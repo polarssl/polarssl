@@ -352,6 +352,76 @@ static int ssl_parse_ecjpake_kkpp( mbedtls_ssl_context *ssl,
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED */
 
+#if defined(MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT)
+static int ssl_parse_client_cert_ext( mbedtls_ssl_context *ssl,
+                                      const unsigned char *buf,
+                                      size_t len )
+{
+    size_t list_size;
+    const unsigned char *p;
+
+    list_size = buf[0];
+    if( list_size + 1 != len )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad client hello message" ) );
+        return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO );
+    }
+
+    p = buf + 1;
+    while( list_size > 0 )
+    {
+        if ( mbedtls_ssl_check_client_certificate_type( ssl, p[0] ) == 0 )
+        {
+            ssl->handshake->client_cert_type = p[0];
+            MBEDTLS_SSL_DEBUG_MSG( 4, ( "%d client certificate type selected", p[0] ) );
+            return( 0 );
+        }
+
+        list_size--;
+        p++;
+    }
+
+    mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                     MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT );
+
+    return( MBEDTLS_ERR_SSL_NO_CERTIFICATE_TYPE_CHOSEN );
+}
+
+static int ssl_parse_server_cert_ext( mbedtls_ssl_context *ssl,
+                                      const unsigned char *buf,
+                                      size_t len )
+{
+    size_t list_size;
+    const unsigned char *p;
+
+    list_size = buf[0];
+    if( list_size + 1 != len )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad client hello message" ) );
+        return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO );
+    }
+
+    p = buf + 1;
+    while( list_size > 0 )
+    {
+        if( mbedtls_ssl_check_server_certificate_type( ssl, p[0] ) == 0 )
+        {
+            ssl->handshake->server_cert_type = p[0];
+            MBEDTLS_SSL_DEBUG_MSG( 4, ( "%d server certificate type selected", p[0] ) );
+            return( 0 );
+        }
+
+        list_size--;
+        p++;
+    }
+
+    mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                     MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT );
+
+    return( MBEDTLS_ERR_SSL_NO_CERTIFICATE_TYPE_CHOSEN );
+}
+#endif /* MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT */
+
 #if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
 static int ssl_parse_max_fragment_length_ext( mbedtls_ssl_context *ssl,
                                               const unsigned char *buf,
@@ -1677,6 +1747,26 @@ read_record_header:
             break;
 #endif /* MBEDTLS_SSL_SESSION_TICKETS */
 
+#if defined(MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT)
+        case MBEDTLS_TLS_EXT_CLIENT_CERTIFICATE_TYPE:
+            MBEDTLS_SSL_DEBUG_MSG( 3, ( "found client certificate type extension" ) );
+            ssl->handshake->cli_exts |= MBEDTLS_TLS_EXT_CLIENT_CERTIFICATE_TYPE_PRESENT;
+
+            ret = ssl_parse_client_cert_ext( ssl, ext + 4, ext_size );
+            if( ret != 0 )
+                return( ret );
+            break;
+
+        case MBEDTLS_TLS_EXT_SERVER_CERTIFICATE_TYPE:
+            MBEDTLS_SSL_DEBUG_MSG( 3, ( "found server certificate type extension" ) );
+            ssl->handshake->cli_exts |= MBEDTLS_TLS_EXT_SERVER_CERTIFICATE_TYPE_PRESENT;
+
+            ret = ssl_parse_server_cert_ext( ssl, ext + 4, ext_size );
+            if( ret != 0 )
+                return( ret );
+            break;
+#endif /* MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT */
+
         default:
             MBEDTLS_SSL_DEBUG_MSG( 3, ( "unknown extension found: %d (ignoring)",
                            ext_id ) );
@@ -2108,6 +2198,72 @@ static void ssl_write_ecjpake_kkpp_ext( mbedtls_ssl_context *ssl,
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED */
 
+#if defined(MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT)
+static void ssl_write_client_certificate_ext( mbedtls_ssl_context *ssl,
+                                              unsigned char *buf,
+                                              size_t *olen )
+{
+    unsigned char *p = buf;
+    const unsigned char *end = ssl->out_msg + MBEDTLS_SSL_MAX_CONTENT_LEN;
+
+    *olen = 0;
+
+    if( ( ssl->handshake->cli_exts &
+          MBEDTLS_TLS_EXT_CLIENT_CERTIFICATE_TYPE_PRESENT ) == 0 )
+        return;
+
+    MBEDTLS_SSL_DEBUG_MSG( 3, ( "server hello, client certificate type extension" ) );
+
+    if( end - p < 5 )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "buffer too small" ) );
+        return;
+    }
+
+    *p++ = (unsigned char)( ( MBEDTLS_TLS_EXT_CLIENT_CERTIFICATE_TYPE >> 8 ) & 0xFF );
+    *p++ = (unsigned char)( ( MBEDTLS_TLS_EXT_CLIENT_CERTIFICATE_TYPE      ) & 0xFF );
+
+    *p++ = 0x00;
+    *p++ = 1;
+
+    *p++ = ssl->handshake->client_cert_type;
+
+    *olen = 5;
+}
+
+static void ssl_write_server_certificate_ext( mbedtls_ssl_context *ssl,
+                                              unsigned char *buf,
+                                              size_t *olen )
+{
+    unsigned char *p = buf;
+    const unsigned char *end = ssl->out_msg + MBEDTLS_SSL_MAX_CONTENT_LEN;
+
+    *olen = 0;
+
+    if( ( ssl->handshake->cli_exts &
+          MBEDTLS_TLS_EXT_SERVER_CERTIFICATE_TYPE_PRESENT ) == 0 )
+        return;
+
+    MBEDTLS_SSL_DEBUG_MSG( 3, ( "server hello, server certificate type extension" ) );
+
+    if( end - p < 5 )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "buffer too small" ) );
+        return;
+    }
+
+    *p++ = (unsigned char)( ( MBEDTLS_TLS_EXT_SERVER_CERTIFICATE_TYPE >> 8 ) & 0xFF );
+    *p++ = (unsigned char)( ( MBEDTLS_TLS_EXT_SERVER_CERTIFICATE_TYPE      ) & 0xFF );
+
+    *p++ = 0x00;
+    *p++ = 1;
+
+    *p++ = ssl->handshake->server_cert_type;
+
+    *olen = 5;
+}
+#endif /* MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT */
+
 #if defined(MBEDTLS_SSL_ALPN )
 static void ssl_write_alpn_ext( mbedtls_ssl_context *ssl,
                                 unsigned char *buf, size_t *olen )
@@ -2405,6 +2561,14 @@ static int ssl_write_server_hello( mbedtls_ssl_context *ssl )
 
 #if defined(MBEDTLS_SSL_ALPN)
     ssl_write_alpn_ext( ssl, p + 2 + ext_len, &olen );
+    ext_len += olen;
+#endif
+
+#if defined(MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT)
+    ssl_write_client_certificate_ext( ssl, p + 2 + ext_len, &olen );
+    ext_len += olen;
+    
+    ssl_write_server_certificate_ext( ssl, p + 2 + ext_len, &olen );
     ext_len += olen;
 #endif
 

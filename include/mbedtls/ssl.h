@@ -106,6 +106,7 @@
 #define MBEDTLS_ERR_SSL_WANT_WRITE                        -0x6880  /**< Connection requires a write call. */
 #define MBEDTLS_ERR_SSL_TIMEOUT                           -0x6800  /**< The operation timed out. */
 #define MBEDTLS_ERR_SSL_CLIENT_RECONNECT                  -0x6780  /**< The client initiated a reconnect from the same port. */
+#define MBEDTLS_ERR_SSL_NO_CERTIFICATE_TYPE_CHOSEN				-0x6700  /**< The server has no certificate types in common with the client */
 
 /*
  * Various constants
@@ -327,6 +328,9 @@
 
 #define MBEDTLS_TLS_EXT_ALPN                        16
 
+#define MBEDTLS_TLS_EXT_CLIENT_CERTIFICATE_TYPE     19
+#define MBEDTLS_TLS_EXT_SERVER_CERTIFICATE_TYPE     20
+
 #define MBEDTLS_TLS_EXT_ENCRYPT_THEN_MAC            22 /* 0x16 */
 #define MBEDTLS_TLS_EXT_EXTENDED_MASTER_SECRET  0x0017 /* 23 */
 
@@ -335,6 +339,15 @@
 #define MBEDTLS_TLS_EXT_ECJPAKE_KKPP               256 /* experimental */
 
 #define MBEDTLS_TLS_EXT_RENEGOTIATION_INFO      0xFF01
+
+/**
+ * TLS Certificate Types
+ * See RFC 7250
+ */
+
+#define MBEDTLS_TLS_CERT_TYPE_NONE            -1
+#define MBEDTLS_TLS_CERT_TYPE_X509            0
+#define MBEDTLS_TLS_CERT_TYPE_RAW_PUBLIC_KEY  2
 
 /*
  * Size defines
@@ -635,6 +648,10 @@ struct mbedtls_ssl_config
 #endif
 #if defined(MBEDTLS_SSL_FALLBACK_SCSV) && defined(MBEDTLS_SSL_CLI_C)
     unsigned int fallback : 1;      /*!< is this a fallback?                */
+#endif
+#if defined(MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT)
+    const int *server_certificate_type_list;
+    const int *client_certificate_type_list;
 #endif
 };
 
@@ -1629,6 +1646,13 @@ void mbedtls_ssl_conf_curves( mbedtls_ssl_config *conf,
 void mbedtls_ssl_conf_sig_hashes( mbedtls_ssl_config *conf,
                                   const int *hashes );
 #endif /* MBEDTLS_KEY_EXCHANGE__WITH_CERT__ENABLED */
+
+#if defined(MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT)
+void mbedtls_ssl_conf_client_certificate_types( mbedtls_ssl_config *conf,
+                                  							const int *cert_types );
+void mbedtls_ssl_conf_server_certificate_types( mbedtls_ssl_config *conf,
+                                  							const int *cert_types );
+#endif /* MBEDTLS_SSL_RAW_PUBLIC_KEY_SUPPORT */
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 /**

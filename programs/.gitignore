@@ -29,6 +29,7 @@ pkey/rsa_sign
 pkey/rsa_sign_pss
 pkey/rsa_verify
 pkey/rsa_verify_pss
+pkey/ecdh_curve25519
 random/gen_entropy
 random/gen_random_ctr_drbg
 random/gen_random_havege
