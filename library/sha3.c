@@ -81,18 +81,22 @@ int mbedtls_sha3_starts( mbedtls_sha3_context *ctx, mbedtls_sha3_type_t type )
     {
     case MBEDTLS_SHA3_224:
         ctx->digest_size = 224U / 8U;
+        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 28U * 2U );
         return mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 224U * 2U, 0x02U, 2U);
 
     case MBEDTLS_SHA3_256:
         ctx->digest_size = 256U / 8U;
+        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 32U * 2U );
         return mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 256U * 2U, 0x02U, 2U);
 
     case MBEDTLS_SHA3_384:
         ctx->digest_size = 384U / 8U;
+        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 48U * 2U );
         return mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 384U * 2U, 0x02U, 2U);
 
     case MBEDTLS_SHA3_512:
         ctx->digest_size = 512U / 8U;
+        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 64U * 2U );
         return mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 512U * 2U, 0x02U, 2U);
 
     default:
@@ -120,6 +124,16 @@ int mbedtls_sha3_finish( mbedtls_sha3_context *ctx, unsigned char* output )
     }
 
     return mbedtls_keccak_sponge_squeeze( &ctx->sponge_ctx, output, ctx->digest_size );
+}
+
+int mbedtls_sha3_process( mbedtls_sha3_context *ctx, const unsigned char* input )
+{
+    if ( ( ctx == NULL ) || ( input == NULL ) )
+    {
+        return( MBEDTLS_ERR_SHA3_BAD_INPUT_DATA );
+    }
+
+    return mbedtls_keccak_sponge_process( &ctx->sponge_ctx, input );
 }
 
 #endif /* MBEDTLS_SHA3_ALT */

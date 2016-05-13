@@ -51,6 +51,7 @@ typedef struct
 {
     mbedtls_keccak_sponge_context sponge_ctx;
     size_t digest_size; /* digest size in bytes */
+    size_t block_size;  /* block size in bytes */
 }
 mbedtls_sha3_context;
 
@@ -115,6 +116,8 @@ int mbedtls_sha3_update( mbedtls_sha3_context *ctx,
  * \return         0 on success, otherwise an error code is returned.
  */
 int mbedtls_sha3_finish( mbedtls_sha3_context *ctx, unsigned char* output );
+
+int mbedtls_sha3_process( mbedtls_sha3_context *ctx, const unsigned char* input );
 
 #ifdef __cplusplus
 }

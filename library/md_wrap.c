@@ -57,6 +57,10 @@
 #include "mbedtls/sha256.h"
 #endif
 
+#if defined(MBEDTLS_SHA3_C)
+#include "mbedtls/sha3.h"
+#endif
+
 #if defined(MBEDTLS_SHA512_C)
 #include "mbedtls/sha512.h"
 #endif
@@ -582,5 +586,151 @@ const mbedtls_md_info_t mbedtls_sha512_info = {
 };
 
 #endif /* MBEDTLS_SHA512_C */
+
+#if defined(MBEDTLS_SHA3_C)
+
+static void sha3_224_starts_wrap( void *ctx )
+{
+    mbedtls_sha3_starts( (mbedtls_sha3_context *) ctx, MBEDTLS_SHA3_224 );
+}
+
+static void sha3_224_wrap( const unsigned char *input, size_t ilen,
+                          unsigned char *output )
+{
+    mbedtls_sha3( input, ilen, MBEDTLS_SHA3_224, output );
+}
+
+static void sha3_256_starts_wrap( void *ctx )
+{
+    mbedtls_sha3_starts( (mbedtls_sha3_context *) ctx, MBEDTLS_SHA3_256 );
+}
+
+static void sha3_256_wrap( const unsigned char *input, size_t ilen,
+                          unsigned char *output )
+{
+    mbedtls_sha3( input, ilen, MBEDTLS_SHA3_256, output );
+}
+
+static void sha3_384_starts_wrap( void *ctx )
+{
+    mbedtls_sha3_starts( (mbedtls_sha3_context *) ctx, MBEDTLS_SHA3_384 );
+}
+
+static void sha3_384_wrap( const unsigned char *input, size_t ilen,
+                          unsigned char *output )
+{
+    mbedtls_sha3( input, ilen, MBEDTLS_SHA3_384, output );
+}
+
+static void sha3_512_starts_wrap( void *ctx )
+{
+    mbedtls_sha3_starts( (mbedtls_sha3_context *) ctx, MBEDTLS_SHA3_512 );
+}
+
+static void sha3_512_wrap( const unsigned char *input, size_t ilen,
+                          unsigned char *output )
+{
+    mbedtls_sha3( input, ilen, MBEDTLS_SHA3_512, output );
+}
+
+static void sha3_update_wrap( void *ctx, const unsigned char *input,
+                              size_t ilen )
+{
+    mbedtls_sha3_update( (mbedtls_sha3_context *) ctx, input, ilen );
+}
+
+static void sha3_finish_wrap( void *ctx, unsigned char *output )
+{
+    mbedtls_sha3_finish( (mbedtls_sha3_context *) ctx, output );
+}
+
+static void *sha3_ctx_alloc( void )
+{
+    void *ctx = mbedtls_calloc( 1, sizeof( mbedtls_sha3_context ) );
+
+    if( ctx != NULL )
+        mbedtls_sha3_init( (mbedtls_sha3_context *) ctx );
+
+    return( ctx );
+}
+
+static void sha3_ctx_free( void *ctx )
+{
+    mbedtls_sha3_free( (mbedtls_sha3_context *) ctx );
+    mbedtls_free( ctx );
+}
+
+static void sha3_clone_wrap( void *dst, const void *src )
+{
+    mbedtls_sha3_clone( (mbedtls_sha3_context *) dst,
+                        (const mbedtls_sha3_context *) src );
+}
+
+static void sha3_process_wrap( void *ctx, const unsigned char *data )
+{
+    mbedtls_sha3_process( (mbedtls_sha3_context *) ctx, data );
+}
+
+const mbedtls_md_info_t mbedtls_sha3_224_info = {
+    MBEDTLS_MD_SHA3_224,
+    "SHA3-224",
+    28,
+    144,
+    sha3_224_starts_wrap,
+    sha3_update_wrap,
+    sha3_finish_wrap,
+    sha3_224_wrap,
+    sha3_ctx_alloc,
+    sha3_ctx_free,
+    sha3_clone_wrap,
+    sha3_process_wrap,
+};
+
+const mbedtls_md_info_t mbedtls_sha3_256_info = {
+    MBEDTLS_MD_SHA3_256,
+    "SHA3-256",
+    32,
+    136,
+    sha3_256_starts_wrap,
+    sha3_update_wrap,
+    sha3_finish_wrap,
+    sha3_256_wrap,
+    sha3_ctx_alloc,
+    sha3_ctx_free,
+    sha3_clone_wrap,
+    sha3_process_wrap,
+};
+
+const mbedtls_md_info_t mbedtls_sha3_384_info = {
+    MBEDTLS_MD_SHA3_384,
+    "SHA3-384",
+    48,
+    104,
+    sha3_384_starts_wrap,
+    sha3_update_wrap,
+    sha3_finish_wrap,
+    sha3_384_wrap,
+    sha3_ctx_alloc,
+    sha3_ctx_free,
+    sha3_clone_wrap,
+    sha3_process_wrap,
+};
+
+const mbedtls_md_info_t mbedtls_sha3_512_info = {
+    MBEDTLS_MD_SHA3_512,
+    "SHA3-512",
+    64,
+    72,
+    sha3_512_starts_wrap,
+    sha3_update_wrap,
+    sha3_finish_wrap,
+    sha3_512_wrap,
+    sha3_ctx_alloc,
+    sha3_ctx_free,
+    sha3_clone_wrap,
+    sha3_process_wrap,
+};
+
+#endif /* MBEDTLS_SHA3_C */
 
 #endif /* MBEDTLS_MD_C */

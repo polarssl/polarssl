@@ -150,6 +150,9 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
         unsigned char* data,
         size_t size );
 
+int mbedtls_keccak_sponge_process( mbedtls_keccak_sponge_context *ctx,
+                                   const unsigned char *input );
+
 #ifdef __cplusplus
 }
 #endif

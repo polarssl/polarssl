@@ -88,6 +88,13 @@ static const int supported_digests[] = {
         MBEDTLS_MD_MD2,
 #endif
 
+#if defined(MBEDTLS_SHA3_C)
+        MBEDTLS_MD_SHA3_224,
+        MBEDTLS_MD_SHA3_256,
+        MBEDTLS_MD_SHA3_384,
+        MBEDTLS_MD_SHA3_512,
+#endif
+
         MBEDTLS_MD_NONE
 };
 
@@ -134,6 +141,16 @@ const mbedtls_md_info_t *mbedtls_md_info_from_string( const char *md_name )
     if( !strcmp( "SHA512", md_name ) )
         return mbedtls_md_info_from_type( MBEDTLS_MD_SHA512 );
 #endif
+#if defined(MBEDTLS_SHA3_C)
+    if( !strcmp( "SHA3-224", md_name ) )
+        return mbedtls_md_info_from_type( MBEDTLS_MD_SHA3_224 );
+    if( !strcmp( "SHA3-256", md_name ) )
+        return mbedtls_md_info_from_type( MBEDTLS_MD_SHA3_256 );
+    if( !strcmp( "SHA3-384", md_name ) )
+        return mbedtls_md_info_from_type( MBEDTLS_MD_SHA3_384 );
+    if( !strcmp( "SHA3-512", md_name ) )
+        return mbedtls_md_info_from_type( MBEDTLS_MD_SHA3_512 );
+#endif
     return( NULL );
 }
 
@@ -172,6 +189,16 @@ const mbedtls_md_info_t *mbedtls_md_info_from_type( mbedtls_md_type_t md_type )
             return( &mbedtls_sha384_info );
         case MBEDTLS_MD_SHA512:
             return( &mbedtls_sha512_info );
+#endif
+#if defined(MBEDTLS_SHA3_C)
+        case MBEDTLS_MD_SHA3_224:
+            return( &mbedtls_sha3_224_info );
+        case MBEDTLS_MD_SHA3_256:
+            return( &mbedtls_sha3_256_info );
+        case MBEDTLS_MD_SHA3_384:
+            return( &mbedtls_sha3_384_info );
+        case MBEDTLS_MD_SHA3_512:
+            return( &mbedtls_sha3_512_info );
 #endif
         default:
             return( NULL );

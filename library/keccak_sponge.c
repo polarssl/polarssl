@@ -383,6 +383,20 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
     return 0;
 }
 
+int mbedtls_keccak_sponge_process( mbedtls_keccak_sponge_context *ctx,
+                                   const unsigned char *input )
+{
+    if ( ( ctx == NULL ) || ( input == NULL ) )
+    {
+        return( MBEDTLS_ERR_KECCAK_SPONGE_BAD_INPUT_DATA );
+    }
+
+    (void)mbedtls_keccakf_xor_binary( &ctx->keccakf_ctx, input, ctx->rate );
+    (void)mbedtls_keccakf_permute( &ctx->keccakf_ctx );
+
+    return 0;
+}
+
 #endif /* MBEDTLS_KECCAK_SPONGE_ALT */
 
 #endif /* MBEDTLS_KECCAK_SPONGE_C */
