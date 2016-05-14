@@ -135,7 +135,7 @@ extern "C" {
 #endif
 
 /**
- * \brief          Generate the SHA-3 hash of a buffer.
+ * \brief          Generate arbitrary SHAKE output from some input bytes.
  *
  * \param input    The buffer to process.
  * \param ilen     The length (in bytes) of the input buffer.
