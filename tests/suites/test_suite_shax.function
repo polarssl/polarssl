@@ -194,6 +194,208 @@ void mbedtls_sha3_512( char *hex_src_string, char *hex_hash_string )
 }
 /* END_CASE */
 
+/* BEGIN_CASE depends_on:MBEDTLS_SHA3_C */
+void mbedtls_sha3_224_streaming( char *hex_src_string )
+{
+    mbedtls_sha3_context ctx;
+    unsigned char reference_hash[129];
+    unsigned char hash[129];
+    unsigned char src_str[10000];
+    size_t i;
+    size_t chunk_size;
+    size_t remaining;
+    size_t src_len;
+    
+    memset(src_str, 0x00, 10000);
+    memset(hash, 0x00, 129);
+    memset(reference_hash, 0x00, 129);
+    
+    src_len = unhexify( src_str, hex_src_string );
+    
+    /* Generate a reference hash */
+    mbedtls_sha3( src_str, src_len, MBEDTLS_SHA3_224, reference_hash );
+    
+    /* Repeat each test with increasingly-sized data chunks 
+     * E.g. start by processing bytes individual bytes, then 2-byte chunks, 
+     * then 3-byte chunks, and so on...
+     * At each test ensure that the same hash is generated.
+     */
+    for ( chunk_size = 1U; chunk_size < src_len; chunk_size++ )
+    {
+        mbedtls_sha3_init( &ctx );
+        mbedtls_sha3_starts( &ctx, MBEDTLS_SHA3_224 );
+        
+        remaining = src_len;
+        
+        for ( i = 0U; i < src_len; i += chunk_size )
+        {
+            size_t len = ( remaining >= chunk_size ) ? chunk_size : remaining;
+            
+            mbedtls_sha3_update( &ctx, &src_str[i], len); 
+            
+            remaining -= len;
+        }
+        
+        mbedtls_sha3_finish( &ctx, hash );
+        
+        TEST_ASSERT( memcmp( hash, reference_hash, 28U) == 0 );
+    }
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHA3_C */
+void mbedtls_sha3_256_streaming( char *hex_src_string )
+{
+    mbedtls_sha3_context ctx;
+    unsigned char reference_hash[129];
+    unsigned char hash[129];
+    unsigned char src_str[10000];
+    size_t i;
+    size_t chunk_size;
+    size_t remaining;
+    size_t src_len;
+    
+    memset(src_str, 0x00, 10000);
+    memset(hash, 0x00, 129);
+    memset(reference_hash, 0x00, 129);
+    
+    src_len = unhexify( src_str, hex_src_string );
+    
+    /* Generate a reference hash */
+    mbedtls_sha3( src_str, src_len, MBEDTLS_SHA3_256, reference_hash );
+    
+    /* Repeat each test with increasingly-sized data chunks 
+     * E.g. start by processing bytes individual bytes, then 2-byte chunks, 
+     * then 3-byte chunks, and so on...
+     * At each test ensure that the same hash is generated.
+     */
+    for ( chunk_size = 1U; chunk_size < src_len; chunk_size++ )
+    {
+        mbedtls_sha3_init( &ctx );
+        mbedtls_sha3_starts( &ctx, MBEDTLS_SHA3_256 );
+        
+        remaining = src_len;
+        
+        for ( i = 0U; i < src_len; i += chunk_size )
+        {
+            size_t len = ( remaining >= chunk_size ) ? chunk_size : remaining;
+            
+            mbedtls_sha3_update( &ctx, &src_str[i], len); 
+            
+            remaining -= len;
+        }
+        
+        mbedtls_sha3_finish( &ctx, hash );
+        
+        TEST_ASSERT( memcmp( hash, reference_hash, 32U) == 0 );
+    }
+    
+    mbedtls_sha3_free( &ctx );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHA3_C */
+void mbedtls_sha3_384_streaming( char *hex_src_string )
+{
+    mbedtls_sha3_context ctx;
+    unsigned char reference_hash[129];
+    unsigned char hash[129];
+    unsigned char src_str[10000];
+    size_t i;
+    size_t chunk_size;
+    size_t remaining;
+    size_t src_len;
+    
+    memset(src_str, 0x00, 10000);
+    memset(hash, 0x00, 129);
+    memset(reference_hash, 0x00, 129);
+    
+    src_len = unhexify( src_str, hex_src_string );
+    
+    /* Generate a reference hash */
+    mbedtls_sha3( src_str, src_len, MBEDTLS_SHA3_384, reference_hash );
+    
+    /* Repeat each test with increasingly-sized data chunks 
+     * E.g. start by processing bytes individual bytes, then 2-byte chunks, 
+     * then 3-byte chunks, and so on...
+     * At each test ensure that the same hash is generated.
+     */
+    for ( chunk_size = 1U; chunk_size < src_len; chunk_size++ )
+    {
+        mbedtls_sha3_init( &ctx );
+        mbedtls_sha3_starts( &ctx, MBEDTLS_SHA3_384 );
+        
+        remaining = src_len;
+        
+        for ( i = 0U; i < src_len; i += chunk_size )
+        {
+            size_t len = ( remaining >= chunk_size ) ? chunk_size : remaining;
+            
+            mbedtls_sha3_update( &ctx, &src_str[i], len); 
+            
+            remaining -= len;
+        }
+        
+        mbedtls_sha3_finish( &ctx, hash );
+        
+        TEST_ASSERT( memcmp( hash, reference_hash, 48U) == 0 );
+    }
+    
+    mbedtls_sha3_free( &ctx );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHA3_C */
+void mbedtls_sha3_512_streaming( char *hex_src_string )
+{
+    mbedtls_sha3_context ctx;
+    unsigned char reference_hash[129];
+    unsigned char hash[129];
+    unsigned char src_str[10000];
+    size_t i;
+    size_t chunk_size;
+    size_t remaining;
+    size_t src_len;
+    
+    memset(src_str, 0x00, 10000);
+    memset(hash, 0x00, 129);
+    memset(reference_hash, 0x00, 129);
+    
+    src_len = unhexify( src_str, hex_src_string );
+    
+    /* Generate a reference hash */
+    mbedtls_sha3( src_str, src_len, MBEDTLS_SHA3_512, reference_hash );
+    
+    /* Repeat each test with increasingly-sized data chunks 
+     * E.g. start by processing bytes individual bytes, then 2-byte chunks, 
+     * then 3-byte chunks, and so on...
+     * At each test ensure that the same hash is generated.
+     */
+    for ( chunk_size = 1U; chunk_size < src_len; chunk_size++ )
+    {
+        mbedtls_sha3_init( &ctx );
+        mbedtls_sha3_starts( &ctx, MBEDTLS_SHA3_512 );
+        
+        remaining = src_len;
+        
+        for ( i = 0U; i < src_len; i += chunk_size )
+        {
+            size_t len = ( remaining >= chunk_size ) ? chunk_size : remaining;
+            
+            mbedtls_sha3_update( &ctx, &src_str[i], len); 
+            
+            remaining -= len;
+        }
+        
+        mbedtls_sha3_finish( &ctx, hash );
+        
+        TEST_ASSERT( memcmp( hash, reference_hash, 64U) == 0 );
+    }
+    
+    mbedtls_sha3_free( &ctx );
+}
+/* END_CASE */
+
 /* BEGIN_CASE depends_on:MBEDTLS_SHA1_C:MBEDTLS_SELF_TEST */
 void sha1_selftest()
 {
