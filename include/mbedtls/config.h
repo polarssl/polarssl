@@ -2487,6 +2487,20 @@
 #define MBEDTLS_SHA3_C
 
 /**
+ * \def MBEDTLS_SHA3_C
+ *
+ * Enable the SHA-3 eXtensible Output Functions (XOF).
+ *
+ * Module:  library/shake.c
+ * Caller:
+ *
+ * Requires: MBEDTLS_KECCAKF_C, MBEDTLS_KECCAK_SPONGE_C
+ *
+ * This module adds support for SHAKE128 and SHAKE256.
+ */
+#define MBEDTLS_SHAKE_C
+
+/**
  * \def MBEDTLS_KECCAKF_C
  *
  * Enable the SHA-3 cryptographic hash algorithms.

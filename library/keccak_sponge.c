@@ -300,6 +300,7 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
 {
     size_t queue_offset;
     size_t data_offset = 0U;
+    size_t queue_len_bytes;
     size_t rate_bytes;
 
     if ( ( ctx == NULL ) || ( data == NULL ) )
@@ -322,11 +323,12 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
 
     if ( size > 0U )
     {
-        rate_bytes   = ctx->rate / 8U;
-        queue_offset = (ctx->rate - ctx->queue_len) / 8U;
+        rate_bytes      = ctx->rate / 8U;
+        queue_offset    = (ctx->rate - ctx->queue_len) / 8U;
+        queue_len_bytes = ctx->queue_len / 8U;
 
         /* Consume data from the queue */
-        if ( size < ( ctx->queue_len / 8U ) )
+        if ( size < queue_len_bytes )
         {
             /* Not enough output requested to empty the queue */
             memcpy ( data, &ctx->queue[queue_offset], size);
@@ -337,10 +339,11 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
         else
         {
             /* Consume all data from the output queue */
-            memcpy (data, &ctx->queue[queue_offset], ctx->queue_len);
 
-            data_offset += ctx->queue_len;
-            size        -= ctx->queue_len;
+            memcpy (data, &ctx->queue[queue_offset], queue_len_bytes );
+
+            data_offset += queue_len_bytes;
+            size        -= queue_len_bytes;
 
             ctx->queue_len = 0U;
         }

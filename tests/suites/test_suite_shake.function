@@ -1,0 +1,54 @@
+/* BEGIN_HEADER */
+#include "mbedtls/shake.h"
+/* END_HEADER */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHAKE_C */
+void mbedtls_shake128( char *hex_src_string, char *hex_output_string )
+{
+    unsigned char src_str[10000];
+    unsigned char output_str[10000];
+    unsigned char output[400];
+    size_t src_len;
+    size_t output_len = strlen( hex_output_string ) / 2;
+
+    memset( src_str,    0x00, 10000 );
+    memset( output_str, 0x00, 10000 );
+    memset( output,     0x00, 400 );
+
+    src_len = unhexify( src_str, hex_src_string );
+
+    mbedtls_shake( src_str, src_len, MBEDTLS_SHAKE128, output, output_len );
+    hexify( output_str, output, output_len );
+
+    TEST_ASSERT( strcmp( (char *) output_str, hex_output_string ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHAKE_C */
+void mbedtls_shake256( char *hex_src_string, char *hex_output_string )
+{
+    unsigned char src_str[10000];
+    unsigned char output_str[10000];
+    unsigned char output[400];
+    size_t src_len;
+    size_t output_len = strlen( hex_output_string ) / 2;
+
+    memset( src_str,    0x00, 10000 );
+    memset( output_str, 0x00, 10000 );
+    memset( output,     0x00, 400 );
+
+    src_len = unhexify( src_str, hex_src_string );
+
+    mbedtls_shake( src_str, src_len, MBEDTLS_SHAKE256, output, output_len );
+    hexify( output_str, output, output_len );
+
+    TEST_ASSERT( strcmp( (char *) output_str, hex_output_string ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHAKE_C:MBEDTLS_SELF_TEST */
+void shake_selftest()
+{
+    TEST_ASSERT( mbedtls_shake_self_test( 0 ) == 0 );
+}
+/* END_CASE */
