@@ -77,131 +77,162 @@ static void mbedtls_zeroize( void *v, size_t n ) {
  * \param in_ctx
  * \param out_ctx
  */
-static void mbedtls_keccakf_theta( const mbedtls_keccakf_context *in_ctx,
-                                   mbedtls_keccakf_context *out_ctx )
+static inline void mbedtls_keccakf_theta( uint64_t in_state[5][5],
+                                          uint64_t out_state[5][5] )
 {
-    uint64_t c_left;
-    uint64_t c_right;
+    uint64_t cl;
+    uint64_t cr;
     uint64_t d;
-    size_t x;
-    size_t x1;
 
-    for ( x = 0U; x < 5U; x++ )
-    {
-        x1 = ( x + 9U ) % 5U; /* x - 1 (mod 5), e.g. if x==0 then x2==4 */
-        c_left = in_ctx->state[x1][0] ^
-                 in_ctx->state[x1][1] ^
-                 in_ctx->state[x1][2] ^
-                 in_ctx->state[x1][3] ^
-                 in_ctx->state[x1][4];
+    cl = in_state[4][0] ^ in_state[4][1] ^ in_state[4][2] ^ in_state[4][3] ^ in_state[4][4];
+    cr = in_state[1][0] ^ in_state[1][1] ^ in_state[1][2] ^ in_state[1][3] ^ in_state[1][4];
+    d = cl ^ ROTL64( cr, 1 );
+    out_state[0][0] = in_state[0][0] ^ d;
+    out_state[0][1] = in_state[0][1] ^ d;
+    out_state[0][2] = in_state[0][2] ^ d;
+    out_state[0][3] = in_state[0][3] ^ d;
+    out_state[0][4] = in_state[0][4] ^ d;
 
-        x1 = ( x + 1U ) % 5U;
-        c_right = in_ctx->state[x1][0] ^
-                  in_ctx->state[x1][1] ^
-                  in_ctx->state[x1][2] ^
-                  in_ctx->state[x1][3] ^
-                  in_ctx->state[x1][4];
+    cl = in_state[0][0] ^ in_state[0][1] ^ in_state[0][2] ^ in_state[0][3] ^ in_state[0][4];
+    cr = in_state[2][0] ^ in_state[2][1] ^ in_state[2][2] ^ in_state[2][3] ^ in_state[2][4];
+    d = cl ^ ROTL64( cr, 1 );
+    out_state[1][0] = in_state[1][0] ^ d;
+    out_state[1][1] = in_state[1][1] ^ d;
+    out_state[1][2] = in_state[1][2] ^ d;
+    out_state[1][3] = in_state[1][3] ^ d;
+    out_state[1][4] = in_state[1][4] ^ d;
 
-        d = c_left ^ ROTL64( c_right, 1 );
+    cl = in_state[1][0] ^ in_state[1][1] ^ in_state[1][2] ^ in_state[1][3] ^ in_state[1][4];
+    cr = in_state[3][0] ^ in_state[3][1] ^ in_state[3][2] ^ in_state[3][3] ^ in_state[3][4];
+    d = cl ^ ROTL64( cr, 1 );
+    out_state[2][0] = in_state[2][0] ^ d;
+    out_state[2][1] = in_state[2][1] ^ d;
+    out_state[2][2] = in_state[2][2] ^ d;
+    out_state[2][3] = in_state[2][3] ^ d;
+    out_state[2][4] = in_state[2][4] ^ d;
 
-        out_ctx->state[x][0] = in_ctx->state[x][0] ^ d;
-        out_ctx->state[x][1] = in_ctx->state[x][1] ^ d;
-        out_ctx->state[x][2] = in_ctx->state[x][2] ^ d;
-        out_ctx->state[x][3] = in_ctx->state[x][3] ^ d;
-        out_ctx->state[x][4] = in_ctx->state[x][4] ^ d;
-    }
+    cl = in_state[2][0] ^ in_state[2][1] ^ in_state[2][2] ^ in_state[2][3] ^ in_state[2][4];
+    cr = in_state[4][0] ^ in_state[4][1] ^ in_state[4][2] ^ in_state[4][3] ^ in_state[4][4];
+    d = cl ^ ROTL64( cr, 1 );
+    out_state[3][0] = in_state[3][0] ^ d;
+    out_state[3][1] = in_state[3][1] ^ d;
+    out_state[3][2] = in_state[3][2] ^ d;
+    out_state[3][3] = in_state[3][3] ^ d;
+    out_state[3][4] = in_state[3][4] ^ d;
+
+    cl = in_state[3][0] ^ in_state[3][1] ^ in_state[3][2] ^ in_state[3][3] ^ in_state[3][4];
+    cr = in_state[0][0] ^ in_state[0][1] ^ in_state[0][2] ^ in_state[0][3] ^ in_state[0][4];
+    d = cl ^ ROTL64( cr, 1 );
+    out_state[4][0] = in_state[4][0] ^ d;
+    out_state[4][1] = in_state[4][1] ^ d;
+    out_state[4][2] = in_state[4][2] ^ d;
+    out_state[4][3] = in_state[4][3] ^ d;
+    out_state[4][4] = in_state[4][4] ^ d;
 }
 
-static void mbedtls_keccakf_rho( const mbedtls_keccakf_context *in_ctx,
-                                 mbedtls_keccakf_context *out_ctx )
+static inline void mbedtls_keccakf_rho( uint64_t in_state[5][5],
+                                        uint64_t out_state[5][5] )
 {
-    out_ctx->state[0][0] =         in_ctx->state[0][0];
-    out_ctx->state[0][1] = ROTL64( in_ctx->state[0][1], 36 );
-    out_ctx->state[0][2] = ROTL64( in_ctx->state[0][2], 3  );
-    out_ctx->state[0][3] = ROTL64( in_ctx->state[0][3], 41 );
-    out_ctx->state[0][4] = ROTL64( in_ctx->state[0][4], 18 );
+    out_state[0][0] =         in_state[0][0];
+    out_state[0][1] = ROTL64( in_state[0][1], 36 );
+    out_state[0][2] = ROTL64( in_state[0][2], 3  );
+    out_state[0][3] = ROTL64( in_state[0][3], 41 );
+    out_state[0][4] = ROTL64( in_state[0][4], 18 );
 
-    out_ctx->state[1][0] = ROTL64( in_ctx->state[1][0], 1  );
-    out_ctx->state[1][1] = ROTL64( in_ctx->state[1][1], 44 );
-    out_ctx->state[1][2] = ROTL64( in_ctx->state[1][2], 10 );
-    out_ctx->state[1][3] = ROTL64( in_ctx->state[1][3], 45 );
-    out_ctx->state[1][4] = ROTL64( in_ctx->state[1][4], 2  );
+    out_state[1][0] = ROTL64( in_state[1][0], 1  );
+    out_state[1][1] = ROTL64( in_state[1][1], 44 );
+    out_state[1][2] = ROTL64( in_state[1][2], 10 );
+    out_state[1][3] = ROTL64( in_state[1][3], 45 );
+    out_state[1][4] = ROTL64( in_state[1][4], 2  );
 
-    out_ctx->state[2][0] = ROTL64( in_ctx->state[2][0], 62 );
-    out_ctx->state[2][1] = ROTL64( in_ctx->state[2][1], 6  );
-    out_ctx->state[2][2] = ROTL64( in_ctx->state[2][2], 43 );
-    out_ctx->state[2][3] = ROTL64( in_ctx->state[2][3], 15 );
-    out_ctx->state[2][4] = ROTL64( in_ctx->state[2][4], 61 );
+    out_state[2][0] = ROTL64( in_state[2][0], 62 );
+    out_state[2][1] = ROTL64( in_state[2][1], 6  );
+    out_state[2][2] = ROTL64( in_state[2][2], 43 );
+    out_state[2][3] = ROTL64( in_state[2][3], 15 );
+    out_state[2][4] = ROTL64( in_state[2][4], 61 );
 
-    out_ctx->state[3][0] = ROTL64( in_ctx->state[3][0], 28 );
-    out_ctx->state[3][1] = ROTL64( in_ctx->state[3][1], 55 );
-    out_ctx->state[3][2] = ROTL64( in_ctx->state[3][2], 25 );
-    out_ctx->state[3][3] = ROTL64( in_ctx->state[3][3], 21 );
-    out_ctx->state[3][4] = ROTL64( in_ctx->state[3][4], 56 );
+    out_state[3][0] = ROTL64( in_state[3][0], 28 );
+    out_state[3][1] = ROTL64( in_state[3][1], 55 );
+    out_state[3][2] = ROTL64( in_state[3][2], 25 );
+    out_state[3][3] = ROTL64( in_state[3][3], 21 );
+    out_state[3][4] = ROTL64( in_state[3][4], 56 );
 
-    out_ctx->state[4][0] = ROTL64( in_ctx->state[4][0], 27 );
-    out_ctx->state[4][1] = ROTL64( in_ctx->state[4][1], 20 );
-    out_ctx->state[4][2] = ROTL64( in_ctx->state[4][2], 39 );
-    out_ctx->state[4][3] = ROTL64( in_ctx->state[4][3], 8  );
-    out_ctx->state[4][4] = ROTL64( in_ctx->state[4][4], 14 );
+    out_state[4][0] = ROTL64( in_state[4][0], 27 );
+    out_state[4][1] = ROTL64( in_state[4][1], 20 );
+    out_state[4][2] = ROTL64( in_state[4][2], 39 );
+    out_state[4][3] = ROTL64( in_state[4][3], 8  );
+    out_state[4][4] = ROTL64( in_state[4][4], 14 );
 }
 
-static void mbedtls_keccakf_pi( const mbedtls_keccakf_context *in_ctx,
-                                mbedtls_keccakf_context *out_ctx )
+static inline void mbedtls_keccakf_pi( uint64_t in_state[5][5],
+                                       uint64_t out_state[5][5] )
 {
-    out_ctx->state[0][0] = in_ctx->state[0][0];
-    out_ctx->state[0][1] = in_ctx->state[3][0];
-    out_ctx->state[0][2] = in_ctx->state[1][0];
-    out_ctx->state[0][3] = in_ctx->state[4][0];
-    out_ctx->state[0][4] = in_ctx->state[2][0];
+    out_state[0][0] = in_state[0][0];
+    out_state[0][1] = in_state[3][0];
+    out_state[0][2] = in_state[1][0];
+    out_state[0][3] = in_state[4][0];
+    out_state[0][4] = in_state[2][0];
 
-    out_ctx->state[1][0] = in_ctx->state[1][1];
-    out_ctx->state[1][1] = in_ctx->state[4][1];
-    out_ctx->state[1][2] = in_ctx->state[2][1];
-    out_ctx->state[1][3] = in_ctx->state[0][1];
-    out_ctx->state[1][4] = in_ctx->state[3][1];
+    out_state[1][0] = in_state[1][1];
+    out_state[1][1] = in_state[4][1];
+    out_state[1][2] = in_state[2][1];
+    out_state[1][3] = in_state[0][1];
+    out_state[1][4] = in_state[3][1];
 
-    out_ctx->state[2][0] = in_ctx->state[2][2];
-    out_ctx->state[2][1] = in_ctx->state[0][2];
-    out_ctx->state[2][2] = in_ctx->state[3][2];
-    out_ctx->state[2][3] = in_ctx->state[1][2];
-    out_ctx->state[2][4] = in_ctx->state[4][2];
+    out_state[2][0] = in_state[2][2];
+    out_state[2][1] = in_state[0][2];
+    out_state[2][2] = in_state[3][2];
+    out_state[2][3] = in_state[1][2];
+    out_state[2][4] = in_state[4][2];
 
-    out_ctx->state[3][0] = in_ctx->state[3][3];
-    out_ctx->state[3][1] = in_ctx->state[1][3];
-    out_ctx->state[3][2] = in_ctx->state[4][3];
-    out_ctx->state[3][3] = in_ctx->state[2][3];
-    out_ctx->state[3][4] = in_ctx->state[0][3];
+    out_state[3][0] = in_state[3][3];
+    out_state[3][1] = in_state[1][3];
+    out_state[3][2] = in_state[4][3];
+    out_state[3][3] = in_state[2][3];
+    out_state[3][4] = in_state[0][3];
 
-    out_ctx->state[4][0] = in_ctx->state[4][4];
-    out_ctx->state[4][1] = in_ctx->state[2][4];
-    out_ctx->state[4][2] = in_ctx->state[0][4];
-    out_ctx->state[4][3] = in_ctx->state[3][4];
-    out_ctx->state[4][4] = in_ctx->state[1][4];
+    out_state[4][0] = in_state[4][4];
+    out_state[4][1] = in_state[2][4];
+    out_state[4][2] = in_state[0][4];
+    out_state[4][3] = in_state[3][4];
+    out_state[4][4] = in_state[1][4];
 }
 
-static void mbedtls_keccakf_chi_iota( const mbedtls_keccakf_context *in_ctx,
-                                      mbedtls_keccakf_context *out_ctx,
-                                      size_t round_index )
+static inline void mbedtls_keccakf_chi_iota( uint64_t in_state[5][5],
+                                             uint64_t out_state[5][5],
+                                             size_t round_index )
 {
-    size_t y;
-
-    out_ctx->state[0][0] = in_ctx->state[0][0] ^ ( ( ~in_ctx->state[1][0] ) & in_ctx->state[2][0] )
+    out_state[0][0] = in_state[0][0] ^ ( ( ~in_state[1][0] ) & in_state[2][0] )
             ^ round_constants[ round_index ]; /* iota step */
 
-    out_ctx->state[1][0] = in_ctx->state[1][0] ^ ( ( ~in_ctx->state[2][0] ) & in_ctx->state[3][0] );
-    out_ctx->state[2][0] = in_ctx->state[2][0] ^ ( ( ~in_ctx->state[3][0] ) & in_ctx->state[4][0] );
-    out_ctx->state[3][0] = in_ctx->state[3][0] ^ ( ( ~in_ctx->state[4][0] ) & in_ctx->state[0][0] );
-    out_ctx->state[4][0] = in_ctx->state[4][0] ^ ( ( ~in_ctx->state[0][0] ) & in_ctx->state[1][0] );
+    out_state[0][1] = in_state[0][1] ^ ( ( ~in_state[1][1] ) & in_state[2][1] );
+    out_state[0][2] = in_state[0][2] ^ ( ( ~in_state[1][2] ) & in_state[2][2] );
+    out_state[0][3] = in_state[0][3] ^ ( ( ~in_state[1][3] ) & in_state[2][3] );
+    out_state[0][4] = in_state[0][4] ^ ( ( ~in_state[1][4] ) & in_state[2][4] );
 
-    for ( y = 1U; y < 5U; y++ )
-    {
-        out_ctx->state[0][y] = in_ctx->state[0][y] ^ ( ( ~in_ctx->state[1][y] ) & in_ctx->state[2][y] );
-        out_ctx->state[1][y] = in_ctx->state[1][y] ^ ( ( ~in_ctx->state[2][y] ) & in_ctx->state[3][y] );
-        out_ctx->state[2][y] = in_ctx->state[2][y] ^ ( ( ~in_ctx->state[3][y] ) & in_ctx->state[4][y] );
-        out_ctx->state[3][y] = in_ctx->state[3][y] ^ ( ( ~in_ctx->state[4][y] ) & in_ctx->state[0][y] );
-        out_ctx->state[4][y] = in_ctx->state[4][y] ^ ( ( ~in_ctx->state[0][y] ) & in_ctx->state[1][y] );
-    }
+    out_state[2][0] = in_state[2][0] ^ ( ( ~in_state[3][0] ) & in_state[4][0] );
+    out_state[2][1] = in_state[2][1] ^ ( ( ~in_state[3][1] ) & in_state[4][1] );
+    out_state[2][2] = in_state[2][2] ^ ( ( ~in_state[3][2] ) & in_state[4][2] );
+    out_state[2][3] = in_state[2][3] ^ ( ( ~in_state[3][3] ) & in_state[4][3] );
+    out_state[2][4] = in_state[2][4] ^ ( ( ~in_state[3][4] ) & in_state[4][4] );
+
+    out_state[4][0] = in_state[4][0] ^ ( ( ~in_state[0][0] ) & in_state[1][0] );
+    out_state[4][1] = in_state[4][1] ^ ( ( ~in_state[0][1] ) & in_state[1][1] );
+    out_state[4][2] = in_state[4][2] ^ ( ( ~in_state[0][2] ) & in_state[1][2] );
+    out_state[4][3] = in_state[4][3] ^ ( ( ~in_state[0][3] ) & in_state[1][3] );
+    out_state[4][4] = in_state[4][4] ^ ( ( ~in_state[0][4] ) & in_state[1][4] );
+
+    out_state[1][0] = in_state[1][0] ^ ( ( ~in_state[2][0] ) & in_state[3][0] );
+    out_state[1][1] = in_state[1][1] ^ ( ( ~in_state[2][1] ) & in_state[3][1] );
+    out_state[1][2] = in_state[1][2] ^ ( ( ~in_state[2][2] ) & in_state[3][2] );
+    out_state[1][3] = in_state[1][3] ^ ( ( ~in_state[2][3] ) & in_state[3][3] );
+    out_state[1][4] = in_state[1][4] ^ ( ( ~in_state[2][4] ) & in_state[3][4] );
+
+    out_state[3][0] = in_state[3][0] ^ ( ( ~in_state[4][0] ) & in_state[0][0] );
+    out_state[3][1] = in_state[3][1] ^ ( ( ~in_state[4][1] ) & in_state[0][1] );
+    out_state[3][2] = in_state[3][2] ^ ( ( ~in_state[4][2] ) & in_state[0][2] );
+    out_state[3][3] = in_state[3][3] ^ ( ( ~in_state[4][3] ) & in_state[0][3] );
+    out_state[3][4] = in_state[3][4] ^ ( ( ~in_state[4][4] ) & in_state[0][4] );
 }
 
 void mbedtls_keccakf_init( mbedtls_keccakf_context *ctx )
@@ -209,6 +240,7 @@ void mbedtls_keccakf_init( mbedtls_keccakf_context *ctx )
     if ( ctx != NULL )
     {
         mbedtls_zeroize(&ctx->state, sizeof(ctx->state));
+        mbedtls_zeroize(&ctx->temp, sizeof(ctx->temp));
     }
 }
 
@@ -217,6 +249,7 @@ void mbedtls_keccakf_free( mbedtls_keccakf_context *ctx )
     if ( ctx != NULL )
     {
         mbedtls_zeroize(&ctx->state, sizeof(ctx->state));
+        mbedtls_zeroize(&ctx->temp, sizeof(ctx->temp));
     }
 }
 
@@ -228,7 +261,6 @@ void mbedtls_keccakf_clone( mbedtls_keccakf_context *dst,
 
 int mbedtls_keccakf_permute( mbedtls_keccakf_context *ctx )
 {
-    mbedtls_keccakf_context temp_state;
     size_t i;
 
     if ( ctx == NULL )
@@ -238,13 +270,11 @@ int mbedtls_keccakf_permute( mbedtls_keccakf_context *ctx )
 
     for ( i = 0U; i < 24U; i++ )
     {
-        mbedtls_keccakf_theta   ( ctx        , &temp_state );
-        mbedtls_keccakf_rho     ( &temp_state, ctx         );
-        mbedtls_keccakf_pi      ( ctx        , &temp_state );
-        mbedtls_keccakf_chi_iota( &temp_state, ctx         , i );
+        mbedtls_keccakf_theta   ( ctx->state, ctx->temp );
+        mbedtls_keccakf_rho     ( ctx->temp , ctx->state );
+        mbedtls_keccakf_pi      ( ctx->state, ctx->temp );
+        mbedtls_keccakf_chi_iota( ctx->temp , ctx->state, i );
     }
-
-    mbedtls_zeroize( &temp_state, sizeof(temp_state) );
 
     return( 0 );
 }
@@ -289,15 +319,15 @@ int mbedtls_keccakf_xor_binary( mbedtls_keccakf_context *ctx,
     if ( remaining_bits > 0U )
     {
         uint64_t lane = ctx->state[x][y];
-        uint64_t byte_offset = 0U;
+        uint64_t shift = 0U;
 
         /* whole bytes */
         while ( remaining_bits >= 8U )
         {
-            lane ^= (uint64_t)( (uint64_t)data[data_offset] << ( byte_offset * 8U ) );
+            lane ^= (uint64_t)( (uint64_t)data[data_offset] << shift );
 
             data_offset++;
-            byte_offset++;
+            shift          += 8U;
             remaining_bits -= 8U;
         }
 
@@ -308,7 +338,7 @@ int mbedtls_keccakf_xor_binary( mbedtls_keccakf_context *ctx,
             unsigned char mask = ((uint64_t)(1U << remaining_bits) - 1U);
             unsigned char byte = data[data_offset] & mask;
 
-            lane ^= (uint64_t)( (uint64_t)byte << ( byte_offset * 8U ) );
+            lane ^= (uint64_t)( (uint64_t)byte << ( shift * 8U ) );
         }
 
         ctx->state[x][y] = lane;

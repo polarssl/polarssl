@@ -49,6 +49,7 @@ extern "C" {
 typedef struct
 {
     uint64_t state[5][5];
+    uint64_t temp[5][5];
 }
 mbedtls_keccakf_context;
 
