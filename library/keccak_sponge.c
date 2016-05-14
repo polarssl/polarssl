@@ -112,7 +112,7 @@ static void mbedtls_keccak_sponge_finalize( mbedtls_keccak_sponge_context *ctx )
         {
             memset( &ctx->queue[( ctx->queue_len / 8U ) + 1U],
                     0,
-                    ( ctx->rate - ( ctx->queue_len + 8U ) ) / 8U );
+                    ( ctx->rate - ctx->queue_len ) / 8U );
         }
 
         /* Add last bit */
@@ -262,11 +262,11 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
                 /* Not enough data to completely fill the queue.
                  * Store this data with the other leftovers
                  */
-                memcpy(&ctx->queue[ctx->queue_len / 8U],
-                       data,
-                       queue_free_bytes );
+                memcpy( &ctx->queue[ctx->queue_len / 8U],
+                        data,
+                        remaining_bytes );
 
-                ctx->queue_len += queue_free_bytes * 8U;
+                ctx->queue_len += remaining_bytes * 8U;
                 remaining_bytes = 0U;
             }
         }
