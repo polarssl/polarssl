@@ -69,6 +69,7 @@ void mbedtls_sha3_clone( mbedtls_sha3_context *dst,
 {
     mbedtls_keccak_sponge_clone( &dst->sponge_ctx, &src->sponge_ctx );
     dst->digest_size = src->digest_size;
+    dst->block_size  = src->block_size;
 }
 
 int mbedtls_sha3_starts( mbedtls_sha3_context *ctx, mbedtls_sha3_type_t type )
