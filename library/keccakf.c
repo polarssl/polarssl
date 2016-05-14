@@ -72,10 +72,13 @@ static void mbedtls_zeroize( void *v, size_t n ) {
 }
 
 /**
- * \brief Keccak Theta round operation.
+ * \brief               Keccak Theta round operation.
  *
- * \param in_ctx
- * \param out_ctx
+ *                      This function implements the algorithm specified in
+ *                      Section 3.2.1 of NIST FIPS PUB 202.
+ *
+ * \param in_state      The Keccak state to transform.
+ * \param out_state     The transformed state is written here.
  */
 static inline void mbedtls_keccakf_theta( uint64_t in_state[5][5],
                                           uint64_t out_state[5][5] )
@@ -130,6 +133,15 @@ static inline void mbedtls_keccakf_theta( uint64_t in_state[5][5],
     out_state[4][4] = in_state[4][4] ^ d;
 }
 
+/**
+ * \brief               Keccak Rho round operation.
+ *
+ *                      This function implements the algorithm specified in
+ *                      Section 3.2.2 of NIST FIPS PUB 202.
+ *
+ * \param in_state      The Keccak state to transform.
+ * \param out_state     The transformed state is written here.
+ */
 static inline void mbedtls_keccakf_rho( uint64_t in_state[5][5],
                                         uint64_t out_state[5][5] )
 {
@@ -164,6 +176,15 @@ static inline void mbedtls_keccakf_rho( uint64_t in_state[5][5],
     out_state[4][4] = ROTL64( in_state[4][4], 14 );
 }
 
+/**
+ * \brief               Keccak Pi round operation.
+ *
+ *                      This function implements the algorithm specified in
+ *                      Section 3.2.3 of NIST FIPS PUB 202.
+ *
+ * \param in_state      The Keccak state to transform.
+ * \param out_state     The transformed state is written here.
+ */
 static inline void mbedtls_keccakf_pi( uint64_t in_state[5][5],
                                        uint64_t out_state[5][5] )
 {
@@ -198,6 +219,19 @@ static inline void mbedtls_keccakf_pi( uint64_t in_state[5][5],
     out_state[4][4] = in_state[1][4];
 }
 
+/**
+ * \brief               Keccak Chi and Iota round operations.
+ *
+ *                      This function implements the algorithm specified in
+ *                      Sections 3.2.4 and 3.2.5 of NIST FIPS PUB 202.
+ *
+ *                      The Iota operation is merged into the Chi operation
+ *                      to reduce unnecessary overhead.
+ *
+ * \param in_state      The Keccak state to transform.
+ * \param out_state     The transformed state is written here.
+ * \param round_index   The index of the current round in the interval [0,23].
+ */
 static inline void mbedtls_keccakf_chi_iota( uint64_t in_state[5][5],
                                              uint64_t out_state[5][5],
                                              size_t round_index )
