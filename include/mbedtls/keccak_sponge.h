@@ -25,6 +25,14 @@
 #ifndef MBEDTLS_KECCAK_SPONGE_H
 #define MBEDTLS_KECCAK_SPONGE_H
 
+#if !defined(MBEDTLS_CONFIG_FILE)
+#include "config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
+
+#if !defined(MBEDTLS_KECCAK_SPONGE_ALT)
+
 #include "keccakf.h"
 
 #ifdef __cplusplus
@@ -38,12 +46,12 @@ extern "C" {
 typedef struct
 {
     mbedtls_keccakf_context keccakf_ctx;
-    unsigned char queue[1600 / 8]; /* store partial block data (absorbing) or pending output data (squeezing) */
-    size_t queue_len;        /* queue length (in bits) */
-    size_t rate;             /* sponge rate (in bits) */
-    size_t suffix_len;       /* length of the suffix (in bits) (range 0..8) */
-    int state;
-    unsigned char suffix;
+    unsigned char queue[1600 / 8]; /** store partial block data (absorbing) or pending output data (squeezing) */
+    size_t queue_len;              /** queue length (in bits) */
+    size_t rate;                   /** sponge rate (in bits) */
+    size_t suffix_len;             /** length of the suffix (in bits) (range 0..8) */
+    int state;                     /** Current state (absorbing/ready to squeeze/squeezing) */
+    unsigned char suffix;          /** suffix bits appended to message, before padding */
 }
 mbedtls_keccak_sponge_context;
 
@@ -89,7 +97,8 @@ void mbedtls_keccak_sponge_clone( mbedtls_keccak_sponge_context *dst,
  *                      security of the sponge. The capacity should be double
  *                      the required security (in bits). For example, if 128 bits
  *                      of security are required then \p capacity should be set
- *                      to 256. This must be a multiple of 8.
+ *                      to 256. This must be a multiple of 8. Must be less than
+ *                      1600.
  * \param suffix        A byte containing the suffix bits that are absorbed
  *                      before the padding rule is applied.
  * \param suffix_len    The length (in bits) of the suffix. 8 is the maximum value.
@@ -156,5 +165,7 @@ int mbedtls_keccak_sponge_process( mbedtls_keccak_sponge_context *ctx,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* MBEDTLS_KECCAK_SPONGE_ALT */
 
 #endif /* MBEDTLS_KECCAK_SPONGE_H */

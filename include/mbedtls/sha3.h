@@ -25,10 +25,16 @@
 #ifndef MBEDTLS_INCLUDE_MBEDTLS_SHA3_H_
 #define MBEDTLS_INCLUDE_MBEDTLS_SHA3_H_
 
-#include "keccak_sponge.h"
+#if !defined(MBEDTLS_CONFIG_FILE)
+#include "config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #if !defined(MBEDTLS_SHA3_ALT)
 // Regular implementation
+
+#include "keccak_sponge.h"
 
 #ifdef __cplusplus
 extern "C" {

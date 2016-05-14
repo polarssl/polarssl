@@ -51,10 +51,11 @@ static void mbedtls_zeroize( void *v, size_t n ) {
 /**
  * \brief       Absorbs the suffix bits into the context.
  *
- * \pre         ctx             != NULL
- * \pre         ctx->queue_len  <  ctx->rate
- * \pre         ctx->rate % 8   == 0
- * \pre         ctx->suffix_len <= 8
+ * \pre         ctx                != NULL
+ * \pre         ctx->queue_len     <  ctx->rate
+ * \pre         ctx->queue_len % 8 == 0
+ * \pre         ctx->rate % 8      == 0
+ * \pre         ctx->suffix_len    <= 8
  *
  * \param ctx   The sponge context. Must not be NULL.
  */
@@ -82,10 +83,11 @@ static void mbedtls_keccak_sponge_absorb_suffix( mbedtls_keccak_sponge_context *
  *              adds the padding bits (using the pad10*1 rule), and finally
  *              generates the first block of output bits.
  *
- * \pre         ctx             != NULL
- * \pre         ctx->queue_len  <  ctx->rate
- * \pre         ctx->rate % 8   == 0
- * \pre         ctx->suffix_len <= 8
+ * \pre         ctx                != NULL
+ * \pre         ctx->queue_len     <  ctx->rate
+ * \pre         ctx->queue_len % 8 == 0
+ * \pre         ctx->rate % 8      == 0
+ * \pre         ctx->suffix_len    <= 8
  *
  * \param ctx   The sponge context. Must not be NULL.
  */
@@ -209,7 +211,7 @@ int mbedtls_keccak_sponge_starts( mbedtls_keccak_sponge_context *ctx,
         ctx->suffix     = suffix & ( (unsigned char)( 1U << suffix_len ) - 1U );
     }
 
-    return 0;
+    return( 0 );
 }
 
 int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
@@ -289,7 +291,7 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
         }
     }
 
-    return 0;
+    return( 0 );
 }
 
 int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
@@ -380,7 +382,7 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
         }
     }
 
-    return 0;
+    return( 0 );
 }
 
 int mbedtls_keccak_sponge_process( mbedtls_keccak_sponge_context *ctx,
@@ -394,7 +396,7 @@ int mbedtls_keccak_sponge_process( mbedtls_keccak_sponge_context *ctx,
     (void)mbedtls_keccakf_xor_binary( &ctx->keccakf_ctx, input, ctx->rate );
     (void)mbedtls_keccakf_permute( &ctx->keccakf_ctx );
 
-    return 0;
+    return( 0 );
 }
 
 #endif /* MBEDTLS_KECCAK_SPONGE_ALT */

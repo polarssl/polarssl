@@ -2502,7 +2502,7 @@
 /**
  * \def MBEDTLS_KECCAKF_C
  *
- * Enable the SHA-3 cryptographic hash algorithms.
+ * Enable the Sponge construction based on Keccak-f[1600].
  *
  * Module:  library/keccak_sponge.c
  * Caller:  library/sha3.c
