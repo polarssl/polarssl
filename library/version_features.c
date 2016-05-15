@@ -114,6 +114,12 @@ static const char *features[] = {
 #if defined(MBEDTLS_GCM_ALT)
     "MBEDTLS_GCM_ALT",
 #endif /* MBEDTLS_GCM_ALT */
+#if defined(MBEDTLS_KECCAKF_ALT)
+    "MBEDTLS_KECCAKF_ALT",
+#endif /* MBEDTLS_KECCAKF_ALT */
+#if defined(MBEDTLS_KECCAK_SPONGE_ALT)
+    "MBEDTLS_KECCAK_SPONGE_ALT",
+#endif /* MBEDTLS_KECCAK_SPONGE_ALT */
 #if defined(MBEDTLS_MD2_ALT)
     "MBEDTLS_MD2_ALT",
 #endif /* MBEDTLS_MD2_ALT */
@@ -135,9 +141,15 @@ static const char *features[] = {
 #if defined(MBEDTLS_SHA256_ALT)
     "MBEDTLS_SHA256_ALT",
 #endif /* MBEDTLS_SHA256_ALT */
+#if defined(MBEDTLS_SHA3_ALT)
+    "MBEDTLS_SHA3_ALT",
+#endif /* MBEDTLS_SHA3_ALT */
 #if defined(MBEDTLS_SHA512_ALT)
     "MBEDTLS_SHA512_ALT",
 #endif /* MBEDTLS_SHA512_ALT */
+#if defined(MBEDTLS_SHAKE_ALT)
+    "MBEDTLS_SHAKE_ALT",
+#endif /* MBEDTLS_SHAKE_ALT */
 #if defined(MBEDTLS_XTEA_ALT)
     "MBEDTLS_XTEA_ALT",
 #endif /* MBEDTLS_XTEA_ALT */
@@ -645,6 +657,18 @@ static const char *features[] = {
 #if defined(MBEDTLS_SHA512_C)
     "MBEDTLS_SHA512_C",
 #endif /* MBEDTLS_SHA512_C */
+#if defined(MBEDTLS_SHA3_C)
+    "MBEDTLS_SHA3_C",
+#endif /* MBEDTLS_SHA3_C */
+#if defined(MBEDTLS_SHAKE_C)
+    "MBEDTLS_SHAKE_C",
+#endif /* MBEDTLS_SHAKE_C */
+#if defined(MBEDTLS_KECCAKF_C)
+    "MBEDTLS_KECCAKF_C",
+#endif /* MBEDTLS_KECCAKF_C */
+#if defined(MBEDTLS_KECCAK_SPONGE_C)
+    "MBEDTLS_KECCAK_SPONGE_C",
+#endif /* MBEDTLS_KECCAK_SPONGE_C */
 #if defined(MBEDTLS_SSL_CACHE_C)
     "MBEDTLS_SSL_CACHE_C",
 #endif /* MBEDTLS_SSL_CACHE_C */
