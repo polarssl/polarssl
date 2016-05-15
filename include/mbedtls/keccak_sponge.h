@@ -63,7 +63,7 @@ mbedtls_keccak_sponge_context;
 void mbedtls_keccak_sponge_init( mbedtls_keccak_sponge_context *ctx );
 
 /**
-* \brief                Clean a Keccak sponge context
+ * \brief               Clean a Keccak sponge context
  *
  * \param ctx           Context to be cleared.
  */
@@ -103,7 +103,13 @@ void mbedtls_keccak_sponge_clone( mbedtls_keccak_sponge_context *dst,
  *                      before the padding rule is applied.
  * \param suffix_len    The length (in bits) of the suffix. 8 is the maximum value.
  *
- * \return
+ * \return              MBEDTLS_ERR_KECCAK_SPONGE_BAD_INPUT_DATA is returned if
+ *                      ctx is NULL, capacity is too big/small or is not a multiple
+ *                      of 8, or if suffix_len is greater than 8.
+ *                      MBEDTLS_ERR_KECCAK_SPONGE_BAD_STATE is returned if the
+ *                      sponge has not been initialized, or has not been
+ *                      re-initialized since it was last used.
+ *                      Otherwise, 0 is returned to indicate success.
  */
 int mbedtls_keccak_sponge_starts( mbedtls_keccak_sponge_context *ctx,
                                   size_t capacity,

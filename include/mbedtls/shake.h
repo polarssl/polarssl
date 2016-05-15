@@ -126,9 +126,9 @@ int mbedtls_shake_process( mbedtls_shake_context *ctx, const unsigned char* inpu
 }
 #endif
 
-#else  /* MBEDTLS_SHA3_ALT */
-#include "sha3_alt.h"
-#endif /* MBEDTLS_SHA3_ALT */
+#else  /* MBEDTLS_SHAKE_ALT */
+#include "shake_alt.h"
+#endif /* MBEDTLS_SHAKE_ALT */
 
 #ifdef __cplusplus
 extern "C" {

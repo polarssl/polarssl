@@ -37,10 +37,10 @@
 #include <stddef.h>
 #include <string.h>
 
-#define MBEDTLS_KECCAK_SPONGE_STATE_UNINIT           (0)
-#define MBEDTLS_KECCAK_SPONGE_STATE_ABSORBING        (1)
-#define MBEDTLS_KECCAK_SPONGE_STATE_READY_TO_SQUEEZE (2)
-#define MBEDTLS_KECCAK_SPONGE_STATE_SQUEEZING        (3)
+#define SPONGE_STATE_UNINIT           (0)
+#define SPONGE_STATE_ABSORBING        (1)
+#define SPONGE_STATE_READY_TO_SQUEEZE (2)
+#define SPONGE_STATE_SQUEEZING        (3)
 
 
 /* Implementation that should never be optimized out by the compiler */
@@ -140,7 +140,7 @@ static void mbedtls_keccak_sponge_finalize( mbedtls_keccak_sponge_context *ctx )
     (void)mbedtls_keccakf_xor_binary( &ctx->keccakf_ctx, ctx->queue, ctx->rate );
     (void)mbedtls_keccakf_permute ( &ctx->keccakf_ctx );
 
-    ctx->state = MBEDTLS_KECCAK_SPONGE_STATE_SQUEEZING;
+    ctx->state = SPONGE_STATE_SQUEEZING;
 
     /* Get initial output data into the queue */
     (void)mbedtls_keccakf_read_binary( &ctx->keccakf_ctx, ctx->queue, ctx->rate / 8U );
@@ -156,7 +156,7 @@ void mbedtls_keccak_sponge_init( mbedtls_keccak_sponge_context *ctx )
         ctx->queue_len  = 0U;
         ctx->rate       = 0U;
         ctx->suffix_len = 0U;
-        ctx->state      = MBEDTLS_KECCAK_SPONGE_STATE_UNINIT;
+        ctx->state      = SPONGE_STATE_UNINIT;
         ctx->suffix     = 0U;
     }
 }
@@ -170,7 +170,7 @@ void mbedtls_keccak_sponge_free( mbedtls_keccak_sponge_context *ctx )
         ctx->queue_len  = 0U;
         ctx->rate       = 0U;
         ctx->suffix_len = 0U;
-        ctx->state      = MBEDTLS_KECCAK_SPONGE_STATE_UNINIT;
+        ctx->state      = SPONGE_STATE_UNINIT;
         ctx->suffix     = 0U;
     }
 }
@@ -200,7 +200,7 @@ int mbedtls_keccak_sponge_starts( mbedtls_keccak_sponge_context *ctx,
     {
         return( MBEDTLS_ERR_KECCAK_SPONGE_BAD_INPUT_DATA );
     }
-    else if ( ctx->state != MBEDTLS_KECCAK_SPONGE_STATE_UNINIT )
+    else if ( ctx->state != SPONGE_STATE_UNINIT )
     {
         return( MBEDTLS_ERR_KECCAK_SPONGE_BAD_STATE );
     }
@@ -230,7 +230,7 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
     {
         return( MBEDTLS_ERR_KECCAK_SPONGE_NOT_SETUP );
     }
-    else if ( ctx->state > MBEDTLS_KECCAK_SPONGE_STATE_ABSORBING )
+    else if ( ctx->state > SPONGE_STATE_ABSORBING )
     {
         return( MBEDTLS_ERR_KECCAK_SPONGE_BAD_STATE );
     }
@@ -311,12 +311,12 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
     {
         return( MBEDTLS_ERR_KECCAK_SPONGE_NOT_SETUP );
     }
-    else if ( ctx->state > MBEDTLS_KECCAK_SPONGE_STATE_SQUEEZING )
+    else if ( ctx->state > SPONGE_STATE_SQUEEZING )
     {
         return( MBEDTLS_ERR_KECCAK_SPONGE_BAD_STATE );
     }
 
-    if ( ctx->state < MBEDTLS_KECCAK_SPONGE_STATE_SQUEEZING )
+    if ( ctx->state < SPONGE_STATE_SQUEEZING )
     {
         mbedtls_keccak_sponge_finalize( ctx );
     }

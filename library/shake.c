@@ -124,7 +124,7 @@ int mbedtls_shake_process( mbedtls_shake_context *ctx, const unsigned char* inpu
     return( mbedtls_keccak_sponge_process( &ctx->sponge_ctx, input ) );
 }
 
-#endif /* MBEDTLS_SHAKE_ALT */
+#endif /* !MBEDTLS_SHAKE_ALT */
 
 int mbedtls_shake( const unsigned char* input,
                    size_t ilen,

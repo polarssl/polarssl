@@ -279,6 +279,8 @@
 //#define MBEDTLS_DHM_ALT
 //#define MBEDTLS_ECJPAKE_ALT
 //#define MBEDTLS_GCM_ALT
+//#define MBEDTLS_KECCAKF_ALT
+//#define MBEDTLS_KECCAK_SPONGE_ALT
 //#define MBEDTLS_MD2_ALT
 //#define MBEDTLS_MD4_ALT
 //#define MBEDTLS_MD5_ALT
@@ -288,6 +290,7 @@
 //#define MBEDTLS_SHA256_ALT
 //#define MBEDTLS_SHA3_ALT
 //#define MBEDTLS_SHA512_ALT
+//#define MBEDTLS_SHAKE_ALT
 //#define MBEDTLS_XTEA_ALT
 /*
  * When replacing the elliptic curve module, pleace consider, that it is
