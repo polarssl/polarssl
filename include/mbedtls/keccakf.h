@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-#define MBEDTLS_ERR_KECCAKF_BAD_INPUT_DATA (-1)
+#define MBEDTLS_ERR_KECCAKF_BAD_INPUT_DATA -0x0091 /**< Invalid input parameter(s). */
 
 
 #define MBEDTLS_KECCAKF_STATE_SIZE_BITS  ( 1600U )

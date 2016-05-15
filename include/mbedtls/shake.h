@@ -40,9 +40,9 @@
 extern "C" {
 #endif
 
-#define MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA   MBEDTLS_ERR_KECCAK_SPONGE_BAD_INPUT_DATA
-#define MBEDTLS_ERR_SHAKE_BAD_NOT_STARTED  MBEDTLS_ERR_KECCAK_SPONGE_NOT_SETUP
-#define MBEDTLS_ERR_SHAKE_BAD_STATE        MBEDTLS_ERR_KECCAK_SPONGE_BAD_STATE
+#define MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA   -0x00B1 /**< Invalid input parameter(s). */
+#define MBEDTLS_ERR_SHAKE_BAD_NOT_STARTED  -0x00B2 /**< mbedtls_keccak_sponge_starts has not been called. */
+#define MBEDTLS_ERR_SHAKE_BAD_STATE        -0x00B3 /**< Requested operation cannot be performed with the current context state. */
 
 typedef enum
 {

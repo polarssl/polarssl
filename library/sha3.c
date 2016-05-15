@@ -46,6 +46,25 @@
 
 #if !defined(MBEDTLS_SHA3_ALT)
 
+static int mbedtls_convert_sponge_result( int sponge_ret )
+{
+    switch ( sponge_ret )
+    {
+        case 0:
+            return 0;
+
+        case MBEDTLS_ERR_KECCAK_SPONGE_BAD_STATE:
+            return MBEDTLS_ERR_SHA3_BAD_STATE;
+
+        case MBEDTLS_ERR_KECCAK_SPONGE_NOT_SETUP:
+            return MBEDTLS_ERR_SHA3_BAD_NOT_STARTED;
+
+        default:
+        case MBEDTLS_ERR_KECCAK_SPONGE_BAD_INPUT_DATA:
+            return MBEDTLS_ERR_SHA3_BAD_INPUT_DATA;
+    }
+}
+
 void mbedtls_sha3_init( mbedtls_sha3_context *ctx )
 {
     if ( ctx != NULL )
@@ -74,6 +93,8 @@ void mbedtls_sha3_clone( mbedtls_sha3_context *dst,
 
 int mbedtls_sha3_starts( mbedtls_sha3_context *ctx, mbedtls_sha3_type_t type )
 {
+    int sponge_ret;
+
     if ( ctx == NULL )
     {
         return( MBEDTLS_ERR_SHA3_BAD_INPUT_DATA );
@@ -84,58 +105,76 @@ int mbedtls_sha3_starts( mbedtls_sha3_context *ctx, mbedtls_sha3_type_t type )
     case MBEDTLS_SHA3_224:
         ctx->digest_size = 224U / 8U;
         ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 28U * 2U );
-        return( mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 224U * 2U, 0x02U, 2U ) );
+        sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 224U * 2U, 0x02U, 2U );
+        break;
 
     case MBEDTLS_SHA3_256:
         ctx->digest_size = 256U / 8U;
         ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 32U * 2U );
-        return( mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 256U * 2U, 0x02U, 2U ) );
+        sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 256U * 2U, 0x02U, 2U );
+        break;
 
     case MBEDTLS_SHA3_384:
         ctx->digest_size = 384U / 8U;
         ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 48U * 2U );
-        return( mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 384U * 2U, 0x02U, 2U ) );
+        sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 384U * 2U, 0x02U, 2U );
 
+        break;
     case MBEDTLS_SHA3_512:
         ctx->digest_size = 512U / 8U;
         ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 64U * 2U );
-        return( mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 512U * 2U, 0x02U, 2U ) );
+        sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 512U * 2U, 0x02U, 2U );
+        break;
 
     default:
         return( MBEDTLS_ERR_SHA3_BAD_INPUT_DATA );
     }
+
+    return( mbedtls_convert_sponge_result( sponge_ret ) );
 }
 
 int mbedtls_sha3_update( mbedtls_sha3_context *ctx,
         const unsigned char* input,
         size_t size )
 {
+    int sponge_ret;
+
     if ( ctx == NULL )
     {
         return( MBEDTLS_ERR_SHA3_BAD_INPUT_DATA );
     }
 
-    return( mbedtls_keccak_sponge_absorb( &ctx->sponge_ctx, input, size ) );
+    sponge_ret = mbedtls_keccak_sponge_absorb( &ctx->sponge_ctx, input, size );
+
+    return( mbedtls_convert_sponge_result( sponge_ret ) );
 }
 
 int mbedtls_sha3_finish( mbedtls_sha3_context *ctx, unsigned char* output )
 {
+    int sponge_ret;
+
     if ( ( ctx == NULL ) || ( output == NULL ) )
     {
         return( MBEDTLS_ERR_SHA3_BAD_INPUT_DATA );
     }
 
-    return( mbedtls_keccak_sponge_squeeze( &ctx->sponge_ctx, output, ctx->digest_size ) );
+    sponge_ret = mbedtls_keccak_sponge_squeeze( &ctx->sponge_ctx, output, ctx->digest_size );
+
+    return( mbedtls_convert_sponge_result( sponge_ret ) );
 }
 
 int mbedtls_sha3_process( mbedtls_sha3_context *ctx, const unsigned char* input )
 {
+    int sponge_ret;
+
     if ( ( ctx == NULL ) || ( input == NULL ) )
     {
         return( MBEDTLS_ERR_SHA3_BAD_INPUT_DATA );
     }
 
-    return( mbedtls_keccak_sponge_process( &ctx->sponge_ctx, input ) );
+    sponge_ret = mbedtls_keccak_sponge_process( &ctx->sponge_ctx, input );
+
+    return( mbedtls_convert_sponge_result( sponge_ret ) );
 }
 
 #endif /* MBEDTLS_SHA3_ALT */
@@ -332,9 +371,6 @@ static int mbedtls_sha3_kat_test( int verbose,
         case MBEDTLS_SHA3_512:
             result = memcmp( hash, test_hash_sha3_512[test_num], 64U );
             break;
-        default:
-            result = -1;
-            break;
     }
 
     if ( 0 != result )
@@ -412,9 +448,6 @@ static int mbedtls_sha3_long_kat_test( int verbose,
             break;
         case MBEDTLS_SHA3_512:
             result = memcmp( hash, long_kat_hash_sha3_512, 64U );
-            break;
-        default:
-            result = -1;
             break;
     }
 
