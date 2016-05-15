@@ -186,7 +186,7 @@ int mbedtls_keccak_sponge_starts( mbedtls_keccak_sponge_context *ctx,
                                   unsigned char suffix,
                                   size_t suffix_len  )
 {
-    if ( ( ctx == NULL ) )
+    if ( ctx == NULL )
     {
         return( MBEDTLS_ERR_KECCAK_SPONGE_BAD_INPUT_DATA );
     }

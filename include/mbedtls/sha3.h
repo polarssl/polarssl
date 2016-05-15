@@ -22,8 +22,8 @@
  *
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
-#ifndef MBEDTLS_INCLUDE_MBEDTLS_SHA3_H_
-#define MBEDTLS_INCLUDE_MBEDTLS_SHA3_H_
+#ifndef MBEDTLS_SHA3_H
+#define MBEDTLS_SHA3_H
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "config.h"
@@ -105,7 +105,7 @@ int mbedtls_sha3_starts( mbedtls_sha3_context *ctx, mbedtls_sha3_type_t type );
  */
 int mbedtls_sha3_update( mbedtls_sha3_context *ctx,
         const unsigned char* input,
-        size_t size_bits );
+        size_t size );
 
 /**
  * \brief          Generate the SHA-3 hash.
@@ -169,4 +169,4 @@ int mbedtls_sha3_self_test( int verbose );
 }
 #endif
 
-#endif /* MBEDTLS_INCLUDE_MBEDTLS_SHA3_H_ */
+#endif /* MBEDTLS_SHA3_H */

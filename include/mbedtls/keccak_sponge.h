@@ -56,14 +56,14 @@ typedef struct
 mbedtls_keccak_sponge_context;
 
 /**
- * \brief               Initialize a Keccak-f[1600] context
+ * \brief               Initialize a Keccak sponge context
  *
  * \param ctx           Context to be initialized
  */
 void mbedtls_keccak_sponge_init( mbedtls_keccak_sponge_context *ctx );
 
 /**
-* \brief                Clean a Keccak-f[1600] context
+* \brief                Clean a Keccak sponge context
  *
  * \param ctx           Context to be cleared.
  */
@@ -133,7 +133,7 @@ int mbedtls_keccak_sponge_starts( mbedtls_keccak_sponge_context *ctx,
  */
 int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
         const unsigned char* data,
-        size_t size_bits );
+        size_t size );
 
 /**
  * \brief               Get output bytes from the sponge.

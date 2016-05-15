@@ -22,8 +22,8 @@
  *
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
-#ifndef MBEDTLS_INCLUDE_MBEDTLS_SHAKE_H_
-#define MBEDTLS_INCLUDE_MBEDTLS_SHAKE_H_
+#ifndef MBEDTLS_SHAKE_H
+#define MBEDTLS_SHAKE_H
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "config.h"
@@ -102,7 +102,7 @@ int mbedtls_shake_starts( mbedtls_shake_context *ctx, mbedtls_shake_type_t type 
  */
 int mbedtls_shake_update( mbedtls_shake_context *ctx,
                           const unsigned char* input,
-                          size_t size_bits );
+                          size_t size );
 
 /**
  * \brief          Generate output bytes.
@@ -141,7 +141,7 @@ extern "C" {
  * \param ilen     The length (in bytes) of the input buffer.
  * \param type     Selects the SHAKE variant (SHAKE128, or SHAKE256).
  * \param output   Pointer to the buffer to where the output data is written.
- * \item  olen     The number of output bytes to generate and write to \p output.
+ * \param olen     The number of output bytes to generate and write to \p output.
  *
  * \return         0 on success, otherwise an error code is returned.
  */
@@ -162,4 +162,4 @@ int mbedtls_shake_self_test( int verbose );
 }
 #endif
 
-#endif /* MBEDTLS_INCLUDE_MBEDTLS_SHAKE_H_ */
+#endif /* MBEDTLS_SHAKE_H */
