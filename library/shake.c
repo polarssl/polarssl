@@ -260,6 +260,11 @@ int mbedtls_shake_self_test( int verbose )
 
     for ( i = 0U; i < 2U; i++ )
     {
+        if ( verbose != 0 )
+        {
+            mbedtls_printf( "  SHAKE128 test %zi ", i );
+        }
+
         result = mbedtls_shake( shake128_test_input[i], 16U,
                                 MBEDTLS_SHAKE128,
                                 output, 16U );
@@ -267,7 +272,7 @@ int mbedtls_shake_self_test( int verbose )
         {
             if ( verbose != 0 )
             {
-                mbedtls_printf( "SHAKE128 test %zi error code: %i\n", i, result );
+                mbedtls_printf( "error code: %i\n", result );
             }
             return( -1 );
         }
@@ -275,9 +280,15 @@ int mbedtls_shake_self_test( int verbose )
         {
             if ( verbose != 0 )
             {
-                mbedtls_printf( "SHAKE128 test %zi failed\n", i );
+                mbedtls_printf( "failed\n" );
             }
             return( -1 );
+        }
+
+        if ( verbose != 0 )
+        {
+            mbedtls_printf( "passed\n" );
+            mbedtls_printf( "  SHAKE256 test %zi ", i );
         }
 
         result = mbedtls_shake( shake256_test_input[i], 32U,
@@ -287,7 +298,7 @@ int mbedtls_shake_self_test( int verbose )
         {
             if ( verbose != 0 )
             {
-                mbedtls_printf( "SHAKE256 test %zi error code: %i\n", i, result );
+                mbedtls_printf( "error code: %i\n", result );
             }
             return( -1 );
         }
@@ -295,10 +306,20 @@ int mbedtls_shake_self_test( int verbose )
         {
             if ( verbose != 0 )
             {
-                mbedtls_printf( "SHAKE256 test %zi failed\n", i );
+                mbedtls_printf( "failed\n" );
             }
             return( -1 );
         }
+
+        if ( verbose != 0 )
+        {
+            mbedtls_printf( "passed\n" );
+        }
+    }
+
+    if ( verbose != 0 )
+    {
+        mbedtls_printf( "\n" );
     }
 
     return( 0 );

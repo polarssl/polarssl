@@ -350,7 +350,7 @@ static int mbedtls_sha3_kat_test( int verbose,
     {
         if ( verbose != 0 )
         {
-            mbedtls_printf( "%s test %zi error code: %i\n",
+            mbedtls_printf( "  %s test %zi error code: %i\n",
                             type_name, test_num, result );
         }
 
@@ -377,10 +377,15 @@ static int mbedtls_sha3_kat_test( int verbose,
     {
         if ( verbose != 0 )
         {
-            mbedtls_printf( "%s test %zi failed\n", type_name, test_num );
+            mbedtls_printf( "  %s test %zi failed\n", type_name, test_num );
         }
 
         return( -1 );
+    }
+
+    if ( verbose != 0 )
+    {
+        mbedtls_printf( "  %s test %zi passed\n", type_name, test_num );
     }
 
     return( 0 );
@@ -398,6 +403,11 @@ static int mbedtls_sha3_long_kat_test( int verbose,
 
     memset( buffer, 'a', 1000U );
 
+    if ( verbose != 0 )
+    {
+        mbedtls_printf( "  %s long KAT test ", type_name );
+    }
+
     mbedtls_sha3_init( &ctx );
 
     result = mbedtls_sha3_starts( &ctx, type );
@@ -405,7 +415,7 @@ static int mbedtls_sha3_long_kat_test( int verbose,
     {
         if ( verbose != 0 )
         {
-            mbedtls_printf( "%s setup failed\n ", type_name );
+            mbedtls_printf( "setup failed\n " );
         }
     }
 
@@ -417,7 +427,7 @@ static int mbedtls_sha3_long_kat_test( int verbose,
         {
             if ( verbose != 0 )
             {
-                mbedtls_printf( "%s long KAT test update error code: %i\n", type_name, result );
+                mbedtls_printf( "update error code: %i\n", result );
             }
 
             goto cleanup;
@@ -429,7 +439,7 @@ static int mbedtls_sha3_long_kat_test( int verbose,
     {
         if ( verbose != 0 )
         {
-            mbedtls_printf( "%s long KAT test finish error code: %i\n", type_name, result );
+            mbedtls_printf( "finish error code: %i\n", result );
         }
 
         goto cleanup;
@@ -455,8 +465,13 @@ static int mbedtls_sha3_long_kat_test( int verbose,
     {
         if ( verbose != 0 )
         {
-            mbedtls_printf( "%s long KAT test failed\n", type_name );
+            mbedtls_printf( "failed\n" );
         }
+    }
+
+    if ( verbose != 0 )
+    {
+        mbedtls_printf( "passed\n" );
     }
 
 cleanup:
@@ -496,6 +511,11 @@ int mbedtls_sha3_self_test( int verbose )
 
     if ( 0 != mbedtls_sha3_long_kat_test( verbose, "SHA3-512", MBEDTLS_SHA3_512 ) )
         return( -1 );
+
+    if ( verbose != 0 )
+    {
+        mbedtls_printf( "\n" );
+    }
 
     return( 0 );
 }
