@@ -40,9 +40,9 @@
 extern "C" {
 #endif
 
-#define MBEDTLS_ERR_SHA3_BAD_INPUT_DATA   -0x00A1 /**< Invalid input parameter(s). */
-#define MBEDTLS_ERR_SHA3_BAD_NOT_STARTED  -0x00A2 /**< mbedtls_keccak_sponge_starts has not been called. */
-#define MBEDTLS_ERR_SHA3_BAD_STATE        -0x00A3 /**< Requested operation cannot be performed with the current context state. */
+#define MBEDTLS_ERR_SHA3_BAD_INPUT_DATA   -0x0055 /**< Invalid input parameter(s). */
+#define MBEDTLS_ERR_SHA3_BAD_NOT_STARTED  -0x0057 /**< mbedtls_keccak_sponge_starts has not been called. */
+#define MBEDTLS_ERR_SHA3_BAD_STATE        -0x0059 /**< Requested operation cannot be performed with the current context state. */
 
 typedef enum
 {
