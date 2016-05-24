@@ -36,7 +36,7 @@
 
 #if !defined(MBEDTLS_KECCAKF_ALT)
 
-#define ROTL64( x, amount ) ( (uint64_t)( x << amount) | ( x >> ( 64 - amount ) ) )
+#define ROTL64( x, amount ) ( (uint64_t) ( x << amount) | ( x >> ( 64 - amount ) ) )
 
 static const uint64_t round_constants[24] =
 {
@@ -273,8 +273,8 @@ void mbedtls_keccakf_init( mbedtls_keccakf_context *ctx )
 {
     if ( ctx != NULL )
     {
-        mbedtls_zeroize(&ctx->state, sizeof(ctx->state));
-        mbedtls_zeroize(&ctx->temp, sizeof(ctx->temp));
+        mbedtls_zeroize( &ctx->state, sizeof( ctx->state ) );
+        mbedtls_zeroize( &ctx->temp, sizeof( ctx->temp ) );
     }
 }
 
@@ -282,8 +282,8 @@ void mbedtls_keccakf_free( mbedtls_keccakf_context *ctx )
 {
     if ( ctx != NULL )
     {
-        mbedtls_zeroize(&ctx->state, sizeof(ctx->state));
-        mbedtls_zeroize(&ctx->temp, sizeof(ctx->temp));
+        mbedtls_zeroize( &ctx->state, sizeof( ctx->state ) );
+        mbedtls_zeroize( &ctx->temp, sizeof( ctx->temp ) );
     }
 }
 
@@ -330,14 +330,14 @@ int mbedtls_keccakf_xor_binary( mbedtls_keccakf_context *ctx,
     /* process whole lanes */
     while ( remaining_bits >= 64U )
     {
-        ctx->state[x][y] ^= (uint64_t)data[data_offset] |
-                            (uint64_t)( (uint64_t)data[data_offset + 1U] << 8U  ) |
-                            (uint64_t)( (uint64_t)data[data_offset + 2U] << 16U ) |
-                            (uint64_t)( (uint64_t)data[data_offset + 3U] << 24U ) |
-                            (uint64_t)( (uint64_t)data[data_offset + 4U] << 32U ) |
-                            (uint64_t)( (uint64_t)data[data_offset + 5U] << 40U ) |
-                            (uint64_t)( (uint64_t)data[data_offset + 6U] << 48U ) |
-                            (uint64_t)( (uint64_t)data[data_offset + 7U] << 56U );
+        ctx->state[x][y] ^= (uint64_t) data[data_offset]
+                            | (uint64_t) ( (uint64_t) data[data_offset + 1U] << 8U  )
+                            | (uint64_t) ( (uint64_t) data[data_offset + 2U] << 16U )
+                            | (uint64_t) ( (uint64_t) data[data_offset + 3U] << 24U )
+                            | (uint64_t) ( (uint64_t) data[data_offset + 4U] << 32U )
+                            | (uint64_t) ( (uint64_t) data[data_offset + 5U] << 40U )
+                            | (uint64_t) ( (uint64_t) data[data_offset + 6U] << 48U )
+                            | (uint64_t) ( (uint64_t) data[data_offset + 7U] << 56U );
 
         x = ( x + 1U ) % 5U;
         if ( x == 0U )
@@ -358,7 +358,7 @@ int mbedtls_keccakf_xor_binary( mbedtls_keccakf_context *ctx,
         /* whole bytes */
         while ( remaining_bits >= 8U )
         {
-            lane ^= (uint64_t)( (uint64_t)data[data_offset] << shift );
+            lane ^= (uint64_t) ( (uint64_t) data[data_offset] << shift );
 
             data_offset++;
             shift          += 8U;
@@ -369,10 +369,10 @@ int mbedtls_keccakf_xor_binary( mbedtls_keccakf_context *ctx,
         if ( remaining_bits > 0U )
         {
             /* mask away higher bits to avoid accidentally XORIng them */
-            unsigned char mask = ((uint64_t)(1U << remaining_bits) - 1U);
+            unsigned char mask = ((uint64_t) (1U << remaining_bits) - 1U);
             unsigned char byte = data[data_offset] & mask;
 
-            lane ^= (uint64_t)( (uint64_t)byte << ( shift * 8U ) );
+            lane ^= (uint64_t) ( (uint64_t) byte << ( shift * 8U ) );
         }
 
         ctx->state[x][y] = lane;
@@ -401,14 +401,14 @@ int mbedtls_keccakf_read_binary( mbedtls_keccakf_context *ctx,
     {
         const uint64_t lane = ctx->state[x][y];
 
-        data[data_offset     ] = (uint8_t)lane;
-        data[data_offset + 1U] = (uint8_t)( lane >> 8U  );
-        data[data_offset + 2U] = (uint8_t)( lane >> 16U );
-        data[data_offset + 3U] = (uint8_t)( lane >> 24U );
-        data[data_offset + 4U] = (uint8_t)( lane >> 32U );
-        data[data_offset + 5U] = (uint8_t)( lane >> 40U );
-        data[data_offset + 6U] = (uint8_t)( lane >> 48U );
-        data[data_offset + 7U] = (uint8_t)( lane >> 56U );
+        data[data_offset     ] = (uint8_t) lane;
+        data[data_offset + 1U] = (uint8_t) ( lane >> 8U  );
+        data[data_offset + 2U] = (uint8_t) ( lane >> 16U );
+        data[data_offset + 3U] = (uint8_t) ( lane >> 24U );
+        data[data_offset + 4U] = (uint8_t) ( lane >> 32U );
+        data[data_offset + 5U] = (uint8_t) ( lane >> 40U );
+        data[data_offset + 6U] = (uint8_t) ( lane >> 48U );
+        data[data_offset + 7U] = (uint8_t) ( lane >> 56U );
 
         x = ( x + 1U ) % 5U;
         if ( x == 0U )
@@ -427,7 +427,7 @@ int mbedtls_keccakf_read_binary( mbedtls_keccakf_context *ctx,
 
         for ( i = 0U; i < remaining_bytes; i++ )
         {
-            data[data_offset + i] = (uint8_t)( lane >> ( i * 8U ) );
+            data[data_offset + i] = (uint8_t) ( lane >> ( i * 8U ) );
         }
     }
 

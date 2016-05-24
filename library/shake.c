@@ -51,17 +51,17 @@ static int mbedtls_convert_sponge_result( int sponge_ret )
     switch ( sponge_ret )
     {
         case 0:
-            return 0;
+            return( 0 );
 
         case MBEDTLS_ERR_KECCAK_SPONGE_BAD_STATE:
-            return MBEDTLS_ERR_SHAKE_BAD_STATE;
+            return( MBEDTLS_ERR_SHAKE_BAD_STATE );
 
         case MBEDTLS_ERR_KECCAK_SPONGE_NOT_SETUP:
-            return MBEDTLS_ERR_SHAKE_BAD_NOT_STARTED;
+            return( MBEDTLS_ERR_SHAKE_BAD_NOT_STARTED );
 
         default:
         case MBEDTLS_ERR_KECCAK_SPONGE_BAD_INPUT_DATA:
-            return MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA;
+            return( MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA );
     }
 }
 
@@ -112,7 +112,7 @@ int mbedtls_shake_starts( mbedtls_shake_context *ctx, mbedtls_shake_type_t type 
         return( MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA );
     }
 
-    return mbedtls_convert_sponge_result( sponge_ret );
+    return( mbedtls_convert_sponge_result( sponge_ret ) );
 }
 
 int mbedtls_shake_update( mbedtls_shake_context *ctx,
@@ -128,7 +128,7 @@ int mbedtls_shake_update( mbedtls_shake_context *ctx,
 
     sponge_ret = mbedtls_keccak_sponge_absorb( &ctx->sponge_ctx, input, size );
 
-    return mbedtls_convert_sponge_result( sponge_ret );
+    return( mbedtls_convert_sponge_result( sponge_ret ) );
 }
 
 int mbedtls_shake_output( mbedtls_shake_context *ctx,
@@ -144,7 +144,7 @@ int mbedtls_shake_output( mbedtls_shake_context *ctx,
 
     sponge_ret = mbedtls_keccak_sponge_squeeze( &ctx->sponge_ctx, output, olen );
 
-    return mbedtls_convert_sponge_result( sponge_ret );
+    return( mbedtls_convert_sponge_result( sponge_ret ) );
 }
 
 int mbedtls_shake_process( mbedtls_shake_context *ctx, const unsigned char* input )
@@ -158,7 +158,7 @@ int mbedtls_shake_process( mbedtls_shake_context *ctx, const unsigned char* inpu
 
     sponge_ret = mbedtls_keccak_sponge_process( &ctx->sponge_ctx, input );
 
-    return mbedtls_convert_sponge_result( sponge_ret );
+    return( mbedtls_convert_sponge_result( sponge_ret ) );
 }
 
 #endif /* !MBEDTLS_SHAKE_ALT */
