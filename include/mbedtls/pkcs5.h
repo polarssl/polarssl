@@ -62,6 +62,28 @@ int mbedtls_pkcs5_pbes2( const mbedtls_asn1_buf *pbe_params, int mode,
                  unsigned char *output );
 
 /**
+ * \brief          PKCS#5 PBES2 function
+ *
+ *                 Added output parameter that return actual number of bytes
+ *                 written to the output buffer
+ *
+ * \param pbe_params the ASN.1 algorithm parameters
+ * \param mode       either MBEDTLS_PKCS5_DECRYPT or MBEDTLS_PKCS5_ENCRYPT
+ * \param pwd        password to use when generating key
+ * \param pwdlen     length of password
+ * \param data       data to process
+ * \param datalen    length of data
+ * \param output     output buffer
+ * \param olen       actual number of bytes written to output
+ *
+ * \returns        0 on success, or a MBEDTLS_ERR_XXX code if verification fails.
+ */
+int mbedtls_pkcs5_pbes2_ext( const mbedtls_asn1_buf *pbe_params, int mode,
+                 const unsigned char *pwd,  size_t pwdlen,
+                 const unsigned char *data, size_t datalen,
+                 unsigned char *output, size_t *olen );
+
+/**
  * \brief          PKCS#5 PBKDF2 using HMAC
  *
  * \param ctx      Generic HMAC context
