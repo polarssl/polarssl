@@ -6474,6 +6474,14 @@ static int ssl_check_ctr_renegotiate( mbedtls_ssl_context *ssl )
  */
 int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len )
 {
+    return mbedtls_ssl_read4( ssl, buf, len, 0 );
+}
+
+/*s
+ * Receive application data decrypted from the SSL layer
+ */
+int mbedtls_ssl_read4( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len, int flags )
+{
     int ret, record_read = 0;
     size_t n;
 
@@ -6711,14 +6719,18 @@ int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len )
         ? len : ssl->in_msglen;
 
     memcpy( buf, ssl->in_offt, n );
-    ssl->in_msglen -= n;
 
-    if( ssl->in_msglen == 0 )
-        /* all bytes consumed  */
-        ssl->in_offt = NULL;
-    else
-        /* more data available */
-        ssl->in_offt += n;
+    if( !(flags & MBEDTLS_NET_MSG_PEEK) )
+    {
+        ssl->in_msglen -= n;
+
+        if( ssl->in_msglen == 0 )
+            /* all bytes consumed  */
+            ssl->in_offt = NULL;
+        else
+            /* more data available */
+            ssl->in_offt += n;
+    }
 
     MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= read" ) );
 

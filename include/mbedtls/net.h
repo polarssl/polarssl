@@ -174,6 +174,21 @@ void mbedtls_net_usleep( unsigned long usec );
 int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len );
 
 /**
+ * \brief          Read at most 'len' characters. If no error occurs,
+ *                 the actual amount read is returned.
+ *
+ * \param ctx      Socket
+ * \param buf      The buffer to write to
+ * \param len      Maximum length of the buffer
+ * \param flags    Bitwise or collection of MBEDTLS_NET_MSG_* flags or 0
+ *
+ * \return         the number of bytes received,
+ *                 or a non-zero error code; with a non-blocking socket,
+ *                 MBEDTLS_ERR_SSL_WANT_READ indicates read() would block.
+ */
+int mbedtls_net_recv4( void *ctx, unsigned char *buf, size_t len, int flags );
+
+/**
  * \brief          Write at most 'len' characters. If no error occurs,
  *                 the actual amount read is returned.
  *

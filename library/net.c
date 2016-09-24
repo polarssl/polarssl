@@ -457,13 +457,24 @@ void mbedtls_net_usleep( unsigned long usec )
  */
 int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
 {
-    int ret;
+    return mbedtls_net_recv4( ctx, buf, len, 0 );
+}
+
+/*
+ * Read at most 'len' characters
+ */
+int mbedtls_net_recv4( void *ctx, unsigned char *buf, size_t len, int flags )
+{
+    int ret, pflags = 0;
     int fd = ((mbedtls_net_context *) ctx)->fd;
 
     if( fd < 0 )
         return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
 
-    ret = (int) read( fd, buf, len );
+    if( flags & MBEDTLS_NET_MSG_PEEK )
+        pflags |= MSG_PEEK;
+
+    ret = (int) recv( fd, buf, len, pflags );
 
     if( ret < 0 )
     {

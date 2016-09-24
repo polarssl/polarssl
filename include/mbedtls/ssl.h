@@ -337,6 +337,15 @@
 
 #define MBEDTLS_TLS_EXT_RENEGOTIATION_INFO      0xFF01
 
+/* 
+ * This really should belong in the net.h header but
+ * it is here to avoid having to define it in both
+ * ssl.h and net.h (or making a shared file for it)
+ * And for whatever reason net.h includes ssl.h (not
+ * the other way around, which would be expected)
+ */
+#define MBEDTLS_NET_MSG_PEEK 1
+
 /*
  * Size defines
  */
@@ -2410,6 +2419,43 @@ int mbedtls_ssl_renegotiate( mbedtls_ssl_context *ssl );
  *                 application layer, would allow authentication bypass!
  */
 int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len );
+
+/**
+ * \brief          Read at most 'len' application data bytes
+ *
+ * \param ssl      SSL context
+ * \param buf      buffer that will hold the data
+ * \param len      maximum number of bytes to read
+ * \param flags    Bitwise or collection of MBEDTLS_NET_MSG_* flags or 0
+ *
+ * \return         the number of bytes read, or
+ *                 0 for EOF, or
+ *                 MBEDTLS_ERR_SSL_WANT_READ or MBEDTLS_ERR_SSL_WANT_WRITE, or
+ *                 MBEDTLS_ERR_SSL_CLIENT_RECONNECT (see below), or
+ *                 another negative error code.
+ *
+ * \note           If this function returns something other than a positive
+ *                 value or MBEDTLS_ERR_SSL_WANT_READ/WRITE or
+ *                 MBEDTLS_ERR_SSL_CLIENT_RECONNECT, then the ssl context
+ *                 becomes unusable, and you should either free it or call
+ *                 \c mbedtls_ssl_session_reset() on it before re-using it for
+ *                 a new connection; the current connection must be closed.
+ *
+ * \note           When this function return MBEDTLS_ERR_SSL_CLIENT_RECONNECT
+ *                 (which can only happen server-side), it means that a client
+ *                 is initiating a new connection using the same source port.
+ *                 You can either treat that as a connection close and wait
+ *                 for the client to resend a ClientHello, or directly
+ *                 continue with \c mbedtls_ssl_handshake() with the same
+ *                 context (as it has beeen reset internally). Either way, you
+ *                 should make sure this is seen by the application as a new
+ *                 connection: application state, if any, should be reset, and
+ *                 most importantly the identity of the client must be checked
+ *                 again. WARNING: not validating the identity of the client
+ *                 again, or not transmitting the new identity to the
+ *                 application layer, would allow authentication bypass!
+ */
+int mbedtls_ssl_read4( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len, int flags );
 
 /**
  * \brief          Try to write exactly 'len' application data bytes
