@@ -1116,12 +1116,12 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_SSL_EXTENDED_MASTER_SECRET)
     if( opt.extended_ms != DFL_EXTENDED_MS )
-        mbedtls_ssl_conf_extended_master_secret( &conf, opt.extended_ms );
+        mbedtls_ssl_conf_extended_master_secret( &conf, (char) opt.extended_ms );
 #endif
 
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
     if( opt.etm != DFL_ETM )
-        mbedtls_ssl_conf_encrypt_then_mac( &conf, opt.etm );
+        mbedtls_ssl_conf_encrypt_then_mac( &conf, (char) opt.etm );
 #endif
 
 #if defined(MBEDTLS_SSL_CBC_RECORD_SPLITTING)
@@ -1159,7 +1159,7 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_ARC4_C)
     if( opt.arc4 != DFL_ARC4 )
-        mbedtls_ssl_conf_arc4_support( &conf, opt.arc4 );
+        mbedtls_ssl_conf_arc4_support( &conf, (char) opt.arc4 );
 #endif
 
     if( opt.allow_legacy != DFL_ALLOW_LEGACY )
@@ -1203,7 +1203,7 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_SSL_FALLBACK_SCSV)
     if( opt.fallback != DFL_FALLBACK )
-        mbedtls_ssl_conf_fallback( &conf, opt.fallback );
+        mbedtls_ssl_conf_fallback( &conf, (char) opt.fallback );
 #endif
 
     if( ( ret = mbedtls_ssl_setup( &ssl, &conf ) ) != 0 )

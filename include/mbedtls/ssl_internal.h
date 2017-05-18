@@ -165,8 +165,8 @@ struct mbedtls_ssl_handshake_params
     /*
      * Handshake specific crypto variables
      */
-    int sig_alg;                        /*!<  Hash algorithm for signature   */
-    int verify_sig_alg;                 /*!<  Signature algorithm for verify */
+    unsigned char sig_alg;              /*!<  Hash algorithm for signature   */
+    unsigned char verify_sig_alg;       /*!<  Signature algorithm for verify */
 #if defined(MBEDTLS_DHM_C)
     mbedtls_dhm_context dhm_ctx;                /*!<  DHM key exchange        */
 #endif
@@ -491,6 +491,15 @@ static inline int mbedtls_ssl_safer_memcmp( const void *a, const void *b, size_t
         diff |= A[i] ^ B[i];
 
     return( diff );
+}
+
+/* SSL message type validation */
+static inline int mbedtls_ssl_message_type_valid(int message_type)
+{
+    return( message_type == MBEDTLS_SSL_MSG_CHANGE_CIPHER_SPEC ||
+            message_type == MBEDTLS_SSL_MSG_ALERT ||
+            message_type == MBEDTLS_SSL_MSG_HANDSHAKE ||
+            message_type == MBEDTLS_SSL_MSG_APPLICATION_DATA );
 }
 
 #ifdef __cplusplus

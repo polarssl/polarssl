@@ -127,7 +127,7 @@ static int net_prepare( void )
  */
 void mbedtls_net_init( mbedtls_net_context *ctx )
 {
-    ctx->fd = -1;
+    ctx->fd = MBEDTLS_INVALID_SOCKET;
 }
 
 /*
@@ -155,8 +155,7 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host,
     ret = MBEDTLS_ERR_NET_UNKNOWN_HOST;
     for( cur = addr_list; cur != NULL; cur = cur->ai_next )
     {
-        ctx->fd = (int) socket( cur->ai_family, cur->ai_socktype,
-                            cur->ai_protocol );
+        ctx->fd = socket( cur->ai_family, cur->ai_socktype, cur->ai_protocol );
         if( ctx->fd < 0 )
         {
             ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
@@ -297,7 +296,7 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
                         mbedtls_net_context *client_ctx,
                         void *client_ip, size_t buf_size, size_t *ip_len )
 {
-    int ret;
+    mbedtls_socket ret;
     int type;
 
     struct sockaddr_storage client_addr;
@@ -322,7 +321,7 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
     if( type == SOCK_STREAM )
     {
         /* TCP: actual accept() */
-        ret = client_ctx->fd = (int) accept( bind_ctx->fd,
+        ret = client_ctx->fd = accept( bind_ctx->fd,
                                              (struct sockaddr *) &client_addr, &n );
     }
     else
@@ -330,8 +329,8 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
         /* UDP: wait for a message, but keep it in the queue */
         char buf[1] = { 0 };
 
-        ret = (int) recvfrom( bind_ctx->fd, buf, sizeof( buf ), MSG_PEEK,
-                        (struct sockaddr *) &client_addr, &n );
+        ret = recvfrom( bind_ctx->fd, buf, sizeof( buf ),
+                            MSG_PEEK, (struct sockaddr *) &client_addr, &n );
 
 #if defined(_WIN32)
         if( ret == SOCKET_ERROR &&
@@ -343,7 +342,7 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
 #endif
     }
 
-    if( ret < 0 )
+    if( ret == MBEDTLS_INVALID_SOCKET )
     {
         if( net_would_block( bind_ctx ) != 0 )
             return( MBEDTLS_ERR_SSL_WANT_READ );
@@ -362,13 +361,14 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
             return( MBEDTLS_ERR_NET_ACCEPT_FAILED );
 
         client_ctx->fd = bind_ctx->fd;
-        bind_ctx->fd   = -1; /* In case we exit early */
+
+        bind_ctx->fd = MBEDTLS_INVALID_SOCKET; /* In case we exit early */
 
         n = sizeof( struct sockaddr_storage );
         if( getsockname( client_ctx->fd,
                          (struct sockaddr *) &local_addr, &n ) != 0 ||
-            ( bind_ctx->fd = (int) socket( local_addr.ss_family,
-                                           SOCK_DGRAM, IPPROTO_UDP ) ) < 0 ||
+            ( bind_ctx->fd = socket( local_addr.ss_family,
+                                          SOCK_DGRAM, IPPROTO_UDP ) ) < 0 ||
             setsockopt( bind_ctx->fd, SOL_SOCKET, SO_REUSEADDR,
                         (const char *) &one, sizeof( one ) ) != 0 )
         {
@@ -459,7 +459,7 @@ void mbedtls_net_usleep( unsigned long usec )
 int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
 {
     int ret;
-    int fd = ((mbedtls_net_context *) ctx)->fd;
+    mbedtls_socket fd = ((mbedtls_net_context *) ctx)->fd;
 
     if( fd < 0 )
         return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
@@ -498,7 +498,7 @@ int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf, size_t len,
     int ret;
     struct timeval tv;
     fd_set read_fds;
-    int fd = ((mbedtls_net_context *) ctx)->fd;
+    mbedtls_socket fd = ((mbedtls_net_context *) ctx)->fd;
 
     if( fd < 0 )
         return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
@@ -509,7 +509,7 @@ int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf, size_t len,
     tv.tv_sec  = timeout / 1000;
     tv.tv_usec = ( timeout % 1000 ) * 1000;
 
-    ret = select( fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv );
+    ret = select( (int) fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv );
 
     /* Zero fds ready means we timed out */
     if( ret == 0 )
@@ -539,7 +539,7 @@ int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf, size_t len,
 int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
 {
     int ret;
-    int fd = ((mbedtls_net_context *) ctx)->fd;
+    mbedtls_socket fd = ((mbedtls_net_context *) ctx)->fd;
 
     if( fd < 0 )
         return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
@@ -574,13 +574,13 @@ int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
  */
 void mbedtls_net_free( mbedtls_net_context *ctx )
 {
-    if( ctx->fd == -1 )
+    if( ctx->fd == MBEDTLS_INVALID_SOCKET )
         return;
 
     shutdown( ctx->fd, 2 );
     close( ctx->fd );
 
-    ctx->fd = -1;
+    ctx->fd = MBEDTLS_INVALID_SOCKET;
 }
 
 #endif /* MBEDTLS_NET_C */

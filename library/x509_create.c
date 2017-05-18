@@ -174,7 +174,7 @@ int mbedtls_x509_set_extension( mbedtls_asn1_named_data **head, const char *oid,
         return( MBEDTLS_ERR_X509_ALLOC_FAILED );
     }
 
-    cur->val.p[0] = critical;
+    cur->val.p[0] = critical == 0 ? 0 : 1;
     memcpy( cur->val.p + 1, val, val_len );
 
     return( 0 );

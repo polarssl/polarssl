@@ -1668,12 +1668,12 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_SSL_EXTENDED_MASTER_SECRET)
     if( opt.extended_ms != DFL_EXTENDED_MS )
-        mbedtls_ssl_conf_extended_master_secret( &conf, opt.extended_ms );
+        mbedtls_ssl_conf_extended_master_secret( &conf, (char) opt.extended_ms );
 #endif
 
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
     if( opt.etm != DFL_ETM )
-        mbedtls_ssl_conf_encrypt_then_mac( &conf, opt.etm );
+        mbedtls_ssl_conf_encrypt_then_mac( &conf, (char) opt.etm );
 #endif
 
 #if defined(MBEDTLS_SSL_ALPN)
@@ -1750,7 +1750,7 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_SSL_DTLS_ANTI_REPLAY)
         if( opt.anti_replay != DFL_ANTI_REPLAY )
-            mbedtls_ssl_conf_dtls_anti_replay( &conf, opt.anti_replay );
+            mbedtls_ssl_conf_dtls_anti_replay( &conf, (char) opt.anti_replay );
 #endif
 
 #if defined(MBEDTLS_SSL_DTLS_BADMAC_LIMIT)
@@ -1765,7 +1765,7 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_ARC4_C)
     if( opt.arc4 != DFL_ARC4 )
-        mbedtls_ssl_conf_arc4_support( &conf, opt.arc4 );
+        mbedtls_ssl_conf_arc4_support( &conf, (char) opt.arc4 );
 #endif
 
     if( opt.version_suites != NULL )

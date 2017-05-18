@@ -1360,8 +1360,14 @@ static int ssl_encrypt_buf( mbedtls_ssl_context *ssl )
         unsigned char taglen = ssl->transform_out->ciphersuite_info->flags &
                                MBEDTLS_CIPHERSUITE_SHORT_TAG ? 8 : 16;
 
+        if ( !mbedtls_ssl_message_type_valid(ssl->out_msgtype) )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+        }
+
         memcpy( add_data, ssl->out_ctr, 8 );
-        add_data[8]  = ssl->out_msgtype;
+        add_data[8]  = (unsigned char) ssl->out_msgtype;
         mbedtls_ssl_write_version( ssl->major_ver, ssl->minor_ver,
                            ssl->conf->transport, add_data + 9 );
         add_data[11] = ( ssl->out_msglen >> 8 ) & 0xFF;
@@ -1630,6 +1636,12 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
         size_t explicit_iv_len = ssl->transform_in->ivlen -
                                  ssl->transform_in->fixed_ivlen;
 
+        if ( !mbedtls_ssl_message_type_valid(ssl->in_msgtype) )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+        }
+
         if( ssl->in_msglen < explicit_iv_len + taglen )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "msglen (%d) < explicit_iv_len (%d) "
@@ -1644,7 +1656,7 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
         ssl->in_msglen = dec_msglen;
 
         memcpy( add_data, ssl->in_ctr, 8 );
-        add_data[8]  = ssl->in_msgtype;
+        add_data[8]  = (unsigned char) ssl->in_msgtype;
         mbedtls_ssl_write_version( ssl->major_ver, ssl->minor_ver,
                            ssl->conf->transport, add_data + 9 );
         add_data[11] = ( ssl->in_msglen >> 8 ) & 0xFF;
@@ -2473,6 +2485,12 @@ static int ssl_flight_append( mbedtls_ssl_context *ssl )
 {
     mbedtls_ssl_flight_item *msg;
 
+    if ( !mbedtls_ssl_message_type_valid(ssl->out_msgtype) )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    }
+
     /* Allocate space for current message */
     if( ( msg = mbedtls_calloc( 1, sizeof(  mbedtls_ssl_flight_item ) ) ) == NULL )
     {
@@ -2491,7 +2509,7 @@ static int ssl_flight_append( mbedtls_ssl_context *ssl )
     /* Copy current handshake message with headers */
     memcpy( msg->p, ssl->out_msg, ssl->out_msglen );
     msg->len = ssl->out_msglen;
-    msg->type = ssl->out_msgtype;
+    msg->type = (unsigned char) ssl->out_msgtype;
     msg->next = NULL;
 
     /* Append to the current flight */
@@ -6033,14 +6051,14 @@ const char *mbedtls_ssl_get_alpn_protocol( const mbedtls_ssl_context *ssl )
 
 void mbedtls_ssl_conf_max_version( mbedtls_ssl_config *conf, int major, int minor )
 {
-    conf->max_major_ver = major;
-    conf->max_minor_ver = minor;
+    conf->max_major_ver = (unsigned char) major;
+    conf->max_minor_ver = (unsigned char) minor;
 }
 
 void mbedtls_ssl_conf_min_version( mbedtls_ssl_config *conf, int major, int minor )
 {
-    conf->min_major_ver = major;
-    conf->min_minor_ver = minor;
+    conf->min_major_ver = (unsigned char) major;
+    conf->min_minor_ver = (unsigned char) minor;
 }
 
 #if defined(MBEDTLS_SSL_FALLBACK_SCSV) && defined(MBEDTLS_SSL_CLI_C)

@@ -29,6 +29,10 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#if defined(MBEDTLS_HAVE_WINSOCK2)
+#include <winsock2.h>
+#endif
+
 #include "ssl.h"
 
 #include <stddef.h>
@@ -51,6 +55,19 @@
 #define MBEDTLS_NET_PROTO_TCP 0 /**< The TCP transport protocol */
 #define MBEDTLS_NET_PROTO_UDP 1 /**< The UDP transport protocol */
 
+/**
+ * Socket types and invalid values differ between platforms.
+ */
+#if defined(MBEDTLS_HAVE_WINSOCK2)
+#define MBEDTLS_INVALID_SOCKET INVALID_SOCKET
+
+typedef SOCKET mbedtls_socket;
+#else
+#define MBEDTLS_INVALID_SOCKET -1
+
+typedef int mbedtls_socket;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,7 +81,7 @@ extern "C" {
  */
 typedef struct
 {
-    int fd;             /**< The underlying file descriptor                 */
+    mbedtls_socket fd;    /**< The underlying file descriptor                 */
 }
 mbedtls_net_context;
 

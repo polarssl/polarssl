@@ -488,7 +488,7 @@ int mbedtls_ecp_point_write_binary( const mbedtls_ecp_group *grp, const mbedtls_
         if( buflen < *olen )
             return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
 
-        buf[0] = 0x02 + mbedtls_mpi_get_bit( &P->Y, 0 );
+        buf[0] = 0x02 + (unsigned char) mbedtls_mpi_get_bit( &P->Y, 0 );
         MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary( &P->X, buf + 1, plen ) );
     }
 
@@ -1644,7 +1644,7 @@ static int ecp_mul_mxz( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
     i = mbedtls_mpi_bitlen( m ); /* one past the (zero-based) most significant bit */
     while( i-- > 0 )
     {
-        b = mbedtls_mpi_get_bit( m, i );
+        b = (unsigned char) mbedtls_mpi_get_bit( m, i );
         /*
          *  if (b) R = 2R + P else R = 2R,
          * which is:

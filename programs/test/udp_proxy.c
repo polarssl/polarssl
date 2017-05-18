@@ -472,7 +472,7 @@ int main( int argc, char *argv[] )
 
     mbedtls_net_context listen_fd, client_fd, server_fd;
 
-    int nb_fds;
+    mbedtls_socket nb_fds;
     fd_set read_fds;
 
     mbedtls_net_init( &listen_fd );
@@ -567,7 +567,7 @@ accept:
         FD_SET( client_fd.fd, &read_fds );
         FD_SET( listen_fd.fd, &read_fds );
 
-        if( ( ret = select( nb_fds, &read_fds, NULL, NULL, NULL ) ) <= 0 )
+        if( ( ret = select( (int) nb_fds, &read_fds, NULL, NULL, NULL ) ) <= 0 )
         {
             perror( "select" );
             goto exit;

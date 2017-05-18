@@ -219,12 +219,13 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx, const unsigned char *p
                        unsigned int iteration_count,
                        uint32_t key_length, unsigned char *output )
 {
-    int ret, j;
+    int ret;
     unsigned int i;
     unsigned char md1[MBEDTLS_MD_MAX_SIZE];
     unsigned char work[MBEDTLS_MD_MAX_SIZE];
-    unsigned char md_size = mbedtls_md_get_size( ctx->md_info );
+    size_t md_size = mbedtls_md_get_size( ctx->md_info );
     size_t use_len;
+    size_t j;
     unsigned char *out_p = output;
     unsigned char counter[4];
 

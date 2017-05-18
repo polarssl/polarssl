@@ -433,7 +433,14 @@ static void ssl_write_max_fragment_length_ext( mbedtls_ssl_context *ssl,
 
     *olen = 0;
 
-    if( ssl->conf->mfl_code == MBEDTLS_SSL_MAX_FRAG_LEN_NONE ) {
+    if( ssl->conf->mfl_code == MBEDTLS_SSL_MAX_FRAG_LEN_NONE )
+    {
+        return;
+    }
+
+    if( ssl->conf->mfl_code > UCHAR_MAX )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "max fragment length too large" ) );
         return;
     }
 
@@ -451,7 +458,7 @@ static void ssl_write_max_fragment_length_ext( mbedtls_ssl_context *ssl,
     *p++ = 0x00;
     *p++ = 1;
 
-    *p++ = ssl->conf->mfl_code;
+    *p++ = (unsigned char) ssl->conf->mfl_code;
 
     *olen = 5;
 }
@@ -907,7 +914,7 @@ static int ssl_write_client_hello( mbedtls_ssl_context *ssl )
     {
         MBEDTLS_SSL_DEBUG_MSG( 3, ( "adding FALLBACK_SCSV" ) );
         *p++ = (unsigned char)( MBEDTLS_SSL_FALLBACK_SCSV_VALUE >> 8 );
-        *p++ = (unsigned char)( MBEDTLS_SSL_FALLBACK_SCSV_VALUE      );
+        *p++ = ( MBEDTLS_SSL_FALLBACK_SCSV_VALUE & 0xFF );
         n++;
     }
 #endif

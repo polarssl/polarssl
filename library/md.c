@@ -449,7 +449,8 @@ unsigned char mbedtls_md_get_size( const mbedtls_md_info_t *md_info )
     if( md_info == NULL )
         return( 0 );
 
-    return md_info->size;
+    /* NOTE: function should be updated if the value of "size" may exceed 255. */
+    return (unsigned char) md_info->size;
 }
 
 mbedtls_md_type_t mbedtls_md_get_type( const mbedtls_md_info_t *md_info )
