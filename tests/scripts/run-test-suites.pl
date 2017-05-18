@@ -11,7 +11,7 @@
 # Executes all the available test suites, and provides a basic summary of the
 # results.
 #
-# Usage: run-test-suites.pl [-v]
+# Usage: run-test-suites.pl [-v] [test suite directory]
 #
 # Options :
 #   -v|--verbose    - Provide a pass/fail/skip breakdown per test suite and
@@ -27,19 +27,35 @@ use open qw(:std utf8);
 use constant FALSE => 0;
 use constant TRUE => 1;
 
-my $verbose;
-my $switch = shift;
-if ( defined($switch) && ( $switch eq "-v" || $switch eq "--verbose" ) ) {
-    $verbose = TRUE;
+my ($verbose, $arg, $test_dir);
+
+while ($arg = shift) {
+
+    if ( $arg eq "-v" || $arg eq "--verbose" ) {
+        $verbose = TRUE;
+    }
+    else
+    {
+        if ( not defined( $test_dir ) ) {
+            $test_dir = $arg;
+        }
+        else {
+            die "Too many command line parameters."
+        }
+    }
 }
 
-my @suites = grep { ! /\.(?:c|gcno|gcda|dSYM)$/ } glob 'test_suite_*';
+my $prefix = $^O eq "MSWin32" ? '' : './';
+my $postfix = $^O eq "MSWin32" ? '.exe' : '';
+
+# If a test directory was specified, use it
+if ( defined( $test_dir ) ){ chdir $test_dir };
+
+my @suites = grep { ! /\.(?:c|gcno|gcda|dSYM)$/ } glob "test_suite_*$postfix";
 die "$0: no test suite found\n" unless @suites;
 
 # in case test suites are linked dynamically
 $ENV{'LD_LIBRARY_PATH'} = '../library';
-
-my $prefix = $^O eq "MSWin32" ? '' : './';
 
 my ($failed_suites, $total_tests_run, $failed, $suite_cases_passed,
     $suite_cases_failed, $suite_cases_skipped, $total_cases_passed,

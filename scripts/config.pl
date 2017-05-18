@@ -61,7 +61,10 @@ Commands
                               specified in the configuration file.
     full                    - Uncomments all #define's in the configuration file
                               excluding some reserved symbols, until the
-                              'Module configuration options' section
+                              'Module configuration options' section occurs
+    windowsfull             - Uncomments all #define's in the configuration file
+                              excluding some reserved symbols, and some not 
+                              applicable to Windows
     realfull                - Uncomments all #define's with no exclusions
 
 Options
@@ -77,7 +80,6 @@ EOU
 
 my @excluded = qw(
 MBEDTLS_TEST_NULL_ENTROPY
-MBEDTLS_DEPRECATED_REMOVED
 MBEDTLS_HAVE_SSE2
 MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
 MBEDTLS_ECP_DP_M221_ENABLED
@@ -92,6 +94,17 @@ MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
 MBEDTLS_ZLIB_SUPPORT
 MBEDTLS_PKCS11_C
 _ALT\s*$
+);
+
+my @posix_excluded = qw(
+MBEDTLS_DEPRECATED_REMOVED
+);
+
+my @windows_excluded = qw(
+MBEDTLS_DEPRECATED_WARNING
+MBEDTLS_THREADING_PTHREAD
+MBEDTLS_THREADING_C
+MBEDTLS_MEMORY_BUFFER_ALLOC_C
 );
 
 # Things that should be enabled in "full" even if they match @excluded
@@ -123,7 +136,8 @@ while ($arg = shift) {
         # ...else assume it's a command
         $action = $arg;
 
-        if ($action eq "full" || $action eq "realfull") {
+        if ($action eq "full" || $action eq "realfull" ||
+                $action eq "windowsfull") {
             # No additional parameters
             die $usage if @ARGV;
 
@@ -170,16 +184,22 @@ my ($exclude_re, $no_exclude_re);
 if ($action eq "realfull") {
     $exclude_re = qr/^$/;
     $no_exclude_re = qr/./;
+} elsif ($action eq "windowsfull") {
+    $exclude_re = join '|', (@excluded, @windows_excluded);
+    $no_exclude_re = join '|', @non_excluded;
 } else {
-    $exclude_re = join '|', @excluded;
+    # Assume this is just 'full' for POSIX platforms
+    $exclude_re = join '|', (@excluded, @posix_excluded);
     $no_exclude_re = join '|', @non_excluded;
 }
+
 
 open my $config_write, '>', $config_file or die "write $config_file: $!\n";
 
 my $done;
 for my $line (@config_lines) {
-    if ($action eq "full" || $action eq "realfull") {
+    if ($action eq "full" || $action eq "realfull" ||
+            $action eq "windowsfull" ) {
         if ($line =~ /name SECTION: Module configuration options/) {
             $done = 1;
         }
