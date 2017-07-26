@@ -160,12 +160,29 @@ if (! -f $config_file)  {
 }
 
 
-# Now read the file and process the contents
-
+# Read the config file
 open my $config_read, '<', $config_file or die "read $config_file: $!\n";
 my @config_lines = <$config_read>;
 close $config_read;
 
+# Process actions that DO NOT modify the config file
+if ($action eq "get") {
+    # The get action is the only function that is not supposed to alter the
+    # content of the config file. Therefore, we process it separately.
+    for my $line (@config_lines) {
+        if ($line =~ /^\s*#define\s*$name\s*(.*)\s*\b/) {
+            $value = $1;
+            if ($value ne '') {
+                print $value
+            }
+            exit 0;
+        }
+    }
+    # The symbol was not found, return an error
+    exit -1;
+}
+
+# Process actions that modify the contents of the config file
 my ($exclude_re, $no_exclude_re);
 if ($action eq "realfull") {
     $exclude_re = qr/^$/;
@@ -204,11 +221,6 @@ for my $line (@config_lines) {
             $line .= "\n";
             $done = 1;
         }
-    } elsif (!$done && $action eq "get") {
-        if ($line =~ /^\s*#define\s*$name\s*(.*)\s*\b/) {
-            $value = $1;
-            $done = 1;
-        }
     }
 
     print $config_write $line;
@@ -227,18 +239,6 @@ if ($action eq "set"&& $force_option && !$done) {
 }
 
 close $config_write;
-
-if ($action eq "get") {
-    if($done) {
-        if ($value ne '') {
-            print $value;
-        }
-        exit 0;
-    } else {
-        # If the symbol was not found, return an error
-        exit -1;
-    }
-}
 
 if ($action eq "full" && !$done) {
     die "Configuration section was not found in $config_file\n";

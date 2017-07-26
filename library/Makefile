@@ -18,9 +18,22 @@ endif
 # To compile on Plan9:
 # CFLAGS += -D_BSD_EXTENSION
 
-# if were running on Windows build for Windows
+# Generate dependency information on headers in GNU Make format
+TDEPEXT = .Td
+DEPEXT = .d
+
+DEPFLAGS = -MT $@ -MMD -MP -MF $*$(TDEPEXT)
+
 ifdef WINDOWS
-WINDOWS_BUILD=1
+# if were running on Windows build for Windows
+WINDOWS_BUILD = 1
+CLEANUP = del /Q /F *.o *$(DEPEXT) *$(TDEPEXT) libmbed*
+POSTCOMPILE = move /Y $*$(TDEPEXT) $*$(DEPEXT)
+DLEXT = dll
+else
+CLEANUP = rm -f *.o *$(DEPEXT) *$(TDEPEXT) libmbed*
+POSTCOMPILE = mv -f $*$(TDEPEXT) $*$(DEPEXT)
+DLEXT = so
 endif
 
 # To compile as a shared library:
@@ -35,14 +48,8 @@ SOEXT_TLS=so.10
 SOEXT_X509=so.0
 SOEXT_CRYPTO=so.0
 
-DLEXT=so
 # OSX shared library extension:
 # DLEXT=dylib
-
-# Windows shared library extension:
-ifdef WINDOWS_BUILD
-DLEXT=dll
-endif
 
 OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		asn1parse.o	asn1write.o	base64.o	\
@@ -157,13 +164,18 @@ libmbedcrypto.dll: $(OBJS_CRYPTO)
 	echo "  LD    $@"
 	$(CC) -shared -Wl,-soname,$@ -Wl,--out-implib,$@.a -o $@ $(OBJS_CRYPTO) -lws2_32 -lwinmm -lgdi32 -static-libgcc $(LOCAL_LDFLAGS) $(LDFLAGS)
 
-.c.o:
+%.o: %.c
+%.o: %.c %$(DEPEXT)
 	echo "  CC    $<"
-	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -c $<
+	$(CC) $(DEPFLAGS) $(LOCAL_CFLAGS) $(CFLAGS) -c $<
+	$(POSTCOMPILE)
+
+.PRECIOUS: %$(DEPEXT)
+%$(DEPEXT): ;
 
 clean:
-ifndef WINDOWS
-	rm -f *.o libmbed*
-else
-	del /Q /F *.o libmbed*
-endif
+	$(CLEANUP)
+
+-include $(OBJS_CRYPTO:.o=$(DEPEXT))
+-include $(OBJS_X509:.o=$(DEPEXT))
+-include $(OBJS_TLS:.o=$(DEPEXT))
