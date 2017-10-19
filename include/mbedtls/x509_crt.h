@@ -589,6 +589,19 @@ int mbedtls_x509write_crt_set_key_usage( mbedtls_x509write_cert *ctx,
                                          unsigned int key_usage );
 
 /**
+ * \brief           Set the Extended Key Usage Extension
+ *                  (e.g. MBEDTLS_OID_SERVER_AUTH)
+ *
+ * \param ctx       CRT context to use
+ * \param exts      extended key usage extensions to set, a sequence of
+ *                  MBEDTLS_ASN1_OID objects
+ *
+ * \return          0 if successful, or MBEDTLS_ERR_X509_ALLOC_FAILED
+ */
+int mbedtls_x509write_crt_set_ext_key_usage( mbedtls_x509write_cert *ctx,
+                                             const mbedtls_asn1_sequence *exts );
+
+/**
  * \brief           Set the Netscape Cert Type flags
  *                  (e.g. MBEDTLS_X509_NS_CERT_TYPE_SSL_CLIENT | MBEDTLS_X509_NS_CERT_TYPE_EMAIL)
  *

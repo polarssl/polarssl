@@ -49,6 +49,7 @@ int main( void )
 
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/x509_csr.h"
+#include "mbedtls/oid.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
@@ -56,6 +57,9 @@ int main( void )
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define SET_OID(x, oid) \
+    do { x.len = MBEDTLS_OID_SIZE(oid); x.p = (unsigned char*)oid; } while( 0 )
 
 #if defined(MBEDTLS_X509_CSR_PARSE_C)
 #define USAGE_CSR                                                           \
@@ -81,7 +85,9 @@ int main( void )
 #define DFL_SELFSIGN            0
 #define DFL_IS_CA               0
 #define DFL_MAX_PATHLEN         -1
+#define DFL_SIG_ALG             MBEDTLS_MD_SHA256
 #define DFL_KEY_USAGE           0
+#define DFL_EXT_KEY_USAGE       0
 #define DFL_NS_CERT_TYPE        0
 
 #define USAGE \
@@ -109,6 +115,7 @@ int main( void )
     "    not_after=%%s        default: 20301231235959\n"\
     "    is_ca=%%d            default: 0 (disabled)\n"  \
     "    max_pathlen=%%d      default: -1 (none)\n"     \
+    "    sig_alg=%%s          default: SHA-256\n"       \
     "    key_usage=%%s        default: (empty)\n"       \
     "                        Comma-separated-list of values:\n"     \
     "                          digital_signature\n"     \
@@ -118,6 +125,14 @@ int main( void )
     "                          key_agreement\n"         \
     "                          key_cert_sign\n"  \
     "                          crl_sign\n"              \
+    "    ext_key_usage=%%s    default: (empty)\n"       \
+    "                        Comma-separated-list of values:\n"     \
+    "                         serverAuth\n"             \
+    "                         clientAuth\n"             \
+    "                         codeSigning\n"            \
+    "                         emailProtection\n"        \
+    "                         timeStamping\n"           \
+    "                         OCSPSigning\n"            \
     "    ns_cert_type=%%s     default: (empty)\n"       \
     "                        Comma-separated-list of values:\n"     \
     "                          ssl_client\n"            \
@@ -149,7 +164,9 @@ struct options
     int selfsign;               /* selfsign the certificate             */
     int is_ca;                  /* is a CA certificate                  */
     int max_pathlen;            /* maximum CA path length               */
+    mbedtls_md_type_t sig_alg;  /* MD to use generating signature       */
     unsigned char key_usage;    /* key usage flags                      */
+    mbedtls_asn1_sequence *ext_key_usage; /* extended key usages        */
     unsigned char ns_cert_type; /* NS cert type                         */
 } opt;
 
@@ -199,6 +216,7 @@ int main( int argc, char *argv[] )
 #endif
     mbedtls_x509write_cert crt;
     mbedtls_mpi serial;
+    mbedtls_asn1_sequence *ext_key_usage;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     const char *pers = "crt example app";
@@ -207,7 +225,6 @@ int main( int argc, char *argv[] )
      * Set to sane values
      */
     mbedtls_x509write_crt_init( &crt );
-    mbedtls_x509write_crt_set_md_alg( &crt, MBEDTLS_MD_SHA256 );
     mbedtls_pk_init( &loaded_issuer_key );
     mbedtls_pk_init( &loaded_subject_key );
     mbedtls_mpi_init( &serial );
@@ -241,7 +258,9 @@ int main( int argc, char *argv[] )
     opt.selfsign            = DFL_SELFSIGN;
     opt.is_ca               = DFL_IS_CA;
     opt.max_pathlen         = DFL_MAX_PATHLEN;
+    opt.sig_alg             = DFL_SIG_ALG;
     opt.key_usage           = DFL_KEY_USAGE;
+    opt.ext_key_usage       = DFL_EXT_KEY_USAGE;
     opt.ns_cert_type        = DFL_NS_CERT_TYPE;
 
     for( i = 1; i < argc; i++ )
@@ -304,6 +323,17 @@ int main( int argc, char *argv[] )
             if( opt.max_pathlen < -1 || opt.max_pathlen > 127 )
                 goto usage;
         }
+        else if( strcmp( p, "sig_alg") == 0 )
+        {
+            if( strcmp( q, "SHA-1" ) == 0 )
+                opt.sig_alg = MBEDTLS_MD_SHA1;
+            else if( strcmp( q, "SHA-256" ) == 0 )
+                opt.sig_alg = MBEDTLS_MD_SHA256;
+            else if( strcmp( q, "MD5" ) == 0 )
+                opt.sig_alg = MBEDTLS_MD_MD5;
+            else
+                goto usage;
+        }
         else if( strcmp( p, "key_usage" ) == 0 )
         {
             while( q != NULL )
@@ -327,6 +357,35 @@ int main( int argc, char *argv[] )
                     opt.key_usage |= MBEDTLS_X509_KU_CRL_SIGN;
                 else
                     goto usage;
+
+                q = r;
+            }
+        }
+        else if( strcmp( p, "ext_key_usage" ) == 0 )
+        {
+            while( q != NULL )
+            {
+                if( ( r = strchr( q, ',' ) ) != NULL )
+                    *r++ = '\0';
+
+                ext_key_usage = mbedtls_calloc( 1, sizeof(mbedtls_asn1_sequence) );
+                ext_key_usage->next = opt.ext_key_usage;
+                ext_key_usage->buf.tag = MBEDTLS_ASN1_OID;
+                if( strcmp( q, "serverAuth" ) == 0 )
+                    SET_OID( ext_key_usage->buf, MBEDTLS_OID_SERVER_AUTH );
+                else if( strcmp( q, "clientAuth" ) == 0 )
+                    SET_OID( ext_key_usage->buf, MBEDTLS_OID_CLIENT_AUTH );
+                else if( strcmp( q, "codeSigning" ) == 0 )
+                    SET_OID( ext_key_usage->buf, MBEDTLS_OID_CODE_SIGNING );
+                else if( strcmp( q, "emailProtection" ) == 0 )
+                    SET_OID( ext_key_usage->buf, MBEDTLS_OID_EMAIL_PROTECTION );
+                else if( strcmp( q, "timeStamping" ) == 0 )
+                    SET_OID( ext_key_usage->buf, MBEDTLS_OID_TIME_STAMPING );
+                else if( strcmp( q, "OCSPSigning" ) == 0 )
+                    SET_OID( ext_key_usage->buf, MBEDTLS_OID_OCSP_SIGNING );
+                else
+                    goto usage;
+                opt.ext_key_usage = ext_key_usage;
 
                 q = r;
             }
@@ -572,6 +631,8 @@ int main( int argc, char *argv[] )
 
     mbedtls_printf( " ok\n" );
 
+    mbedtls_x509write_crt_set_md_alg( &crt, opt.sig_alg );
+
 #if defined(MBEDTLS_SHA1_C)
     mbedtls_printf( "  . Adding the Subject Key Identifier ..." );
     fflush( stdout );
@@ -610,6 +671,22 @@ int main( int argc, char *argv[] )
         {
             mbedtls_strerror( ret, buf, 1024 );
             mbedtls_printf( " failed\n  !  mbedtls_x509write_crt_set_key_usage returned -0x%02x - %s\n\n", -ret, buf );
+            goto exit;
+        }
+
+        mbedtls_printf( " ok\n" );
+    }
+
+    if( opt.ext_key_usage )
+    {
+        mbedtls_printf( "  . Adding the Extended Key Usage extension ..." );
+        fflush( stdout );
+
+        ret = mbedtls_x509write_crt_set_ext_key_usage( &crt, opt.ext_key_usage );
+        if( ret != 0 )
+        {
+            mbedtls_strerror( ret, buf, 1024 );
+            mbedtls_printf( " failed\n  !  mbedtls_x509write_crt_set_ext_key_usage returned -0x%02x - %s\n\n", -ret, buf );
             goto exit;
         }
 

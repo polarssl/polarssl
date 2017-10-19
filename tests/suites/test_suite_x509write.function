@@ -75,8 +75,8 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
                      char *subject_name, char *issuer_key_file,
                      char *issuer_pwd, char *issuer_name,
                      char *serial_str, char *not_before, char *not_after,
-                     int md_type, int key_usage, int cert_type, int ver,
-                     char *cert_check_file )
+                     int md_type, int key_usage, char *ext_key_usage,
+                     int cert_type, int ver, char *cert_check_file )
 {
     mbedtls_pk_context subject_key, issuer_key;
     mbedtls_x509write_cert crt;
@@ -121,6 +121,24 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
             TEST_ASSERT( mbedtls_x509write_crt_set_key_usage( &crt, key_usage ) == 0 );
         if( cert_type != 0 )
             TEST_ASSERT( mbedtls_x509write_crt_set_ns_cert_type( &crt, cert_type ) == 0 );
+        if( strcmp( ext_key_usage, "NULL" ) != 0 )
+        {
+            mbedtls_asn1_sequence exts[2] = { };
+#define SET_OID(x, oid) \
+    do { x.len = MBEDTLS_OID_SIZE(oid); x.p = (unsigned char*)oid; \
+         x.tag = MBEDTLS_ASN1_OID; } while( 0 )
+            if( strcmp( ext_key_usage, "serverAuth" ) == 0 )
+            {
+              SET_OID( exts[0].buf, MBEDTLS_OID_SERVER_AUTH );
+            }
+            else if( strcmp( ext_key_usage, "codeSigning,timeStamping" ) == 0 )
+            {
+              SET_OID( exts[0].buf, MBEDTLS_OID_CODE_SIGNING );
+              exts[0].next = &exts[1];
+              SET_OID( exts[1].buf, MBEDTLS_OID_TIME_STAMPING );
+            }
+            TEST_ASSERT( mbedtls_x509write_crt_set_ext_key_usage( &crt, exts ) == 0 );
+        }
     }
 
     ret = mbedtls_x509write_crt_pem( &crt, buf, sizeof(buf),
