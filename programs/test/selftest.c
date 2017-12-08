@@ -53,6 +53,7 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/ecjpake.h"
 #include "mbedtls/timing.h"
+#include "mbedtls/threefish.h"
 
 #include <string.h>
 
@@ -328,6 +329,14 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_CAMELLIA_C)
     if( mbedtls_camellia_self_test( v ) != 0 )
+    {
+        suites_failed++;
+    }
+    suites_tested++;
+#endif
+
+#if defined(MBEDTLS_THREEFISH_C)
+    if( mbedtls_threefish_self_test( v ) != 0 )
     {
         suites_failed++;
     }

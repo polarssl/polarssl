@@ -93,6 +93,9 @@ static const char *features[] = {
 #if defined(MBEDTLS_BLOWFISH_ALT)
     "MBEDTLS_BLOWFISH_ALT",
 #endif /* MBEDTLS_BLOWFISH_ALT */
+#if defined(MBEDTLS_THREEFISH_ALT)
+    "MBEDTLS_THREEFISH_ALT",
+#endif /* MBEDTLS_THREEFISH_ALT */
 #if defined(MBEDTLS_CAMELLIA_ALT)
     "MBEDTLS_CAMELLIA_ALT",
 #endif /* MBEDTLS_CAMELLIA_ALT */
@@ -486,6 +489,9 @@ static const char *features[] = {
 #if defined(MBEDTLS_BLOWFISH_C)
     "MBEDTLS_BLOWFISH_C",
 #endif /* MBEDTLS_BLOWFISH_C */
+#if defined(MBEDTLS_THREEFISH_C)
+    "MBEDTLS_THREEFISH_C",
+#endif /* MBEDTLS_THREEFISH_C */
 #if defined(MBEDTLS_CAMELLIA_C)
     "MBEDTLS_CAMELLIA_C",
 #endif /* MBEDTLS_CAMELLIA_C */

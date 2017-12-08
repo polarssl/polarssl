@@ -11,6 +11,7 @@ set(src_crypto
     base64.c
     bignum.c
     blowfish.c
+    threefish.c
     camellia.c
     ccm.c
     cipher.c

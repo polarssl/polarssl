@@ -265,6 +265,7 @@
 //#define MBEDTLS_AES_ALT
 //#define MBEDTLS_ARC4_ALT
 //#define MBEDTLS_BLOWFISH_ALT
+//#define MBEDTLS_THREEFISH_ALT
 //#define MBEDTLS_CAMELLIA_ALT
 //#define MBEDTLS_DES_ALT
 //#define MBEDTLS_XTEA_ALT
@@ -1670,6 +1671,13 @@
  * Module:  library/blowfish.c
  */
 #define MBEDTLS_BLOWFISH_C
+
+/**
+ * \def MBEDTLS_THREEFISH_C
+ *
+ * Module: library/threefish.c
+ */
+//#define MBEDTLS_THREEFISH_C
 
 /**
  * \def MBEDTLS_CAMELLIA_C

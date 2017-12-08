@@ -58,6 +58,7 @@ int main( void )
 #include "mbedtls/des.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/blowfish.h"
+#include "mbedtls/threefish.h"
 #include "mbedtls/camellia.h"
 #include "mbedtls/gcm.h"
 #include "mbedtls/ccm.h"
@@ -238,7 +239,7 @@ typedef struct {
     char md4, md5, ripemd160, sha1, sha256, sha512,
          arc4, des3, des,
          aes_cbc, aes_gcm, aes_ccm, aes_cmac, des3_cmac,
-         camellia, blowfish,
+         camellia, blowfish, threefish,
          havege, ctr_drbg, hmac_drbg,
          rsa, dhm, ecdsa, ecdh;
 } todo_list;
@@ -295,6 +296,8 @@ int main( int argc, char *argv[] )
                 todo.camellia = 1;
             else if( strcmp( argv[i], "blowfish" ) == 0 )
                 todo.blowfish = 1;
+            else if( strcmp( argv[i], "threefish" ) == 0 )
+                todo.threefish = 1;
             else if( strcmp( argv[i], "havege" ) == 0 )
                 todo.havege = 1;
             else if( strcmp( argv[i], "ctr_drbg" ) == 0 )
@@ -550,6 +553,30 @@ int main( int argc, char *argv[] )
         }
 
         mbedtls_blowfish_free( &blowfish );
+    }
+#endif
+
+#if defined(MBEDTLS_THREEFISH_C) && defined(MBEDTLS_CIPHER_MODE_CBC)
+    if( todo.threefish )
+    {
+        int keysize;
+        mbedtls_threefish_context threefish;
+        mbedtls_threefish_init( &threefish );
+
+        for( keysize = 256; keysize <= 1024; keysize *= 2 )
+        {
+            mbedtls_snprintf( title, sizeof( title ), "THREEFISH_CBC-%d", keysize );
+
+            memset( buf, 0, sizeof( buf ) );
+            memset( tmp, 0, sizeof( tmp ) );
+            mbedtls_threefish_setkey( &threefish, tmp, keysize );
+            mbedtls_threefish_settweak( &threefish, tmp );
+
+            TIME_AND_TSC( title,
+                    mbedtls_threefish_crypt_cbc( &threefish, MBEDTLS_THREEFISH_ENCRYPT,
+                        BUFSIZE, tmp, buf, buf ) );
+        }
+        mbedtls_threefish_free( &threefish );
     }
 #endif
 

@@ -1,0 +1,95 @@
+/* BEGIN_HEADER */
+#include "mbedtls/threefish.h"
+/* END_HEADER */
+
+/* BEGIN_DEPENDENCIES
+ * depends_on:MBEDTLS_THREEFISH_C
+ * END_DEPENDENCIES
+ */
+
+/* BEGIN_CASE */
+void threefish_encrypt_ecb( char *hex_key_string, char *hex_src_string,
+                            char *hex_dst_string, char *hex_tweak_string,
+                            int setkey_result, int settweak_result )
+{
+    mbedtls_threefish_context ctx;
+
+    unsigned char key[256];
+    unsigned char cipher[256];
+    unsigned char plaintext[256];
+    unsigned char output[256];
+    unsigned char tweak[16];
+    unsigned int block_size;
+
+    memset( key, 0x00, sizeof( key ) );
+    memset( cipher, 0x00, sizeof( cipher ) );
+    memset( plaintext, 0x00, sizeof( plaintext ) );
+    memset( output, 0x00, sizeof( output ) );
+    memset( tweak, 0x00, sizeof( tweak ) );
+    mbedtls_threefish_init( &ctx );
+
+    block_size = unhexify( key, hex_key_string ) << 3;
+    unhexify( tweak, hex_tweak_string );
+
+    TEST_ASSERT( mbedtls_threefish_setkey( &ctx, key, block_size ) == setkey_result );
+    TEST_ASSERT( mbedtls_threefish_settweak( &ctx, tweak ) == settweak_result );
+    if( setkey_result == 0 && settweak_result == 0 )
+    {
+        unhexify( plaintext, hex_src_string );
+        TEST_ASSERT( mbedtls_threefish_crypt_ecb( &ctx, MBEDTLS_THREEFISH_ENCRYPT, plaintext, output ) == 0 );
+        unhexify( cipher, hex_dst_string );
+
+        TEST_ASSERT( memcmp( cipher, output, block_size >> 3 ) == 0 );
+    }
+
+exit:
+    mbedtls_threefish_free( &ctx );
+}
+/* END_CASE */
+
+/* BEGIN_CASE */
+void threefish_decrypt_ecb( char *hex_key_string, char *hex_src_string,
+                            char *hex_dst_string, char *hex_tweak_string,
+                            int setkey_result, int settweak_result )
+{
+    mbedtls_threefish_context ctx;
+
+    unsigned char key[256];
+    unsigned char cipher[256];
+    unsigned char plaintext[256];
+    unsigned char output[256];
+    unsigned char tweak[16];
+    unsigned int block_size;
+
+    memset( key, 0x00, sizeof( key ) );
+    memset( cipher, 0x00, sizeof( cipher ) );
+    memset( plaintext, 0x00, sizeof( plaintext ) );
+    memset( output, 0x00, sizeof( output ) );
+    memset( tweak, 0x00, sizeof( tweak ) );
+    mbedtls_threefish_init( &ctx );
+
+    block_size = unhexify( key, hex_key_string ) << 3;
+    unhexify( tweak, hex_tweak_string );
+
+    TEST_ASSERT( mbedtls_threefish_setkey( &ctx, key, block_size ) == setkey_result );
+    TEST_ASSERT( mbedtls_threefish_settweak( &ctx, tweak ) == settweak_result );
+    if( setkey_result == 0 && settweak_result  == 0 )
+    {
+        unhexify( cipher, hex_src_string );
+        TEST_ASSERT( mbedtls_threefish_crypt_ecb( &ctx, MBEDTLS_THREEFISH_DECRYPT, cipher, output ) == 0 );
+        unhexify( plaintext, hex_dst_string );
+
+        TEST_ASSERT( memcmp( plaintext, output, block_size >> 3 ) == 0 );
+    }
+
+exit:
+    mbedtls_threefish_free( &ctx );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SELF_TEST */
+void threefish_selftest()
+{
+    TEST_ASSERT( mbedtls_threefish_self_test( 1 ) == 0 );
+}
+/* END_CASE */

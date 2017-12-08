@@ -141,6 +141,10 @@
 #include "mbedtls/threading.h"
 #endif
 
+#if defined(MBEDTLS_THREEFISH_C)
+#include "mbedtls/threefish.h"
+#endif
+
 #if defined(MBEDTLS_X509_USE_C) || defined(MBEDTLS_X509_CREATE_C)
 #include "mbedtls/x509.h"
 #endif
@@ -676,6 +680,13 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
     if( use_ret == -(MBEDTLS_ERR_THREADING_MUTEX_ERROR) )
         mbedtls_snprintf( buf, buflen, "THREADING - Locking / unlocking / free failed with error code" );
 #endif /* MBEDTLS_THREADING_C */
+
+#if defined(MBEDTLS_THREEFISH_C)
+    if( use_ret == -(MBEDTLS_ERR_THREEFISH_INVALID_KEY_LENGTH) )
+        mbedtls_snprintf( buf, buflen, "THREEFISH - Invalid key length" );
+    if( use_ret == -(MBEDTLS_ERR_THREEFISH_INVALID_INPUT_LENGTH) )
+        mbedtls_snprintf( buf, buflen, "THREEFISH - Invalid input length" );
+#endif /* MBEDTLS_THREEFISH_C */
 
 #if defined(MBEDTLS_XTEA_C)
     if( use_ret == -(MBEDTLS_ERR_XTEA_INVALID_INPUT_LENGTH) )
