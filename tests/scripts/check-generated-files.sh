@@ -11,14 +11,18 @@ fi
 
 check()
 {
-    FILE=$1
-    SCRIPT=$2
+    SCRIPT=$1
+    shift
 
-    cp $FILE $FILE.bak
-    $SCRIPT
-    diff $FILE $FILE.bak
-    mv $FILE.bak $FILE
+    for FILE; do
+        cp "$FILE" "$FILE.bak"
+    done
+    "$SCRIPT"
+    for FILE; do
+        diff "$FILE" "$FILE.bak"
+        mv "$FILE.bak" "$FILE"
+    done
 }
 
-check library/error.c scripts/generate_errors.pl
-check library/version_features.c scripts/generate_features.pl
+check scripts/generate_errors.pl library/error.c include/mbedtls/error.h
+check scripts/generate_features.pl library/version_features.c

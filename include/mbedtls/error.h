@@ -47,40 +47,39 @@
  *
  * Low-level module errors (0x0002-0x007E, 0x0003-0x007F)
  *
- * Module   Nr  Codes assigned
- * MPI       7  0x0002-0x0010
- * GCM       2  0x0012-0x0014
- * BLOWFISH  2  0x0016-0x0018
- * THREADING 3  0x001A-0x001E
- * AES       2  0x0020-0x0022
- * CAMELLIA  2  0x0024-0x0026
- * XTEA      1  0x0028-0x0028
- * BASE64    2  0x002A-0x002C
- * OID       1  0x002E-0x002E   0x000B-0x000B
- * PADLOCK   1  0x0030-0x0030
- * DES       1  0x0032-0x0032
- * CTR_DBRG  4  0x0034-0x003A
- * ENTROPY   3  0x003C-0x0040   0x003D-0x003F
- * NET      11  0x0042-0x0052   0x0043-0x0045
- * ASN1      7  0x0060-0x006C
- * PBKDF2    1  0x007C-0x007C
- * HMAC_DRBG 4  0x0003-0x0009
- * CCM       2                  0x000D-0x000F
+ * Module    Nr  Codes assigned
+ * BIGNUM     8  0x0002-0x0010
+ * GCM        2  0x0012-0x0014
+ * BLOWFISH   2  0x0016-0x0018
+ * THREADING  3  0x001A-0x001E
+ * AES        2  0x0020-0x0022
+ * CAMELLIA   2  0x0024-0x0026
+ * XTEA       1  0x0028-0x0028
+ * BASE64     2  0x002A-0x002C
+ * OID        2  0x002E-0x002E   0x000B-0x000B
+ * PADLOCK    1  0x0030-0x0030
+ * DES        1  0x0032-0x0032
+ * CTR_DRBG   4  0x0034-0x003A
+ * ENTROPY    5  0x003C-0x0040   0x003D-0x003F
+ * NET       11  0x0042-0x0052   0x0043-0x0045
+ * ASN1       7  0x0060-0x006C
+ * HMAC_DRBG  4                  0x0003-0x0009
+ * CCM        2                  0x000D-0x000F
  *
  * High-level module nr (3 bits - 0x0...-0x7...)
  * Name      ID  Nr of Errors
- * PEM       1   9
- * PKCS#12   1   4 (Started from top)
- * X509      2   20
- * PKCS5     2   4 (Started from top)
- * DHM       3   9
- * PK        3   14 (Started from top)
- * RSA       4   9
- * ECP       4   8 (Started from top)
- * MD        5   4
- * CIPHER    6   6
- * SSL       6   17 (Started from top)
- * SSL       7   31
+ * PEM        1  9
+ * PKCS12     1  4 (Started from top)
+ * X509       3  20
+ * PKCS5      2  4 (Started from top)
+ * DHM        3  9
+ * PK         3  14 (Started from top)
+ * RSA        4  9
+ * ECP        4  8 (Started from top)
+ * MD         5  4
+ * CIPHER     6  7
+ * SSL        6  20 (Started from top)
+ * SSL        7  31
  *
  * Module dependent error code (5 bits 0x.00.-0x.F8.)
  */
