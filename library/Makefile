@@ -167,3 +167,5 @@ ifndef WINDOWS
 else
 	del /Q /F *.o libmbed*
 endif
+
+include .depend

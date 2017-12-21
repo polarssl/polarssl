@@ -22,3 +22,4 @@ check()
 
 check library/error.c scripts/generate_errors.pl
 check library/version_features.c scripts/generate_features.pl
+scripts/generate_depend.py -n

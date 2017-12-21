@@ -58,7 +58,8 @@ sub abort {
     die $_[0];
 }
 
-while( my ($conf, $data) = each %configs ) {
+foreach my $conf (sort keys %configs) {
+    my $data = $configs{$conf};
     system( "cp $config_h.bak $config_h" ) and die;
     system( "make clean" ) and die;
 

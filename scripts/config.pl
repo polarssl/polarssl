@@ -40,8 +40,9 @@
 
 use warnings;
 use strict;
+use Getopt::Long;
 
-my $config_file = "include/mbedtls/config.h";
+my $default_config_file = "include/mbedtls/config.h";
 my $usage = <<EOU;
 $0 [-f <file> | --file <file>] [-o | --force]
                    [set <symbol> <value> | unset <symbol> | get <symbol> |
@@ -65,11 +66,14 @@ Commands
     realfull                - Uncomments all #define's with no exclusions
 
 Options
-    -f | --file <filename>  - The file or file path for the configuration file
+    -b, --backup=<filename> - Back up the output file this file before writing.
+    -f, --file=<filename>   - The file or file path for the configuration file
                               to edit. When omitted, the following default is
                               used:
-                                $config_file
-    -o | --force            - If the symbol isn't present in the configuration
+                                $default_config_file
+    -o, --output=<filename> - The file to output to. When omitted, overwrite
+                              the input file.
+    --force                 - If the symbol isn't present in the configuration
                               file when setting its value, a #define is
                               appended to the end of the file.
 
@@ -102,67 +106,57 @@ PLATFORM_[A-Z0-9]+_ALT
 # Process the command line arguments
 
 my $force_option = 0;
+my ($input_file, $output_file, $backup_file);
 
 my ($arg, $name, $value, $action);
 
-while ($arg = shift) {
-
-    # Check if the argument is an option
-    if ($arg eq "-f" || $arg eq "--file") {
-        $config_file = shift;
-
-        -f $config_file or die "No such file: $config_file\n";
-
-    }
-    elsif ($arg eq "-o" || $arg eq "--force") {
-        $force_option = 1;
-
-    }
-    else
-    {
-        # ...else assume it's a command
-        $action = $arg;
-
-        if ($action eq "full" || $action eq "realfull") {
-            # No additional parameters
-            die $usage if @ARGV;
-
-        }
-        elsif ($action eq "unset" || $action eq "get") {
-            die $usage unless @ARGV;
-            $name = shift;
-
-        }
-        elsif ($action eq "set") {
-            die $usage unless @ARGV;
-            $name = shift;
-            $value = shift if @ARGV;
-
-        }
-        else {
-            die "Command '$action' not recognised.\n\n".$usage;
-        }
-    }
-}
+GetOptions('b|backup=s' => \$backup_file,
+           'f|file=s' => \$input_file,
+           'o|output=s' => \$output_file,
+           'force' => \$force_option,
+           'help' => sub {print $usage; exit;})
+  or die $usage;
 
 # If no command was specified, exit...
-if ( not defined($action) ){ die $usage; }
+die "Missing command name.\n\n" . $usage if @ARGV == 0;
 
-# Check the config file is present
-if (! -f $config_file)  {
+$action = shift @ARGV;
 
-    chdir '..' or die;
-
-    # Confirm this is the project root directory and try again
-    if ( !(-d 'scripts' && -d 'include' && -d 'library' && -f $config_file) ) {
-        die "If no file specified, must be run from the project root or scripts directory.\n";
-    }
+if ($action eq "full" || $action eq "realfull") {
+    # No additional parameters
+    die "Command '$action' requires no parameters.\n\n" . $usage if @ARGV;
+} elsif ($action eq "unset" || $action eq "get") {
+    die "Command '$action' requires 1 parameter.\n\n" . $usage
+      unless @ARGV == 1;
+    $name = shift;
+} elsif ($action eq "set") {
+    die "Command '$action' requires 1 or 2 parameters.\n\n" . $usage
+      unless @ARGV >= 1 && @ARGV <= 2;
+    $name = shift;
+    $value = shift if @ARGV;
+} else {
+    die "Command '$action' not recognised.\n\n" . $usage;
 }
 
+
+# If no input file was specified, look for the default one.
+unless (defined $input_file) {
+    unless (-f $default_config_file)  {
+        chdir '..' or die;
+        # Confirm this is the project root directory and try again
+        unless (-d 'scripts' && -d 'include' && -d 'library' &&
+                -f $default_config_file) {
+            die "If no file specified, must be run from the project root or scripts directory.\n";
+        }
+    }
+    $input_file = $default_config_file;
+}
+
+$output_file = $input_file unless defined $output_file;
 
 # Now read the file and process the contents
 
-open my $config_read, '<', $config_file or die "read $config_file: $!\n";
+open my $config_read, '<', $input_file or die "read $input_file: $!\n";
 my @config_lines = <$config_read>;
 close $config_read;
 
@@ -177,7 +171,10 @@ if ($action eq "realfull") {
 
 my $config_write = undef;
 if ($action ne "get") {
-    open $config_write, '>', $config_file or die "write $config_file: $!\n";
+    if (defined $backup_file && -f $output_file) {
+        rename $output_file, $backup_file or die "backup to $backup_file: $!\n";
+    }
+    open $config_write, '>', $output_file or die "write $output_file: $!\n";
 }
 
 my $done;
@@ -215,7 +212,7 @@ for my $line (@config_lines) {
     }
 
     if (defined $config_write) {
-        print $config_write $line or die "write $config_file: $!\n";
+        print $config_write $line or die "write $output_file: $!\n";
     }
 }
 
@@ -228,11 +225,11 @@ if ($action eq "set" && $force_option && !$done) {
     $line .= "\n";
     $done = 1;
 
-    print $config_write $line or die "write $config_file: $!\n";
+    print $config_write $line or die "write $output_file: $!\n";
 }
 
 if (defined $config_write) {
-    close $config_write or die "close $config_file: $!\n";
+    close $config_write or die "close $output_file: $!\n";
 }
 
 if ($action eq "get") {
@@ -248,12 +245,12 @@ if ($action eq "get") {
 }
 
 if ($action eq "full" && !$done) {
-    die "Configuration section was not found in $config_file\n";
+    die "Configuration section was not found in $input_file\n";
 
 }
 
 if ($action ne "full" && $action ne "unset" && !$done) {
-    die "A #define for the symbol $name was not found in $config_file\n";
+    die "A #define for the symbol $name was not found in $input_file\n";
 }
 
 __END__

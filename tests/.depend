@@ -1,0 +1,585 @@
+test_suite_aes.cbc.o test_suite_aes.cbc$(EXEXT): test_suite_aes.cbc.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_aes.cfb.o test_suite_aes.cfb$(EXEXT): test_suite_aes.cfb.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_aes.ecb.o test_suite_aes.ecb$(EXEXT): test_suite_aes.ecb.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_aes.rest.o test_suite_aes.rest$(EXEXT): test_suite_aes.rest.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_arc4.o test_suite_arc4$(EXEXT): test_suite_arc4.c \
+  ../include/mbedtls/arc4.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_asn1write.o test_suite_asn1write$(EXEXT): test_suite_asn1write.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/asn1write.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_base64.o test_suite_base64$(EXEXT): test_suite_base64.c \
+  ../include/mbedtls/base64.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_blowfish.o test_suite_blowfish$(EXEXT): test_suite_blowfish.c \
+  ../include/mbedtls/blowfish.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_camellia.o test_suite_camellia$(EXEXT): test_suite_camellia.c \
+  ../include/mbedtls/camellia.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_ccm.o test_suite_ccm$(EXEXT): test_suite_ccm.c \
+  ../include/mbedtls/ccm.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.aes.o test_suite_cipher.aes$(EXEXT): test_suite_cipher.aes.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.arc4.o test_suite_cipher.arc4$(EXEXT): test_suite_cipher.arc4.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.blowfish.o test_suite_cipher.blowfish$(EXEXT): test_suite_cipher.blowfish.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.camellia.o test_suite_cipher.camellia$(EXEXT): test_suite_cipher.camellia.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.ccm.o test_suite_cipher.ccm$(EXEXT): test_suite_cipher.ccm.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.des.o test_suite_cipher.des$(EXEXT): test_suite_cipher.des.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.gcm.o test_suite_cipher.gcm$(EXEXT): test_suite_cipher.gcm.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.null.o test_suite_cipher.null$(EXEXT): test_suite_cipher.null.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cipher.padding.o test_suite_cipher.padding$(EXEXT): test_suite_cipher.padding.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_cmac.o test_suite_cmac$(EXEXT): test_suite_cmac.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/cmac.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_ctr_drbg.o test_suite_ctr_drbg$(EXEXT): test_suite_ctr_drbg.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/threading.h
+test_suite_debug.o test_suite_debug$(EXEXT): test_suite_debug.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/debug.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+test_suite_des.o test_suite_des$(EXEXT): test_suite_des.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/des.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_dhm.o test_suite_dhm$(EXEXT): test_suite_dhm.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_ecdh.o test_suite_ecdh$(EXEXT): test_suite_ecdh.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_ecdsa.o test_suite_ecdsa$(EXEXT): test_suite_ecdsa.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_ecjpake.o test_suite_ecjpake$(EXEXT): test_suite_ecjpake.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecjpake.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_ecp.o test_suite_ecp$(EXEXT): test_suite_ecp.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_entropy.o test_suite_entropy$(EXEXT): test_suite_entropy.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/entropy_poll.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+test_suite_error.o test_suite_error$(EXEXT): test_suite_error.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_gcm.aes128_de.o test_suite_gcm.aes128_de$(EXEXT): test_suite_gcm.aes128_de.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_gcm.aes128_en.o test_suite_gcm.aes128_en$(EXEXT): test_suite_gcm.aes128_en.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_gcm.aes192_de.o test_suite_gcm.aes192_de$(EXEXT): test_suite_gcm.aes192_de.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_gcm.aes192_en.o test_suite_gcm.aes192_en$(EXEXT): test_suite_gcm.aes192_en.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_gcm.aes256_de.o test_suite_gcm.aes256_de$(EXEXT): test_suite_gcm.aes256_de.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_gcm.aes256_en.o test_suite_gcm.aes256_en$(EXEXT): test_suite_gcm.aes256_en.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_gcm.camellia.o test_suite_gcm.camellia$(EXEXT): test_suite_gcm.camellia.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_hmac_drbg.misc.o test_suite_hmac_drbg.misc$(EXEXT): test_suite_hmac_drbg.misc.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/hmac_drbg.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/threading.h
+test_suite_hmac_drbg.no_reseed.o test_suite_hmac_drbg.no_reseed$(EXEXT): test_suite_hmac_drbg.no_reseed.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/hmac_drbg.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/threading.h
+test_suite_hmac_drbg.nopr.o test_suite_hmac_drbg.nopr$(EXEXT): test_suite_hmac_drbg.nopr.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/hmac_drbg.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/threading.h
+test_suite_hmac_drbg.pr.o test_suite_hmac_drbg.pr$(EXEXT): test_suite_hmac_drbg.pr.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/hmac_drbg.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/threading.h
+test_suite_md.o test_suite_md$(EXEXT): test_suite_md.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_mdx.o test_suite_mdx$(EXEXT): test_suite_mdx.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md2.h \
+  ../include/mbedtls/md4.h \
+  ../include/mbedtls/md5.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/ripemd160.h
+test_suite_memory_buffer_alloc.o test_suite_memory_buffer_alloc$(EXEXT): test_suite_memory_buffer_alloc.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_mpi.o test_suite_mpi$(EXEXT): test_suite_mpi.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_pem.o test_suite_pem$(EXEXT): test_suite_pem.c \
+  ../include/mbedtls/base64.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/pem.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_pk.o test_suite_pk$(EXEXT): test_suite_pk.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h
+test_suite_pkcs1_v15.o test_suite_pkcs1_v15$(EXEXT): test_suite_pkcs1_v15.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h
+test_suite_pkcs1_v21.o test_suite_pkcs1_v21$(EXEXT): test_suite_pkcs1_v21.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h
+test_suite_pkcs5.o test_suite_pkcs5$(EXEXT): test_suite_pkcs5.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/pkcs5.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+test_suite_pkparse.o test_suite_pkparse$(EXEXT): test_suite_pkparse.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/oid.h \
+  ../include/mbedtls/pem.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h
+test_suite_pkwrite.o test_suite_pkwrite$(EXEXT): test_suite_pkwrite.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/oid.h \
+  ../include/mbedtls/pem.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h
+test_suite_rsa.o test_suite_rsa$(EXEXT): test_suite_rsa.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/md2.h \
+  ../include/mbedtls/md4.h \
+  ../include/mbedtls/md5.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha1.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/sha512.h \
+  ../include/mbedtls/threading.h
+test_suite_shax.o test_suite_shax$(EXEXT): test_suite_shax.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/sha1.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/sha512.h
+test_suite_ssl.o test_suite_ssl$(EXEXT): test_suite_ssl.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecjpake.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/md5.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha1.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/sha512.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/ssl_internal.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+test_suite_timing.o test_suite_timing$(EXEXT): test_suite_timing.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/timing.h
+test_suite_version.o test_suite_version$(EXEXT): test_suite_version.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/version.h
+test_suite_x509parse.o test_suite_x509parse$(EXEXT): test_suite_x509parse.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/base64.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/oid.h \
+  ../include/mbedtls/pem.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h \
+  ../include/mbedtls/x509_csr.h
+test_suite_x509write.o test_suite_x509write$(EXEXT): test_suite_x509write.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/oid.h \
+  ../include/mbedtls/pem.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h \
+  ../include/mbedtls/x509_csr.h
+test_suite_xtea.o test_suite_xtea$(EXEXT): test_suite_xtea.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/xtea.h

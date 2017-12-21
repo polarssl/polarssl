@@ -1,0 +1,905 @@
+aes/aescrypt2.o aes/aescrypt2$(EXEXT): aes/aescrypt2.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+aes/crypt_and_hash.o aes/crypt_and_hash$(EXEXT): aes/crypt_and_hash.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+hash/generic_sum.o hash/generic_sum$(EXEXT): hash/generic_sum.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+hash/hello.o hash/hello$(EXEXT): hash/hello.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md5.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+pkey/dh_client.o pkey/dh_client$(EXEXT): pkey/dh_client.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha1.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+pkey/dh_genprime.o pkey/dh_genprime$(EXEXT): pkey/dh_genprime.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/dh_server.o pkey/dh_server$(EXEXT): pkey/dh_server.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha1.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+pkey/ecdh_curve25519.o pkey/ecdh_curve25519$(EXEXT): pkey/ecdh_curve25519.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/ecdsa.o pkey/ecdsa$(EXEXT): pkey/ecdsa.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/gen_key.o pkey/gen_key$(EXEXT): pkey/gen_key.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/key_app.o pkey/key_app$(EXEXT): pkey/key_app.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h
+pkey/key_app_writer.o pkey/key_app_writer$(EXEXT): pkey/key_app_writer.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h
+pkey/mpi_demo.o pkey/mpi_demo$(EXEXT): pkey/mpi_demo.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+pkey/pk_decrypt.o pkey/pk_decrypt$(EXEXT): pkey/pk_decrypt.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/pk_encrypt.o pkey/pk_encrypt$(EXEXT): pkey/pk_encrypt.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/pk_sign.o pkey/pk_sign$(EXEXT): pkey/pk_sign.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/pk_verify.o pkey/pk_verify$(EXEXT): pkey/pk_verify.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h
+pkey/rsa_decrypt.o pkey/rsa_decrypt$(EXEXT): pkey/rsa_decrypt.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/rsa_encrypt.o pkey/rsa_encrypt$(EXEXT): pkey/rsa_encrypt.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+pkey/rsa_genkey.o pkey/rsa_genkey$(EXEXT): pkey/rsa_genkey.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h
+pkey/rsa_sign.o pkey/rsa_sign$(EXEXT): pkey/rsa_sign.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h
+pkey/rsa_sign_pss.o pkey/rsa_sign_pss$(EXEXT): pkey/rsa_sign_pss.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h
+pkey/rsa_verify.o pkey/rsa_verify$(EXEXT): pkey/rsa_verify.c \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h
+pkey/rsa_verify_pss.o pkey/rsa_verify_pss$(EXEXT): pkey/rsa_verify_pss.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pem.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h
+random/gen_entropy.o random/gen_entropy$(EXEXT): random/gen_entropy.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+random/gen_random_ctr_drbg.o random/gen_random_ctr_drbg$(EXEXT): random/gen_random_ctr_drbg.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h
+random/gen_random_havege.o random/gen_random_havege$(EXEXT): random/gen_random_havege.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+ssl/dtls_client.o ssl/dtls_client$(EXEXT): ssl/dtls_client.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/debug.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/timing.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/dtls_server.o ssl/dtls_server$(EXEXT): ssl/dtls_server.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/debug.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_cache.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/ssl_cookie.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/timing.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/mini_client.o ssl/mini_client$(EXEXT): ssl/mini_client.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/ssl_client1.o ssl/ssl_client1$(EXEXT): ssl/ssl_client1.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/debug.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/ssl_client2.o ssl/ssl_client2$(EXEXT): ssl/ssl_client2.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/debug.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/timing.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/ssl_fork_server.o ssl/ssl_fork_server$(EXEXT): ssl/ssl_fork_server.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/timing.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/ssl_mail_client.o ssl/ssl_mail_client$(EXEXT): ssl/ssl_mail_client.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/base64.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/ssl_pthread_server.o ssl/ssl_pthread_server$(EXEXT): ssl/ssl_pthread_server.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_cache.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/ssl_server.o ssl/ssl_server$(EXEXT): ssl/ssl_server.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/debug.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_cache.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+ssl/ssl_server2.o ssl/ssl_server2$(EXEXT): ssl/ssl_server2.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/debug.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_cache.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/ssl_cookie.h \
+  ../include/mbedtls/ssl_ticket.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/timing.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+test/benchmark.o test/benchmark$(EXEXT): test/benchmark.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/arc4.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/blowfish.h \
+  ../include/mbedtls/camellia.h \
+  ../include/mbedtls/ccm.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/cmac.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/des.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/hmac_drbg.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/md4.h \
+  ../include/mbedtls/md5.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/ripemd160.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha1.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/sha512.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/timing.h
+test/selftest.o test/selftest$(EXEXT): test/selftest.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/arc4.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/base64.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/camellia.h \
+  ../include/mbedtls/ccm.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/cmac.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/des.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecjpake.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/entropy_poll.h \
+  ../include/mbedtls/gcm.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/hmac_drbg.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/md2.h \
+  ../include/mbedtls/md4.h \
+  ../include/mbedtls/md5.h \
+  ../include/mbedtls/memory_buffer_alloc.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/pkcs5.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/ripemd160.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha1.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/sha512.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/timing.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/xtea.h
+test/ssl_cert_test.o test/ssl_cert_test$(EXEXT): test/ssl_cert_test.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/certs.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+test/udp_proxy.o test/udp_proxy$(EXEXT): test/udp_proxy.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+util/pem2der.o util/pem2der$(EXEXT): util/pem2der.c \
+  ../include/mbedtls/base64.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+util/strerror.o util/strerror$(EXEXT): util/strerror.c \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h
+x509/cert_app.o x509/cert_app$(EXEXT): x509/cert_app.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/cipher.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/debug.h \
+  ../include/mbedtls/dhm.h \
+  ../include/mbedtls/ecdh.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/net_sockets.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/ssl.h \
+  ../include/mbedtls/ssl_ciphersuites.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h
+x509/cert_req.o x509/cert_req$(EXEXT): x509/cert_req.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_csr.h
+x509/cert_write.o x509/cert_write$(EXEXT): x509/cert_write.c \
+  ../include/mbedtls/aes.h \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ctr_drbg.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/entropy.h \
+  ../include/mbedtls/error.h \
+  ../include/mbedtls/havege.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/sha256.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h \
+  ../include/mbedtls/x509_crt.h \
+  ../include/mbedtls/x509_csr.h
+x509/crl_app.o x509/crl_app$(EXEXT): x509/crl_app.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_crl.h
+x509/req_app.o x509/req_app$(EXEXT): x509/req_app.c \
+  ../include/mbedtls/asn1.h \
+  ../include/mbedtls/bignum.h \
+  ../include/mbedtls/check_config.h \
+  ../include/mbedtls/config.h \
+  ../include/mbedtls/ecdsa.h \
+  ../include/mbedtls/ecp.h \
+  ../include/mbedtls/md.h \
+  ../include/mbedtls/pk.h \
+  ../include/mbedtls/platform.h \
+  ../include/mbedtls/platform_time.h \
+  ../include/mbedtls/rsa.h \
+  ../include/mbedtls/threading.h \
+  ../include/mbedtls/x509.h \
+  ../include/mbedtls/x509_csr.h
