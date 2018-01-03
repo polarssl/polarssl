@@ -1,0 +1,180 @@
+/* BEGIN_HEADER */
+#include "mbedtls/sm4.h"
+/* END_HEADER */
+
+/* BEGIN_DEPENDENCIES
+ * depends_on:MBEDTLS_SM4_C
+ * END_DEPENDENCIES
+ */
+
+/* BEGIN_CASE */
+void sm4_encrypt_ecb( char *hex_key_string, char *hex_src_string,
+                       char *hex_dst_string, int setkey_return )
+{
+    unsigned char key_str[100];
+    unsigned char src_str[100];
+    unsigned char dst_str[100];
+    unsigned char output[100];
+    mbedtls_sm4_context ctx;
+
+    size_t i, data_len, key_len;
+
+    memset(key_str, 0x00, 100);
+    memset(src_str, 0x00, 100);
+    memset(dst_str, 0x00, 100);
+    memset(output, 0x00, 100);
+
+    key_len = unhexify( key_str, hex_key_string );
+    data_len = unhexify( src_str, hex_src_string );
+
+    TEST_ASSERT( mbedtls_sm4_setkey_enc( &ctx, key_str,
+        8 * key_len ) == setkey_return );
+
+    for( i = 0; i < data_len; i += 16 )
+    {
+        TEST_ASSERT( mbedtls_sm4_crypt_ecb( &ctx, MBEDTLS_SM4_ENCRYPT,
+            src_str + i, output + i ) == 0 );
+    }
+
+    hexify( dst_str, output, data_len );
+
+    TEST_ASSERT( strcmp( (char *) dst_str, hex_dst_string ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE */
+void sm4_decrypt_ecb( char *hex_key_string, char *hex_src_string,
+                       char *hex_dst_string, int setkey_return )
+{
+    unsigned char key_str[100];
+    unsigned char src_str[100];
+    unsigned char dst_str[100];
+    unsigned char output[100];
+    mbedtls_sm4_context ctx;
+
+    size_t i, data_len, key_len;
+
+    memset(key_str, 0x00, 100);
+    memset(src_str, 0x00, 100);
+    memset(dst_str, 0x00, 100);
+    memset(output, 0x00, 100);
+
+    key_len = unhexify( key_str, hex_key_string );
+    data_len = unhexify( src_str, hex_src_string );
+
+    TEST_ASSERT( mbedtls_sm4_setkey_dec( &ctx, key_str,
+        8 * key_len ) == setkey_return );
+
+    for( i = 0; i < data_len; i += 16 )
+    {
+        TEST_ASSERT( mbedtls_sm4_crypt_ecb( &ctx, MBEDTLS_SM4_DECRYPT,
+            src_str + i, output + i ) == 0 );
+    }
+
+    hexify( dst_str, output, data_len );
+
+    TEST_ASSERT( strcmp( (char *) dst_str, hex_dst_string ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_CIPHER_MODE_CBC */
+void sm4_encrypt_cbc( char *hex_key_string, char *hex_iv_string,
+                       char *hex_src_string, char *hex_dst_string, int ret )
+{
+    unsigned char key_str[100];
+    unsigned char src_str[100];
+    unsigned char dst_str[100];
+    unsigned char iv_str[100];
+    unsigned char output[100];
+    mbedtls_sm4_context ctx;
+    size_t data_len;
+
+    memset(key_str, 0x00, 100);
+    memset(src_str, 0x00, 100);
+    memset(dst_str, 0x00, 100);
+    memset(iv_str, 0x00, 100);
+    memset(output, 0x00, 100);
+
+    unhexify( key_str, hex_key_string );
+    unhexify( iv_str, hex_iv_string );
+    data_len = unhexify( src_str, hex_src_string );
+    mbedtls_sm4_setkey_enc( &ctx, key_str, 128 );
+
+    TEST_ASSERT( mbedtls_sm4_crypt_cbc( &ctx, MBEDTLS_SM4_ENCRYPT,
+        data_len, iv_str, src_str, output ) == ret );
+    hexify( dst_str, output, data_len );
+
+    TEST_ASSERT( strcmp( (char *) dst_str, hex_dst_string ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_CIPHER_MODE_CBC */
+void sm4_decrypt_cbc( char *hex_key_string, char *hex_iv_string,
+                       char *hex_src_string, char *hex_dst_string, int ret )
+{
+    unsigned char key_str[100];
+    unsigned char src_str[100];
+    unsigned char dst_str[100];
+    unsigned char iv_str[100];
+    unsigned char output[100];
+    mbedtls_sm4_context ctx;
+    size_t data_len;
+
+    memset(key_str, 0x00, 100);
+    memset(src_str, 0x00, 100);
+    memset(dst_str, 0x00, 100);
+    memset(iv_str, 0x00, 100);
+    memset(output, 0x00, 100);
+
+    unhexify( key_str, hex_key_string );
+    unhexify( iv_str, hex_iv_string );
+    data_len = unhexify( src_str, hex_src_string );
+
+    mbedtls_sm4_setkey_dec( &ctx, key_str, 128 );
+    TEST_ASSERT( mbedtls_sm4_crypt_cbc( &ctx, MBEDTLS_SM4_DECRYPT,
+        data_len, iv_str, src_str, output ) == ret );
+    hexify( dst_str, output, data_len );
+
+    TEST_ASSERT( strcmp( (char *) dst_str, hex_dst_string ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_CIPHER_MODE_CTR */
+void sm4_crypt_ctr( char *hex_key_string, char *hex_iv_string,
+                       char *hex_src_string, char *hex_dst_string, int ret )
+{
+    unsigned char key_str[200];
+    unsigned char src_str[200];
+    unsigned char dst_str[200];
+    unsigned char iv_str[200];
+    unsigned char output[200];
+    unsigned char blk[16];
+    mbedtls_sm4_context ctx;
+    size_t n, data_len;
+
+    memset(key_str, 0x00, 200);
+    memset(src_str, 0x00, 200);
+    memset(dst_str, 0x00, 200);
+    memset(iv_str, 0x00, 200);
+    memset(output, 0x00, 200);
+
+    unhexify( key_str, hex_key_string );
+    unhexify( iv_str, hex_iv_string );
+    data_len = unhexify( src_str, hex_src_string );
+    mbedtls_sm4_setkey_enc( &ctx, key_str, 128 );
+
+    n = 0;
+    TEST_ASSERT( mbedtls_sm4_crypt_ctr( &ctx, data_len, &n,
+        iv_str, blk, src_str, output ) == ret );
+    hexify( dst_str, output, data_len );
+
+    TEST_ASSERT( strcmp( (char *) dst_str, hex_dst_string ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SELF_TEST */
+void sm4_selftest()
+{
+    TEST_ASSERT( mbedtls_sm4_self_test( 1 ) == 0 );
+}
+/* END_CASE */

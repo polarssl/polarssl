@@ -84,7 +84,8 @@ APPS =	test_suite_aes.ecb$(EXEXT)	test_suite_aes.cbc$(EXEXT)	\
 	test_suite_rsa$(EXEXT)		test_suite_shax$(EXEXT)		\
 	test_suite_ssl$(EXEXT)		test_suite_timing$(EXEXT)			\
 	test_suite_x509parse$(EXEXT)	test_suite_x509write$(EXEXT)	\
-	test_suite_xtea$(EXEXT)		test_suite_version$(EXEXT)
+	test_suite_xtea$(EXEXT)		test_suite_version$(EXEXT)	\
+	test_suite_sm4$(EXEXT)
 
 .SILENT:
 
@@ -434,6 +435,10 @@ test_suite_debug$(EXEXT): test_suite_debug.c $(DEP)
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) $<	$(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
 
 test_suite_version$(EXEXT): test_suite_version.c $(DEP)
+	echo "  CC    $<"
+	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) $<	$(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
+
+test_suite_sm4$(EXEXT): test_suite_sm4.c $(DEP)
 	echo "  CC    $<"
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) $<	$(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
 

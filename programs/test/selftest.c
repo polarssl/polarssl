@@ -53,6 +53,7 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/ecjpake.h"
 #include "mbedtls/timing.h"
+#include "mbedtls/sm4.h"
 
 #include <string.h>
 
@@ -369,6 +370,14 @@ int main( int argc, char *argv[] )
             suites_tested++;
         }
     }
+
+#if defined(MBEDTLS_SM4_C)
+    if( mbedtls_sm4_self_test( v ) != 0 )
+    {
+        suites_failed++;
+    }
+    suites_tested++;
+#endif
 
 #else
     (void) exclude_mode;

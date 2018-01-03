@@ -2577,6 +2577,16 @@
  */
 #define MBEDTLS_XTEA_C
 
+/**
+ * \def MBEDTLS_SM4_C
+ *
+ * Enable the SM4 block cipher.
+ *
+ * Module:  library/sm4.c
+ * Caller:
+ */
+#define MBEDTLS_SM4_C
+
 /* \} name SECTION: mbed TLS modules */
 
 /**

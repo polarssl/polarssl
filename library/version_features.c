@@ -666,6 +666,9 @@ static const char *features[] = {
 #if defined(MBEDTLS_XTEA_C)
     "MBEDTLS_XTEA_C",
 #endif /* MBEDTLS_XTEA_C */
+#if defined(MBEDTLS_SM4_C)
+    "MBEDTLS_SM4_C",
+#endif /* MBEDTLS_SM4_C */
 #endif /* MBEDTLS_VERSION_FEATURES */
     NULL
 };
