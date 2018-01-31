@@ -24,16 +24,22 @@ void ssl_dtls_replay( char *prevs, char *new, int ret )
                  MBEDTLS_SSL_PRESET_DEFAULT ) == 0 );
     TEST_ASSERT( mbedtls_ssl_setup( &ssl, &conf ) == 0 );
 
+    /* allocation for the ssl buffers is normally deferred until
+     * first use.  For the test, force an allocation of the in
+     * buffer.
+     */
+    TEST_ASSERT( mbedtls_ssl_confirm_content_len( &ssl, &ssl.in, 1024) == 0 );
+
     /* Read previous record numbers */
     for( ; end_prevs - prevs >= 13; prevs += 13 )
     {
         prevs[12] = '\0';
-        unhexify( ssl.in_ctr + 2, prevs );
+        unhexify( ssl.in.ctr + 2, prevs );
         mbedtls_ssl_dtls_replay_update( &ssl );
     }
 
     /* Check new number */
-    unhexify( ssl.in_ctr + 2, new );
+    unhexify( ssl.in.ctr + 2, new );
     TEST_ASSERT( mbedtls_ssl_dtls_replay_check( &ssl ) == ret );
 
     mbedtls_ssl_free( &ssl );
