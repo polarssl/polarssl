@@ -36,22 +36,129 @@
 extern "C" {
 #endif
 
-#define MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE         -0x001A  /**< The selected feature is not available. */
-#define MBEDTLS_ERR_THREADING_BAD_INPUT_DATA              -0x001C  /**< Bad input parameters to function. */
-#define MBEDTLS_ERR_THREADING_MUTEX_ERROR                 -0x001E  /**< Locking / unlocking / free failed with error code. */
+#if defined(MBEDTLS_THREADING_C)
 
-#if defined(MBEDTLS_THREADING_PTHREAD)
+#define MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE   -0x001A
+                            /**< The selected feature is not available. */
+#define MBEDTLS_ERR_THREADING_BAD_INPUT_DATA        -0x001C
+                            /**< Bad input parameters to function. */
+#define MBEDTLS_ERR_THREADING_MUTEX_ERROR           -0x001E
+                            /**< Locking / unlocking / free failed with
+                             * error code. */
+
+
+#if defined(MBEDTLS_THREADING_ALT)
+
+/* You should define the mbedtls_threading_mutex_t type in your header */
+#include "threading_alt.h"
+
+#elif defined(MBEDTLS_THREADING_PTHREAD)
+/* pthreads implementation of the threading primitives */
+
 #include <pthread.h>
-typedef struct
+typedef struct _mbedtls_threading_mutex_t
 {
     pthread_mutex_t mutex;
     char is_valid;
 } mbedtls_threading_mutex_t;
-#endif
 
-#if defined(MBEDTLS_THREADING_ALT)
-/* You should define the mbedtls_threading_mutex_t type in your header */
-#include "threading_alt.h"
+#else
+
+/* For no given implementation, define as an opaque pointer */
+typedef struct _mbedtls_threading_mutex_t
+{
+    void* mutex;
+} mbedtls_threading_mutex_t;
+
+#endif /* !MBEDTLS_THREADING_ALT && !MBEDTLS_THREADING_PTHREAD */
+
+#if !defined(MBEDTLS_THREADING_ALT)
+
+/**
+ * \brief          Initialize mutex
+ *
+ * \param mutex    Pointer to mutex to initialize
+ *
+ * \note           The function initializes the passed mutex.
+ *
+ * \note           The implementation may be provided by the user application,
+ *                 if MBEDTLS_THREADING_ALT or MBEDTLS_MUTEX_XXX_MACRO symbols
+ *                 are defined.
+ */
+void mbedtls_mutex_init( mbedtls_threading_mutex_t *mutex );
+
+/**
+ * \brief          Free mutex
+ *
+ * \param mutex    Pointer to mutex to deallocate
+ *
+ * \note           The function deallocates the passed mutex.
+ *
+ * \note           The implementation may be provided by the user application,
+ *                 if MBEDTLS_THREADING_ALT or MBEDTLS_MUTEX_XXX_MACRO symbols
+ *                 are defined.
+ */
+void mbedtls_mutex_free( mbedtls_threading_mutex_t *mutex );
+
+/**
+ * \brief          Lock mutex
+ *
+ * \param mutex    Pointer to mutex to lock
+ *
+ * \note           The function locks the passed mutex.
+ *
+ * \note           The implementation may be provided by the user application,
+ *                 if MBEDTLS_THREADING_ALT or MBEDTLS_MUTEX_XXX_MACRO symbols
+ *                 are defined.
+ */
+int mbedtls_mutex_lock( mbedtls_threading_mutex_t *mutex );
+
+/**
+ * \brief          Unlock mutex
+ *
+ * \param mutex    Pointer to mutex to unlock
+ *
+ * \note           The function unlocks the passed mutex.
+ *
+ * \note           The implementation may be provided by the user application,
+ *                 if MBEDTLS_THREADING_ALT or MBEDTLS_MUTEX_XXX_MACRO symbols
+ *                 are defined.
+ */
+int mbedtls_mutex_unlock( mbedtls_threading_mutex_t *mutex );
+
+#else
+
+/**
+ * \brief          Pointer to initialize mutex function
+ *
+ * \param mutex    Pointer to mutex to initialize
+ *
+ */
+typedef void (mbedtls_mutex_init_t)( mbedtls_threading_mutex_t* mutex );
+
+/**
+ * \brief          Pointer to free mutex function
+ *
+ * \param mutex    Pointer to mutex to deallocate
+ *
+ */
+typedef void (mbedtls_mutex_free_t)( mbedtls_threading_mutex_t* );
+
+/**
+ * \brief          Pointer to lock mutex function
+ *
+ * \param mutex    Pointer to mutex to lock
+ *
+ */
+typedef int (mbedtls_mutex_lock_t)( mbedtls_threading_mutex_t* );
+
+/**
+ * \brief          Pointer to unlock mutex function
+ *
+ * \param mutex    Pointer to mutex to unlock
+ *
+ */
+typedef int (mbedtls_mutex_unlock_t)( mbedtls_threading_mutex_t* );
 
 /**
  * \brief           Set your alternate threading implementation function
@@ -71,20 +178,18 @@ typedef struct
  * \param mutex_lock    the lock function implementation
  * \param mutex_unlock  the unlock function implementation
  */
-void mbedtls_threading_set_alt( void (*mutex_init)( mbedtls_threading_mutex_t * ),
-                       void (*mutex_free)( mbedtls_threading_mutex_t * ),
-                       int (*mutex_lock)( mbedtls_threading_mutex_t * ),
-                       int (*mutex_unlock)( mbedtls_threading_mutex_t * ) );
+void mbedtls_threading_set_alt( mbedtls_mutex_init_t* mutex_init,
+                                mbedtls_mutex_free_t* mutex_free,
+                                mbedtls_mutex_lock_t* mutex_lock,
+                                mbedtls_mutex_unlock_t* mutex_unlock );
 
 /**
  * \brief               Free global mutexes.
  */
 void mbedtls_threading_free_alt( void );
-#endif /* MBEDTLS_THREADING_ALT */
 
-#if defined(MBEDTLS_THREADING_C)
 /*
- * The function pointers for mutex_init, mutex_free, mutex_ and mutex_unlock
+ * The function pointers for mutex_init, mutex_free, mutex_lock and mutex_unlock
  *
  * All these functions are expected to work or the result will be undefined.
  */
@@ -93,11 +198,14 @@ extern void (*mbedtls_mutex_free)( mbedtls_threading_mutex_t *mutex );
 extern int (*mbedtls_mutex_lock)( mbedtls_threading_mutex_t *mutex );
 extern int (*mbedtls_mutex_unlock)( mbedtls_threading_mutex_t *mutex );
 
+#endif /* MBEDTLS_THREADING_ALT */
+
 /*
  * Global mutexes
  */
 extern mbedtls_threading_mutex_t mbedtls_threading_readdir_mutex;
 extern mbedtls_threading_mutex_t mbedtls_threading_gmtime_mutex;
+
 #endif /* MBEDTLS_THREADING_C */
 
 #ifdef __cplusplus

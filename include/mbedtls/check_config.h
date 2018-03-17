@@ -600,24 +600,17 @@
 #error "MBEDTLS_SSL_SERVER_NAME_INDICATION defined, but not all prerequisites"
 #endif
 
-#if defined(MBEDTLS_THREADING_PTHREAD)
-#if !defined(MBEDTLS_THREADING_C) || defined(MBEDTLS_THREADING_IMPL)
+#if defined(MBEDTLS_THREADING_PTHREAD) && !defined(MBEDTLS_THREADING_C)
 #error "MBEDTLS_THREADING_PTHREAD defined, but not all prerequisites"
 #endif
-#define MBEDTLS_THREADING_IMPL
-#endif
 
-#if defined(MBEDTLS_THREADING_ALT)
-#if !defined(MBEDTLS_THREADING_C) || defined(MBEDTLS_THREADING_IMPL)
+#if defined(MBEDTLS_THREADING_ALT) && !defined(MBEDTLS_THREADING_C)
 #error "MBEDTLS_THREADING_ALT defined, but not all prerequisites"
 #endif
-#define MBEDTLS_THREADING_IMPL
-#endif
 
-#if defined(MBEDTLS_THREADING_C) && !defined(MBEDTLS_THREADING_IMPL)
-#error "MBEDTLS_THREADING_C defined, single threading implementation required"
+#if defined(MBEDTLS_THREADING_ALT) && defined(MBEDTLS_THREADING_PTHREAD)
+#error "MBEDTLS_THREADING_ALT and MBEDTLS_THREADING_PTHREAD cannot be defined simultaneously"
 #endif
-#undef MBEDTLS_THREADING_IMPL
 
 #if defined(MBEDTLS_VERSION_FEATURES) && !defined(MBEDTLS_VERSION_C)
 #error "MBEDTLS_VERSION_FEATURES defined, but not all prerequisites"

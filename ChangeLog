@@ -170,6 +170,11 @@ New deprecations
      from hex strings. Superseded by mbedtls_ssl_conf_dh_param_bin()
      accepting DHM parameters in binary form, matching the new constants.
 
+API Changes
+   * Extended threading API to allow static definition of threading primitives
+     at link time, to avoid calls to mbedtls_threading_set_alt() to initialise
+     threading.
+
 Bugfix
    * Fix ssl_parse_record_header() to silently discard invalid DTLS records
      as recommended in RFC 6347 Section 4.1.2.7.

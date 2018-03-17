@@ -2336,7 +2336,7 @@
  * Enable the platform abstraction layer that allows you to re-assign
  * functions like calloc(), free(), snprintf(), printf(), fprintf(), exit().
  *
- * Enabling MBEDTLS_PLATFORM_C enables to use of MBEDTLS_PLATFORM_XXX_ALT
+ * Defining MBEDTLS_PLATFORM_C enables use of MBEDTLS_PLATFORM_XXX_ALT
  * or MBEDTLS_PLATFORM_XXX_MACRO directives, allowing the functions mentioned
  * above to be specified at runtime or compile time respectively.
  *
@@ -2515,22 +2515,26 @@
 /**
  * \def MBEDTLS_THREADING_C
  *
- * Enable the threading abstraction layer.
+ * Enable the threading abstraction layer, to use mbed TLS thread-safe
+ * features.
+ *
  * By default mbed TLS assumes it is used in a non-threaded environment or that
  * contexts are not shared between threads. If you do intend to use contexts
  * between threads, you will need to enable this layer to prevent race
- * conditions. See also our Knowledge Base article about threading:
+ * conditions.
+ *
+ * See also our Knowledge Base article about threading:
  * https://tls.mbed.org/kb/development/thread-safety-and-multi-threading
  *
  * Module:  library/threading.c
  *
- * This allows different threading implementations (self-implemented or
- * provided).
+ * Enabling MBEDTLS_THREADING_C enables use of MBEDTLS_THREADING_PTHREAD,
+ * MBEDTLS_THREADING_ALT and MBEDTLS_MUTEX_XXX_MACRO directives, allowing the
+ * mutex functions to be specified at runtime or compile time.
  *
- * You will have to enable either MBEDTLS_THREADING_ALT or
- * MBEDTLS_THREADING_PTHREAD.
+ * You will have to enable either MBEDTLS_THREADING_ALT/MBEDTLS_MUTEX_XXX_MACRO
+ * or MBEDTLS_THREADING_PTHREAD.
  *
- * Enable this layer to allow use of mutexes within mbed TLS
  */
 //#define MBEDTLS_THREADING_C
 
@@ -2737,6 +2741,8 @@
 //#define MBEDTLS_PLATFORM_STD_SNPRINTF    snprintf /**< Default snprintf to use, can be undefined */
 //#define MBEDTLS_PLATFORM_STD_EXIT_SUCCESS       0 /**< Default exit value to use, can be undefined */
 //#define MBEDTLS_PLATFORM_STD_EXIT_FAILURE       1 /**< Default exit value to use, can be undefined */
+
+/* NV Seed platform operations */
 //#define MBEDTLS_PLATFORM_STD_NV_SEED_READ   mbedtls_platform_std_nv_seed_read /**< Default nv_seed_read function to use, can be undefined */
 //#define MBEDTLS_PLATFORM_STD_NV_SEED_WRITE  mbedtls_platform_std_nv_seed_write /**< Default nv_seed_write function to use, can be undefined */
 //#define MBEDTLS_PLATFORM_STD_NV_SEED_FILE  "seedfile" /**< Seed file to read/write with default implementation */
@@ -2754,6 +2760,19 @@
 //#define MBEDTLS_PLATFORM_SNPRINTF_MACRO    snprintf /**< Default snprintf macro to use, can be undefined */
 //#define MBEDTLS_PLATFORM_NV_SEED_READ_MACRO   mbedtls_platform_std_nv_seed_read /**< Default nv_seed_read function to use, can be undefined */
 //#define MBEDTLS_PLATFORM_NV_SEED_WRITE_MACRO  mbedtls_platform_std_nv_seed_write /**< Default nv_seed_write function to use, can be undefined */
+
+/* Threading/mutex operations */
+/* To define the threading operations with these macros, MBEDTLS_THREADING_C
+ * and MBEDTLS_THREADING_ALT must be defined. */
+//#define MBEDTLS_MUTEX_INIT_MACRO        mbedtls_mutex_init
+//#define MBEDTLS_MUTEX_FREE_MACRO        mbedtls_mutex_free
+//#define MBEDTLS_MUTEX_LOCK_MACRO        mbedtls_mutex_lock
+//#define MBEDTLS_MUTEX_UNLOCK_MACRO      mbedtls_mutex_unlock
+
+//#define MBEDTLS_MUTEX_INITIALIZER       { NULL }
+                                /**< Default static initialisation value for
+                                 * each declared mbedtls_threading_mutex_t
+                                 * structure used by the library. */
 
 /* SSL Cache options */
 //#define MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT       86400 /**< 1 day  */
