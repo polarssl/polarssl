@@ -74,6 +74,10 @@ extern const char   mbedtls_test_cli_crt_ec[];
 extern const size_t mbedtls_test_cli_crt_ec_len;
 extern const char   mbedtls_test_cli_key_ec[];
 extern const size_t mbedtls_test_cli_key_ec_len;
+#if defined(MBEDTLS_SHA256_C) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT) && defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+extern const char   mbedtls_test_srv_directoryname_ec_crt[];
+extern const size_t mbedtls_test_srv_directoryname_ec_crt_len;
+#endif
 #endif
 
 #if defined(MBEDTLS_RSA_C)

@@ -46,6 +46,31 @@ extern "C" {
  * \name Structures and functions for parsing and writing X.509 certificates
  * \{
  */
+ 
+#if defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
+typedef enum
+{
+    /* Don't use the value zero in this enum, because we use zero to denote an unset struct. */
+    MBEDTLS_X509_GENERALNAME_DNSNAME = 1,
+    MBEDTLS_X509_GENERALNAME_DIRECTORYNAME
+} mbedtls_x509_general_name_choice;
+
+typedef struct mbedtls_x509_general_name
+{
+    mbedtls_x509_general_name_choice name_type;
+    union
+    {
+        mbedtls_x509_buf dns_name;
+        mbedtls_x509_name directory_name;
+    };
+} mbedtls_x509_general_name;
+
+typedef struct mbedtls_x509_general_names
+{
+    mbedtls_x509_general_name general_name;
+    struct mbedtls_x509_general_names *next;
+} mbedtls_x509_general_names;
+#endif
 
 /**
  * Container for an X.509 certificate. The certificate may be chained.
@@ -73,7 +98,11 @@ typedef struct mbedtls_x509_crt
     mbedtls_x509_buf issuer_id;         /**< Optional X.509 v2/v3 issuer unique identifier. */
     mbedtls_x509_buf subject_id;        /**< Optional X.509 v2/v3 subject unique identifier. */
     mbedtls_x509_buf v3_ext;            /**< Optional X.509 v3 extensions.  */
+#if defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
+    mbedtls_x509_general_names subject_alt_names; /**< Optional list of Subject Alternative Names (Only dNSName and directoryName supported). */
+#else
     mbedtls_x509_sequence subject_alt_names;    /**< Optional list of Subject Alternative Names (Only dNSName supported). */
+#endif
 
     int ext_types;              /**< Bit string containing detected and parsed extensions */
     int ca_istrue;              /**< Optional Basic Constraint extension value: 1 if this certificate belongs to a CA, 0 otherwise. */

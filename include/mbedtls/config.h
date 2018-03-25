@@ -1531,6 +1531,21 @@
 #define MBEDTLS_X509_RSASSA_PSS_SUPPORT
 
 /**
+ * \def MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
+ *
+ * Enable parsing of all supported subtypes of the Subject Alternative Name
+ * extension. When enabled, the subject_alt_names field of mbedtls_x509_crt
+ * is defined as an mbedtls_x509_subject_alt_name_sequence, each element of
+ * which can describe a different subtype of the GeneralName choice as defined
+ * by the standard.
+ *
+ * Comment this macro to only support dNSName subtypes, and to define the
+ * subject_alt_names field as an mbedtls_x509_sequence. Any other subtypes will
+ * be ignored. This was the behavior in earlier versions.
+ */
+#define MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
+
+/**
  * \def MBEDTLS_ZLIB_SUPPORT
  *
  * If set, the SSL/TLS module uses ZLIB to support compression and

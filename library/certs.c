@@ -113,6 +113,23 @@ const char mbedtls_test_cli_key_ec[] =
 "wNUYFHDlf5/VS0UY5bBs1Vz4lo+HcKPkxw==\r\n"
 "-----END EC PRIVATE KEY-----\r\n";
 const size_t mbedtls_test_cli_key_ec_len = sizeof( mbedtls_test_cli_key_ec );
+
+#if defined(MBEDTLS_SHA256_C) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT) && defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+const char mbedtls_test_srv_directoryname_ec_crt[] =
+"-----BEGIN CERTIFICATE-----\r\n"
+"MIIBVzCB/qADAgECAgkAkWvgYjFeWV0wCgYIKoZIzj0EAwIwEzERMA8GA1UEAwwI\r\n"
+"VGVzdENlcnQwHhcNMTYxMjEzMjMwNDM3WhcNMzAwODIyMjMwNDM3WjATMREwDwYD\r\n"
+"VQQDDAhUZXN0Q2VydDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABOkrKfbStoGN\r\n"
+"oOUTet2ryyRul++FE++6vpEup83bHywiOO1a4JtDgzNJcjj8/uAKsECYQrI1T4Y/\r\n"
+"rpnYu8ff9VGjOzA5MDcGA1UdEQQwMC6kLDAqMRYwFAYDVQQLDA1OYW1lIEFzc2ln\r\n"
+"bmVyMRAwDgYDVQQDDAdNeSBSb2xlMAoGCCqGSM49BAMCA0gAMEUCIGdd/GGuoOXJ\r\n"
+"8Ipl3hy69gb35MmkwEQKuYrud+Qs5XfFAiEAsmEOP4KFZadL23XJfMfGuPn2MDLr\r\n"
+"G9lDDpiediVxGO0=\r\n"
+"-----END CERTIFICATE-----\r\n";
+
+const size_t mbedtls_test_srv_directoryname_ec_crt_len = sizeof( mbedtls_test_srv_directoryname_ec_crt );
+#endif
+
 #endif /* MBEDTLS_ECDSA_C */
 
 #if defined(MBEDTLS_RSA_C)
