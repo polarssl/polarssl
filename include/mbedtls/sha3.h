@@ -34,7 +34,7 @@
 #if !defined(MBEDTLS_SHA3_ALT)
 // Regular implementation
 
-#include "keccak_sponge.h"
+#include "keccak.h"
 
 #ifdef __cplusplus
 extern "C" {

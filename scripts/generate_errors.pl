@@ -31,7 +31,7 @@ my $error_format_file = $data_dir.'/error.fmt';
 
 my @low_level_modules = qw( AES ARC4 ASN1 BASE64 BIGNUM BLOWFISH
                             CAMELLIA CCM CMAC CTR_DRBG DES
-                            ENTROPY GCM HMAC_DRBG KECCAKF KECCAK_SPONGE
+                            ENTROPY GCM HMAC_DRBG KECCAK
                             MD2 MD4 MD5 NET OID PADLOCK PBKDF2 RIPEMD160
                             SHA1 SHA256 SHA3 SHAKE SHA512 THREADING XTEA );
 my @high_level_modules = qw( CIPHER DHM ECP MD
@@ -80,7 +80,6 @@ while (my $line = <GREP>)
     $module_name = "BIGNUM" if ($module_name eq "MPI");
     $module_name = "CTR_DRBG" if ($module_name eq "CTR");
     $module_name = "HMAC_DRBG" if ($module_name eq "HMAC");
-    $module_name = "KECCAK_SPONGE" if ($module_name eq "KECCAK");
 
     my $define_name = $module_name;
     $define_name = "X509_USE,X509_CREATE" if ($define_name eq "X509");

@@ -105,12 +105,8 @@
 #include "mbedtls/hmac_drbg.h"
 #endif
 
-#if defined(MBEDTLS_KECCAK_SPONGE_C)
-#include "mbedtls/keccak_sponge.h"
-#endif
-
-#if defined(MBEDTLS_KECCAKF_C)
-#include "mbedtls/keccakf.h"
+#if defined(MBEDTLS_KECCAK_C)
+#include "mbedtls/keccak.h"
 #endif
 
 #if defined(MBEDTLS_MD_C)
@@ -723,19 +719,14 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
         mbedtls_snprintf( buf, buflen, "HMAC_DRBG - The entropy source failed" );
 #endif /* MBEDTLS_HMAC_DRBG_C */
 
-#if defined(MBEDTLS_KECCAK_SPONGE_C)
-    if( use_ret == -(MBEDTLS_ERR_KECCAK_SPONGE_BAD_INPUT_DATA) )
-        mbedtls_snprintf( buf, buflen, "KECCAK_SPONGE - Invalid input parameter(s)" );
-    if( use_ret == -(MBEDTLS_ERR_KECCAK_SPONGE_NOT_SETUP) )
-        mbedtls_snprintf( buf, buflen, "KECCAK_SPONGE - mbedtls_keccak_sponge_starts has not been called" );
-    if( use_ret == -(MBEDTLS_ERR_KECCAK_SPONGE_BAD_STATE) )
-        mbedtls_snprintf( buf, buflen, "KECCAK_SPONGE - Requested operation cannot be performed with the current context state" );
-#endif /* MBEDTLS_KECCAK_SPONGE_C */
-
-#if defined(MBEDTLS_KECCAKF_C)
-    if( use_ret == -(MBEDTLS_ERR_KECCAKF_BAD_INPUT_DATA) )
-        mbedtls_snprintf( buf, buflen, "KECCAKF - Invalid input parameter(s)" );
-#endif /* MBEDTLS_KECCAKF_C */
+#if defined(MBEDTLS_KECCAK_C)
+    if( use_ret == -(MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "KECCAK - Invalid input parameter(s)" );
+    if( use_ret == -(MBEDTLS_ERR_KECCAK_NOT_SETUP) )
+        mbedtls_snprintf( buf, buflen, "KECCAK - mbedtls_keccak_sponge_starts has not been called" );
+    if( use_ret == -(MBEDTLS_ERR_KECCAK_BAD_STATE) )
+        mbedtls_snprintf( buf, buflen, "KECCAK - Requested operation cannot be performed with the current context state" );
+#endif /* MBEDTLS_KECCAK_C */
 
 #if defined(MBEDTLS_MD2_C)
     if( use_ret == -(MBEDTLS_ERR_MD2_HW_ACCEL_FAILED) )

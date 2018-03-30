@@ -114,9 +114,9 @@ static const char *features[] = {
 #if defined(MBEDTLS_GCM_ALT)
     "MBEDTLS_GCM_ALT",
 #endif /* MBEDTLS_GCM_ALT */
-#if defined(MBEDTLS_KECCAKF_ALT)
-    "MBEDTLS_KECCAKF_ALT",
-#endif /* MBEDTLS_KECCAKF_ALT */
+#if defined(MBEDTLS_KECCAK_F_ALT)
+    "MBEDTLS_KECCAK_F_ALT",
+#endif /* MBEDTLS_KECCAK_F_ALT */
 #if defined(MBEDTLS_KECCAK_SPONGE_ALT)
     "MBEDTLS_KECCAK_SPONGE_ALT",
 #endif /* MBEDTLS_KECCAK_SPONGE_ALT */
@@ -591,12 +591,9 @@ static const char *features[] = {
 #if defined(MBEDTLS_HMAC_DRBG_C)
     "MBEDTLS_HMAC_DRBG_C",
 #endif /* MBEDTLS_HMAC_DRBG_C */
-#if defined(MBEDTLS_KECCAKF_C)
-    "MBEDTLS_KECCAKF_C",
-#endif /* MBEDTLS_KECCAKF_C */
-#if defined(MBEDTLS_KECCAK_SPONGE_C)
-    "MBEDTLS_KECCAK_SPONGE_C",
-#endif /* MBEDTLS_KECCAK_SPONGE_C */
+#if defined(MBEDTLS_KECCAK_C)
+    "MBEDTLS_KECCAK_C",
+#endif /* MBEDTLS_KECCAK_C */
 #if defined(MBEDTLS_MD_C)
     "MBEDTLS_MD_C",
 #endif /* MBEDTLS_MD_C */

@@ -50,11 +50,10 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		ccm.o		cipher.o	cipher_wrap.o	\
 		cmac.o		ctr_drbg.o	des.o		\
 		dhm.o		ecdh.o		ecdsa.o		\
-		ecjpake.o	ecp.o				\
-		ecp_curves.o	entropy.o	entropy_poll.o	\
-		error.o		gcm.o		havege.o	\
-		hmac_drbg.o	keccak_sponge.o	keccakf.o	\
-		md.o		md2.o				\
+		ecjpake.o	ecp.o		ecp_curves.o	\
+		entropy.o	entropy_poll.o	error.o		\
+		gcm.o		havege.o	hmac_drbg.o	\
+		keccak.o	md.o		md2.o		\
 		md4.o		md5.o		md_wrap.o	\
 		memory_buffer_alloc.o		oid.o		\
 		padlock.o	pem.o		pk.o		\
