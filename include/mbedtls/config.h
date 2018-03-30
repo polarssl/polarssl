@@ -2109,6 +2109,34 @@
 #define MBEDTLS_HMAC_DRBG_C
 
 /**
+ * \def MBEDTLS_KECCAKF_C
+ *
+ * Enable the SHA-3 cryptographic hash algorithms.
+ *
+ * Module:  library/keccakf.c
+ * Caller:  library/keccak_sponge.c
+ *
+ * This module adds support for the Keccak-f[1600] permutation.
+ * This module is required by for the Keccak Sponge module.
+ */
+#define MBEDTLS_KECCAKF_C
+
+/**
+ * \def MBEDTLS_KECCAKF_C
+ *
+ * Enable the Sponge construction based on Keccak-f[1600].
+ *
+ * Module:  library/keccak_sponge.c
+ * Caller:  library/sha3.c
+ *
+ * Requires: MBEDTKS_KECCAKF_C
+ *
+ * This module adds support for the sponge construction based on Keccak-f[1600].
+ * This module is required by for the SHA-3 module.
+ */
+#define MBEDTLS_KECCAK_SPONGE_C
+
+/**
  * \def MBEDTLS_MD_C
  *
  * Enable the generic message digest layer.
@@ -2502,34 +2530,6 @@
  * This module adds support for SHAKE128 and SHAKE256.
  */
 #define MBEDTLS_SHAKE_C
-
-/**
- * \def MBEDTLS_KECCAKF_C
- *
- * Enable the SHA-3 cryptographic hash algorithms.
- *
- * Module:  library/keccakf.c
- * Caller:  library/keccak_sponge.c
- *
- * This module adds support for the Keccak-f[1600] permutation.
- * This module is required by for the Keccak Sponge module.
- */
-#define MBEDTLS_KECCAKF_C
-
-/**
- * \def MBEDTLS_KECCAKF_C
- *
- * Enable the Sponge construction based on Keccak-f[1600].
- *
- * Module:  library/keccak_sponge.c
- * Caller:  library/sha3.c
- *
- * Requires: MBEDTKS_KECCAKF_C
- *
- * This module adds support for the sponge construction based on Keccak-f[1600].
- * This module is required by for the SHA-3 module.
- */
-#define MBEDTLS_KECCAK_SPONGE_C
 
 /**
  * \def MBEDTLS_SSL_CACHE_C
