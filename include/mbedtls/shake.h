@@ -40,9 +40,7 @@
 extern "C" {
 #endif
 
-#define MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA   -0x005B /**< Invalid input parameter(s). */
-#define MBEDTLS_ERR_SHAKE_BAD_NOT_STARTED  -0x005D /**< mbedtls_keccak_sponge_starts has not been called. */
-#define MBEDTLS_ERR_SHAKE_BAD_STATE        -0x005F /**< Requested operation cannot be performed with the current context state. */
+#define MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA   -0x0057 /**< Invalid input parameter(s). */
 
 typedef enum
 {

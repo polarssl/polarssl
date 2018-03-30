@@ -631,7 +631,7 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
     }
     else if ( ctx->rate == 0U )
     {
-        return( MBEDTLS_ERR_KECCAK_NOT_SETUP );
+        return( MBEDTLS_ERR_KECCAK_BAD_STATE );
     }
     else if ( ctx->state > SPONGE_STATE_ABSORBING )
     {
@@ -712,7 +712,7 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
     }
     else if ( ctx->rate == 0U )
     {
-        return( MBEDTLS_ERR_KECCAK_NOT_SETUP );
+        return( MBEDTLS_ERR_KECCAK_BAD_STATE );
     }
     else if ( ctx->state > SPONGE_STATE_SQUEEZING )
     {

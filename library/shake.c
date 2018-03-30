@@ -53,12 +53,6 @@ static int mbedtls_convert_sponge_result( int sponge_ret )
         case 0:
             return( 0 );
 
-        case MBEDTLS_ERR_KECCAK_BAD_STATE:
-            return( MBEDTLS_ERR_SHAKE_BAD_STATE );
-
-        case MBEDTLS_ERR_KECCAK_NOT_SETUP:
-            return( MBEDTLS_ERR_SHAKE_BAD_NOT_STARTED );
-
         default:
         case MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA:
             return( MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA );

@@ -32,8 +32,7 @@
 #endif
 
 #define MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA -0x0054 /**< Invalid input parameter(s). */
-#define MBEDTLS_ERR_KECCAK_NOT_SETUP      -0x0056 /**< mbedtls_keccak_sponge_starts has not been called. */
-#define MBEDTLS_ERR_KECCAK_BAD_STATE      -0x0058 /**< Requested operation cannot be performed with the current context state. */
+#define MBEDTLS_ERR_KECCAK_BAD_STATE      -0x0056 /**< Requested operation cannot be performed with the current context state. */
 
 #define MBEDTLS_KECCAK_F_STATE_SIZE_BITS  ( 1600U )
 #define MBEDTLS_KECCAK_F_STATE_SIZE_BYTES ( 1600U / 8U )
@@ -177,7 +176,7 @@ void mbedtls_keccak_sponge_clone( mbedtls_keccak_sponge_context *dst,
  *                      mbedtls_keccak_sponge_init and before calling the
  *                      absorb or squeeze functions. If this function has not
  *                      been called then the absorb/squeeze functions will
- *                      return MBEDTLS_ERR_KECCAK_NOT_SETUP.
+ *                      return MBEDTLS_ERR_KECCAK_BAD_STATE.
  *
  * \param ctx           The sponge context to setup.
  * \param capacity      The sponge's capacity parameter. This determines the
@@ -219,7 +218,7 @@ int mbedtls_keccak_sponge_starts( mbedtls_keccak_sponge_context *ctx,
  *                      sponge can no longer accept data for absorption. This
  *                      occurs when mbedtls_keccak_sponge_squeeze has been previously
  *                      called.
- *                      MBEDTLS_ERR_KECCAK_NOT_SETUP is returned if
+ *                      MBEDTLS_ERR_KECCAK_BAD_STATE is returned if
  *                      mbedtls_keccak_sponge_starts has not yet been called to
  *                      configure the context.
  *                      Otherwise, 0 is returned to indicate success.
@@ -243,7 +242,7 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
  *
  * \return              MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA is returned if
  *                      ctx or data is NULL.
- *                      MBEDTLS_ERR_KECCAK_NOT_SETUP is returned if
+ *                      MBEDTLS_ERR_KECCAK_BAD_STATE is returned if
  *                      mbedtls_keccak_sponge_starts has not yet been called to
  *                      configure the context.
  *                      Otherwise, 0 is returned to indicate success.

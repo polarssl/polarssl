@@ -63,7 +63,7 @@
  * CTR_DBRG  4  0x0034-0x003A
  * ENTROPY   3  0x003C-0x0040   0x003D-0x003F
  * NET      11  0x0042-0x0052   0x0043-0x0045
- * KECCAK    3  0x0054-0x0058
+ * KECCAK    3  0x0054-0x0056
  * ASN1      7  0x0060-0x006C
  * CMAC      1  0x007A-0x007A
  * PBKDF2    1  0x007C-0x007C
@@ -77,8 +77,8 @@
  * SHA1      1                  0x0035-0x0035
  * SHA256    1                  0x0037-0x0037
  * SHA512    1                  0x0039-0x0039
- * SHA-3     3                  0x0055-0x0059
- * SHAKE     3                  0x005B-0x005F
+ * SHA-3     1                  0x0053-0x0053
+ * SHAKE     1                  0x0057-0x0057
  *
  * High-level module nr (3 bits - 0x0...-0x7...)
  * Name      ID  Nr of Errors
