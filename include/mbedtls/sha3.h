@@ -4,8 +4,8 @@
  * \brief SHA-3 cryptographic hash functions (SHA3-224, SHA3-256, SHA3-384, SHA3-512)
  *
  * \author Daniel King <damaki.gh@gmail.com>
- *
- *  Copyright (C) 2006-2016, ARM Limited, All Rights Reserved
+ */
+/*  Copyright (C) 2006-2018, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
