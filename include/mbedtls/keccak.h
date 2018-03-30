@@ -35,8 +35,8 @@
 #define MBEDTLS_ERR_KECCAK_NOT_SETUP      -0x0056 /**< mbedtls_keccak_sponge_starts has not been called. */
 #define MBEDTLS_ERR_KECCAK_BAD_STATE      -0x0058 /**< Requested operation cannot be performed with the current context state. */
 
-#define MBEDTLS_KECCAKF_STATE_SIZE_BITS  ( 1600U )
-#define MBEDTLS_KECCAKF_STATE_SIZE_BYTES ( 1600U / 8U )
+#define MBEDTLS_KECCAK_F_STATE_SIZE_BITS  ( 1600U )
+#define MBEDTLS_KECCAK_F_STATE_SIZE_BYTES ( 1600U / 8U )
 
 #include <stdint.h>
 #include <stddef.h>
@@ -61,17 +61,17 @@ mbedtls_keccak_f_context;
 /**
  * \brief               Initialize a Keccak-f[1600] context.
  *                      This should always be called first.
- *                      Prepares the context for other mbedtls_keccakf_* functions.
+ *                      Prepares the context for other mbedtls_keccak_f_* functions.
  *
  *                      By default the Keccak state is zeroed.
  */
-void mbedtls_keccakf_init( mbedtls_keccakf_context *ctx );
+void mbedtls_keccak_f_init( mbedtls_keccak_f_context *ctx );
 
 /**
  * \brief               Free and clear the internal structures of ctx.
- *                      Can be called at any time after mbedtls_keccakf_init().
+ *                      Can be called at any time after mbedtls_keccak_f_init().
  */
-void mbedtls_keccakf_free( mbedtls_keccakf_context *ctx );
+void mbedtls_keccak_f_free( mbedtls_keccak_f_context *ctx );
 
 /**
  * \brief               Clone (the state of) a Keccak-f[1600] context
@@ -79,8 +79,8 @@ void mbedtls_keccakf_free( mbedtls_keccakf_context *ctx );
  * \param dst           The destination context
  * \param src           The context to be cloned
  */
-void mbedtls_keccakf_clone( mbedtls_keccakf_context *dst,
-                            const mbedtls_keccakf_context *src );
+void mbedtls_keccak_f_clone( mbedtls_keccak_f_context *dst,
+                             const mbedtls_keccak_f_context *src );
 
 /**
  * \brief               Apply the Keccak permutation to the ctx.
@@ -90,7 +90,7 @@ void mbedtls_keccakf_clone( mbedtls_keccakf_context *dst,
  * \returns             MBEDTLS_ERR_KECCAKF_BAD_INPUT_DATA if the ctx is NULL.
  *                      Otherwise 0 is returned for success.
  */
-int mbedtls_keccakf_permute( mbedtls_keccakf_context *ctx );
+int mbedtls_keccak_f_permute( mbedtls_keccak_f_context *ctx );
 
 /**
  * \brief               XOR binary bits into the Keccak state.
@@ -106,9 +106,9 @@ int mbedtls_keccakf_permute( mbedtls_keccakf_context *ctx );
  *                      or \p data are NULL, or if size_bits is larger than 1600.
  *                      Otherwise, 0 is returned for success.
  */
-int mbedtls_keccakf_xor_binary( mbedtls_keccakf_context *ctx,
-                                const unsigned char *data,
-                                size_t size_bits );
+int mbedtls_keccak_f_xor_binary( mbedtls_keccak_f_context *ctx,
+                                 const unsigned char *data,
+                                 size_t size_bits );
 
 /**
  * \brief               Read bytes from the Keccak state.
@@ -124,14 +124,14 @@ int mbedtls_keccakf_xor_binary( mbedtls_keccakf_context *ctx,
  *                      or \p data are NULL, or if size is larger than 200.
  *                      Otherwise, 0 is returned for success.
  */
-int mbedtls_keccakf_read_binary( mbedtls_keccakf_context *ctx,
-                                 unsigned char *data,
-                                 size_t size );
+int mbedtls_keccak_f_read_binary( mbedtls_keccak_f_context *ctx,
+                                  unsigned char *data,
+                                  size_t size );
 
 #if !defined(MBEDTLS_KECCAK_SPONGE_ALT)
 typedef struct
 {
-    mbedtls_keccakf_context keccakf_ctx;
+    mbedtls_keccak_f_context keccak_f_ctx;
     unsigned char queue[1600 / 8]; /** store partial block data (absorbing) or pending output data (squeezing) */
     size_t queue_len;              /** queue length (in bits) */
     size_t rate;                   /** sponge rate (in bits) */

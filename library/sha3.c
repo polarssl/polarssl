@@ -104,25 +104,25 @@ int mbedtls_sha3_starts( mbedtls_sha3_context *ctx, mbedtls_sha3_type_t type )
     {
     case MBEDTLS_SHA3_224:
         ctx->digest_size = 224U / 8U;
-        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 28U * 2U );
+        ctx->block_size  = MBEDTLS_KECCAK_F_STATE_SIZE_BYTES - ( 28U * 2U );
         sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 224U * 2U, 0x02U, 2U );
         break;
 
     case MBEDTLS_SHA3_256:
         ctx->digest_size = 256U / 8U;
-        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 32U * 2U );
+        ctx->block_size  = MBEDTLS_KECCAK_F_STATE_SIZE_BYTES - ( 32U * 2U );
         sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 256U * 2U, 0x02U, 2U );
         break;
 
     case MBEDTLS_SHA3_384:
         ctx->digest_size = 384U / 8U;
-        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 48U * 2U );
+        ctx->block_size  = MBEDTLS_KECCAK_F_STATE_SIZE_BYTES - ( 48U * 2U );
         sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 384U * 2U, 0x02U, 2U );
 
         break;
     case MBEDTLS_SHA3_512:
         ctx->digest_size = 512U / 8U;
-        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - ( 64U * 2U );
+        ctx->block_size  = MBEDTLS_KECCAK_F_STATE_SIZE_BYTES - ( 64U * 2U );
         sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 512U * 2U, 0x02U, 2U );
         break;
 

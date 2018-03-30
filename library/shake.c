@@ -99,12 +99,12 @@ int mbedtls_shake_starts( mbedtls_shake_context *ctx, mbedtls_shake_type_t type 
     switch (type)
     {
     case MBEDTLS_SHAKE128:
-        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - 32U;
+        ctx->block_size  = MBEDTLS_KECCAK_F_STATE_SIZE_BYTES - 32U;
         sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 256U, 0x0FU, 4U );
         break;
 
     case MBEDTLS_SHAKE256:
-        ctx->block_size  = MBEDTLS_KECCAKF_STATE_SIZE_BYTES - 64U;
+        ctx->block_size  = MBEDTLS_KECCAK_F_STATE_SIZE_BYTES - 64U;
         sponge_ret = mbedtls_keccak_sponge_starts( &ctx->sponge_ctx, 512U, 0x0FU, 4U );
         break;
 
