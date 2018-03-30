@@ -58,6 +58,13 @@ static void mbedtls_zeroize( void *v, size_t n ) {
  */
 static const int supported_digests[] = {
 
+#if defined(MBEDTLS_SHA3_C)
+        MBEDTLS_MD_SHA3_224,
+        MBEDTLS_MD_SHA3_256,
+        MBEDTLS_MD_SHA3_384,
+        MBEDTLS_MD_SHA3_512,
+#endif
+
 #if defined(MBEDTLS_SHA512_C)
         MBEDTLS_MD_SHA512,
         MBEDTLS_MD_SHA384,
@@ -86,13 +93,6 @@ static const int supported_digests[] = {
 
 #if defined(MBEDTLS_MD2_C)
         MBEDTLS_MD_MD2,
-#endif
-
-#if defined(MBEDTLS_SHA3_C)
-        MBEDTLS_MD_SHA3_224,
-        MBEDTLS_MD_SHA3_256,
-        MBEDTLS_MD_SHA3_384,
-        MBEDTLS_MD_SHA3_512,
 #endif
 
         MBEDTLS_MD_NONE
