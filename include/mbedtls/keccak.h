@@ -31,8 +31,9 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-#define MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA -0x0054 /**< Invalid input parameter(s). */
-#define MBEDTLS_ERR_KECCAK_BAD_STATE      -0x0056 /**< Requested operation cannot be performed with the current context state. */
+#define MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA                 -0x0054  /**< Bad input parameters to function. */
+#define MBEDTLS_ERR_KECCAK_BAD_STATE                      -0x0056  /**< The requested operation cannot be performed with the current context state. */
+#define MBEDTLS_ERR_KECCAK_HW_ACCEL_FAILED                -0x0058  /**< SHAKE hardware accelerator failed. */
 
 #define MBEDTLS_KECCAK_F_STATE_SIZE_BITS  ( 1600U )
 #define MBEDTLS_KECCAK_F_STATE_SIZE_BYTES ( 1600U / 8U )

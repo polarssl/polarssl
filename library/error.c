@@ -721,9 +721,11 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
 
 #if defined(MBEDTLS_KECCAK_C)
     if( use_ret == -(MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA) )
-        mbedtls_snprintf( buf, buflen, "KECCAK - Invalid input parameter(s)" );
+        mbedtls_snprintf( buf, buflen, "KECCAK - Bad input parameters to function" );
     if( use_ret == -(MBEDTLS_ERR_KECCAK_BAD_STATE) )
-        mbedtls_snprintf( buf, buflen, "KECCAK - Requested operation cannot be performed with the current context state" );
+        mbedtls_snprintf( buf, buflen, "KECCAK - The requested operation cannot be performed with the current context state" );
+    if( use_ret == -(MBEDTLS_ERR_KECCAK_HW_ACCEL_FAILED) )
+        mbedtls_snprintf( buf, buflen, "KECCAK - SHAKE hardware accelerator failed" );
 #endif /* MBEDTLS_KECCAK_C */
 
 #if defined(MBEDTLS_MD2_C)
@@ -795,7 +797,9 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
 
 #if defined(MBEDTLS_SHA3_C)
     if( use_ret == -(MBEDTLS_ERR_SHA3_BAD_INPUT_DATA) )
-        mbedtls_snprintf( buf, buflen, "SHA3 - Invalid input parameter(s)" );
+        mbedtls_snprintf( buf, buflen, "SHA3 - Bad input parameters to function" );
+    if( use_ret == -(MBEDTLS_ERR_SHA3_HW_ACCEL_FAILED) )
+        mbedtls_snprintf( buf, buflen, "SHA3 - SHA3 hardware accelerator failed" );
 #endif /* MBEDTLS_SHA3_C */
 
 #if defined(MBEDTLS_SHA512_C)
@@ -805,7 +809,9 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
 
 #if defined(MBEDTLS_SHAKE_C)
     if( use_ret == -(MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA) )
-        mbedtls_snprintf( buf, buflen, "SHAKE - Invalid input parameter(s)" );
+        mbedtls_snprintf( buf, buflen, "SHAKE - Bad input parameters to function" );
+    if( use_ret == -(MBEDTLS_ERR_SHAKE_HW_ACCEL_FAILED) )
+        mbedtls_snprintf( buf, buflen, "SHAKE - SHAKE hardware accelerator failed" );
 #endif /* MBEDTLS_SHAKE_C */
 
 #if defined(MBEDTLS_THREADING_C)

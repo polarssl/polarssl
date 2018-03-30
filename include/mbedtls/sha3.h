@@ -31,6 +31,9 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#define MBEDTLS_ERR_SHA3_BAD_INPUT_DATA                   -0x0053  /**< Bad input parameters to function. */
+#define MBEDTLS_ERR_SHA3_HW_ACCEL_FAILED                  -0x0055  /**< SHA3 hardware accelerator failed. */
+
 #if !defined(MBEDTLS_SHA3_ALT)
 // Regular implementation
 
@@ -39,8 +42,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define MBEDTLS_ERR_SHA3_BAD_INPUT_DATA   -0x0053 /**< Invalid input parameter(s). */
 
 typedef enum
 {
