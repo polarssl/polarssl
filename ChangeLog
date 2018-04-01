@@ -14,6 +14,9 @@ Features
    * Add option MBEDTLS_AES_FEWER_TABLES to dynamically compute 3/4 of the AES tables
      during runtime, thereby reducing the RAM/ROM footprint by ~6kb. Suggested
      and contributed by jkivilin in #394.
+   * Add support for the SHA-3 message digest algorithm family and the
+     SHAKE family of extendable output functions. Contributed by Daniel King
+     in #479.
 
 Bugfix
    * Fix spurious uninitialized variable warning in cmac.c. Fix independently
