@@ -47,7 +47,8 @@ static void mbedtls_zeroize( void *v, size_t n ) {
 
 #if !defined(MBEDTLS_KECCAK_F_ALT)
 
-#define ROTL64( x, amount ) ( (uint64_t) ( x << amount) | ( x >> ( 64 - amount ) ) )
+#define ROTL64( x, amount ) \
+    ( (uint64_t) ( x << amount) | ( x >> ( 64 - amount ) ) )
 
 static const uint64_t round_constants[24] =
 {
@@ -93,8 +94,10 @@ static inline void mbedtls_keccak_f_theta( uint64_t in_state[5][5],
     uint64_t cr;
     uint64_t d;
 
-    cl = in_state[4][0] ^ in_state[4][1] ^ in_state[4][2] ^ in_state[4][3] ^ in_state[4][4];
-    cr = in_state[1][0] ^ in_state[1][1] ^ in_state[1][2] ^ in_state[1][3] ^ in_state[1][4];
+    cl = ( in_state[4][0] ^ in_state[4][1] ^ in_state[4][2] ^
+           in_state[4][3] ^ in_state[4][4] );
+    cr = ( in_state[1][0] ^ in_state[1][1] ^ in_state[1][2] ^
+           in_state[1][3] ^ in_state[1][4] );
     d = cl ^ ROTL64( cr, 1 );
     out_state[0][0] = in_state[0][0] ^ d;
     out_state[0][1] = in_state[0][1] ^ d;
@@ -102,8 +105,10 @@ static inline void mbedtls_keccak_f_theta( uint64_t in_state[5][5],
     out_state[0][3] = in_state[0][3] ^ d;
     out_state[0][4] = in_state[0][4] ^ d;
 
-    cl = in_state[0][0] ^ in_state[0][1] ^ in_state[0][2] ^ in_state[0][3] ^ in_state[0][4];
-    cr = in_state[2][0] ^ in_state[2][1] ^ in_state[2][2] ^ in_state[2][3] ^ in_state[2][4];
+    cl = ( in_state[0][0] ^ in_state[0][1] ^ in_state[0][2] ^
+           in_state[0][3] ^ in_state[0][4] );
+    cr = ( in_state[2][0] ^ in_state[2][1] ^ in_state[2][2] ^
+           in_state[2][3] ^ in_state[2][4] );
     d = cl ^ ROTL64( cr, 1 );
     out_state[1][0] = in_state[1][0] ^ d;
     out_state[1][1] = in_state[1][1] ^ d;
@@ -111,8 +116,10 @@ static inline void mbedtls_keccak_f_theta( uint64_t in_state[5][5],
     out_state[1][3] = in_state[1][3] ^ d;
     out_state[1][4] = in_state[1][4] ^ d;
 
-    cl = in_state[1][0] ^ in_state[1][1] ^ in_state[1][2] ^ in_state[1][3] ^ in_state[1][4];
-    cr = in_state[3][0] ^ in_state[3][1] ^ in_state[3][2] ^ in_state[3][3] ^ in_state[3][4];
+    cl = ( in_state[1][0] ^ in_state[1][1] ^ in_state[1][2] ^
+           in_state[1][3] ^ in_state[1][4] );
+    cr = ( in_state[3][0] ^ in_state[3][1] ^ in_state[3][2] ^
+           in_state[3][3] ^ in_state[3][4] );
     d = cl ^ ROTL64( cr, 1 );
     out_state[2][0] = in_state[2][0] ^ d;
     out_state[2][1] = in_state[2][1] ^ d;
@@ -120,8 +127,10 @@ static inline void mbedtls_keccak_f_theta( uint64_t in_state[5][5],
     out_state[2][3] = in_state[2][3] ^ d;
     out_state[2][4] = in_state[2][4] ^ d;
 
-    cl = in_state[2][0] ^ in_state[2][1] ^ in_state[2][2] ^ in_state[2][3] ^ in_state[2][4];
-    cr = in_state[4][0] ^ in_state[4][1] ^ in_state[4][2] ^ in_state[4][3] ^ in_state[4][4];
+    cl = ( in_state[2][0] ^ in_state[2][1] ^ in_state[2][2] ^
+           in_state[2][3] ^ in_state[2][4] );
+    cr = ( in_state[4][0] ^ in_state[4][1] ^ in_state[4][2] ^
+           in_state[4][3] ^ in_state[4][4] );
     d = cl ^ ROTL64( cr, 1 );
     out_state[3][0] = in_state[3][0] ^ d;
     out_state[3][1] = in_state[3][1] ^ d;
@@ -129,8 +138,10 @@ static inline void mbedtls_keccak_f_theta( uint64_t in_state[5][5],
     out_state[3][3] = in_state[3][3] ^ d;
     out_state[3][4] = in_state[3][4] ^ d;
 
-    cl = in_state[3][0] ^ in_state[3][1] ^ in_state[3][2] ^ in_state[3][3] ^ in_state[3][4];
-    cr = in_state[0][0] ^ in_state[0][1] ^ in_state[0][2] ^ in_state[0][3] ^ in_state[0][4];
+    cl = ( in_state[3][0] ^ in_state[3][1] ^ in_state[3][2] ^
+           in_state[3][3] ^ in_state[3][4] );
+    cr = ( in_state[0][0] ^ in_state[0][1] ^ in_state[0][2] ^
+           in_state[0][3] ^ in_state[0][4] );
     d = cl ^ ROTL64( cr, 1 );
     out_state[4][0] = in_state[4][0] ^ d;
     out_state[4][1] = in_state[4][1] ^ d;
@@ -242,8 +253,9 @@ static inline void mbedtls_keccak_f_chi_iota( uint64_t in_state[5][5],
                                               uint64_t out_state[5][5],
                                               size_t round_index )
 {
+    /* iota step */
     out_state[0][0] = in_state[0][0] ^ ( ( ~in_state[1][0] ) & in_state[2][0] )
-            ^ round_constants[ round_index ]; /* iota step */
+                                     ^ round_constants[ round_index ];
 
     out_state[0][1] = in_state[0][1] ^ ( ( ~in_state[1][1] ) & in_state[2][1] );
     out_state[0][2] = in_state[0][2] ^ ( ( ~in_state[1][2] ) & in_state[2][2] );
@@ -286,7 +298,7 @@ void mbedtls_keccak_f_init( mbedtls_keccak_f_context *ctx )
 
 void mbedtls_keccak_f_free( mbedtls_keccak_f_context *ctx )
 {
-    if ( ctx != NULL )
+    if( ctx != NULL )
     {
         mbedtls_zeroize( &ctx->state, sizeof( ctx->state ) );
         mbedtls_zeroize( &ctx->temp, sizeof( ctx->temp ) );
@@ -303,12 +315,12 @@ int mbedtls_keccak_f_permute( mbedtls_keccak_f_context *ctx )
 {
     size_t i;
 
-    if ( ctx == NULL )
+    if( ctx == NULL )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
 
-    for ( i = 0U; i < 24U; i++ )
+    for( i = 0U; i < 24U; i++ )
     {
         mbedtls_keccak_f_theta   ( ctx->state, ctx->temp );
         mbedtls_keccak_f_rho     ( ctx->temp , ctx->state );
@@ -328,25 +340,27 @@ int mbedtls_keccak_f_xor_binary( mbedtls_keccak_f_context *ctx,
     size_t remaining_bits = size_bits;
     size_t data_offset = 0U;
 
-    if ( ( ctx == NULL ) || ( data == NULL ) || ( size_bits > MBEDTLS_KECCAK_F_STATE_SIZE_BITS ) )
+    if( ctx == NULL || data == NULL ||
+        size_bits > MBEDTLS_KECCAK_F_STATE_SIZE_BITS )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
 
     /* process whole lanes */
-    while ( remaining_bits >= 64U )
+    while( remaining_bits >= 64U )
     {
-        ctx->state[x][y] ^= (uint64_t) data[data_offset]
-                            | (uint64_t) ( (uint64_t) data[data_offset + 1U] << 8U  )
-                            | (uint64_t) ( (uint64_t) data[data_offset + 2U] << 16U )
-                            | (uint64_t) ( (uint64_t) data[data_offset + 3U] << 24U )
-                            | (uint64_t) ( (uint64_t) data[data_offset + 4U] << 32U )
-                            | (uint64_t) ( (uint64_t) data[data_offset + 5U] << 40U )
-                            | (uint64_t) ( (uint64_t) data[data_offset + 6U] << 48U )
-                            | (uint64_t) ( (uint64_t) data[data_offset + 7U] << 56U );
+        ctx->state[x][y] ^=
+            (uint64_t)              data[data_offset]               |
+            (uint64_t) ( (uint64_t) data[data_offset + 1U] << 8U  ) |
+            (uint64_t) ( (uint64_t) data[data_offset + 2U] << 16U ) |
+            (uint64_t) ( (uint64_t) data[data_offset + 3U] << 24U ) |
+            (uint64_t) ( (uint64_t) data[data_offset + 4U] << 32U ) |
+            (uint64_t) ( (uint64_t) data[data_offset + 5U] << 40U ) |
+            (uint64_t) ( (uint64_t) data[data_offset + 6U] << 48U ) |
+            (uint64_t) ( (uint64_t) data[data_offset + 7U] << 56U );
 
         x = ( x + 1U ) % 5U;
-        if ( x == 0U )
+        if( x == 0U )
         {
             y = y + 1U;
         }
@@ -356,13 +370,13 @@ int mbedtls_keccak_f_xor_binary( mbedtls_keccak_f_context *ctx,
     }
 
     /* process last (partial) lane */
-    if ( remaining_bits > 0U )
+    if( remaining_bits > 0U )
     {
         uint64_t lane = ctx->state[x][y];
         uint64_t shift = 0U;
 
         /* whole bytes */
-        while ( remaining_bits >= 8U )
+        while( remaining_bits >= 8U )
         {
             lane ^= (uint64_t) ( (uint64_t) data[data_offset] << shift );
 
@@ -372,7 +386,7 @@ int mbedtls_keccak_f_xor_binary( mbedtls_keccak_f_context *ctx,
         }
 
         /* final bits */
-        if ( remaining_bits > 0U )
+        if( remaining_bits > 0U )
         {
             /* mask away higher bits to avoid accidentally XORIng them */
             unsigned char mask = ((uint64_t) (1U << remaining_bits) - 1U);
@@ -397,13 +411,14 @@ int mbedtls_keccak_f_read_binary( mbedtls_keccak_f_context *ctx,
     size_t remaining_bytes = size;
     size_t data_offset = 0U;
 
-    if ( ( ctx == NULL ) || ( data == NULL ) || ( size > MBEDTLS_KECCAK_F_STATE_SIZE_BYTES ) )
+    if( ctx == NULL || data == NULL ||
+        size > MBEDTLS_KECCAK_F_STATE_SIZE_BYTES )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
 
     /* process whole lanes */
-    while ( remaining_bytes >= 8U )
+    while( remaining_bytes >= 8U )
     {
         const uint64_t lane = ctx->state[x][y];
 
@@ -417,7 +432,7 @@ int mbedtls_keccak_f_read_binary( mbedtls_keccak_f_context *ctx,
         data[data_offset + 7U] = (uint8_t) ( lane >> 56U );
 
         x = ( x + 1U ) % 5U;
-        if ( x == 0U )
+        if( x == 0U )
         {
             y = y + 1U;
         }
@@ -427,11 +442,11 @@ int mbedtls_keccak_f_read_binary( mbedtls_keccak_f_context *ctx,
     }
 
     /* Process last (partial) lane */
-    if ( remaining_bytes > 0U )
+    if( remaining_bytes > 0U )
     {
         const uint64_t lane = ctx->state[x][y];
 
-        for ( i = 0U; i < remaining_bytes; i++ )
+        for( i = 0U; i < remaining_bytes; i++ )
         {
             data[data_offset + i] = (uint8_t) ( lane >> ( i * 8U ) );
         }
@@ -464,18 +479,19 @@ int mbedtls_keccak_f_read_binary( mbedtls_keccak_f_context *ctx,
  */
 static void mbedtls_keccak_sponge_absorb_suffix( mbedtls_keccak_sponge_context *ctx )
 {
-    if ( ctx->suffix_len > 0U )
+    if( ctx->suffix_len > 0U )
     {
         ctx->queue[ctx->queue_len / 8U] = ctx->suffix;
         ctx->queue_len += ctx->suffix_len;
     }
 
-    if ( ctx->queue_len >= ctx->rate )
+    if( ctx->queue_len >= ctx->rate )
     {
         ctx->queue_len = 0U;
 
-        (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx, ctx->queue, ctx->rate );
-        (void) mbedtls_keccak_f_permute ( &ctx->keccak_f_ctx );
+        (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx,
+                                            ctx->queue, ctx->rate );
+        (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
     }
 }
 
@@ -506,14 +522,16 @@ static void mbedtls_keccak_sponge_finalize( mbedtls_keccak_sponge_context *ctx )
     /* Note that there might only be 1 bit free if there was 1 byte free in the
      * queue before the suffix was added, and the suffix length is 7 bits.
      */
-    if (bits_free_in_queue >= 2U)
+    if(bits_free_in_queue >= 2U)
     {
         /* Set first bit */
-        ctx->queue[ctx->queue_len / 8U] &= ( (unsigned char) ( 1U << ( ctx->queue_len % 8U ) ) ) - 1U;
-        ctx->queue[ctx->queue_len / 8U] |= (unsigned char) ( 1U << ( ctx->queue_len % 8U ) );
+        ctx->queue[ctx->queue_len / 8U] &=
+            ( (unsigned char) ( 1U << ( ctx->queue_len % 8U ) ) ) - 1U;
+        ctx->queue[ctx->queue_len / 8U] |=
+            (unsigned char) ( 1U << ( ctx->queue_len % 8U ) );
 
         /* Add zeroes (if necessary) */
-        if ( bits_free_in_queue >= 8U )
+        if( bits_free_in_queue >= 8U )
         {
             memset( &ctx->queue[( ctx->queue_len / 8U ) + 1U],
                     0,
@@ -532,27 +550,30 @@ static void mbedtls_keccak_sponge_finalize( mbedtls_keccak_sponge_context *ctx )
         /* Add first bit to complete the first block */
         ctx->queue[ctx->queue_len / 8U] |= 0x80U;
 
-        (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx, ctx->queue, ctx->rate );
-        (void) mbedtls_keccak_f_permute ( &ctx->keccak_f_ctx );
+        (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx,
+                                            ctx->queue, ctx->rate );
+        (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
 
         /* Set the next block to complete the padding */
         memset( ctx->queue, 0, ctx->rate / 8U );
         ctx->queue[( ctx->rate - 1U ) / 8U] |= 0x80U;
     }
 
-    (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx, ctx->queue, ctx->rate );
-    (void) mbedtls_keccak_f_permute ( &ctx->keccak_f_ctx );
+    (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx,
+                                        ctx->queue, ctx->rate );
+    (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
 
     ctx->state = SPONGE_STATE_SQUEEZING;
 
     /* Get initial output data into the queue */
-    (void) mbedtls_keccak_f_read_binary( &ctx->keccak_f_ctx, ctx->queue, ctx->rate / 8U );
+    (void) mbedtls_keccak_f_read_binary( &ctx->keccak_f_ctx,
+                                         ctx->queue, ctx->rate / 8U );
     ctx->queue_len = ctx->rate;
 }
 
 void mbedtls_keccak_sponge_init( mbedtls_keccak_sponge_context *ctx )
 {
-    if ( ctx != NULL )
+    if( ctx != NULL )
     {
         mbedtls_keccak_f_init( &ctx->keccak_f_ctx );
         mbedtls_zeroize( ctx->queue, sizeof( ctx->queue ) );
@@ -566,7 +587,7 @@ void mbedtls_keccak_sponge_init( mbedtls_keccak_sponge_context *ctx )
 
 void mbedtls_keccak_sponge_free( mbedtls_keccak_sponge_context *ctx )
 {
-    if ( ctx != NULL )
+    if( ctx != NULL )
     {
         mbedtls_keccak_f_free( &ctx->keccak_f_ctx );
         mbedtls_zeroize( ctx->queue, sizeof( ctx->queue ) );
@@ -589,21 +610,21 @@ int mbedtls_keccak_sponge_starts( mbedtls_keccak_sponge_context *ctx,
                                   unsigned char suffix,
                                   size_t suffix_len  )
 {
-    if ( ctx == NULL )
+    if( ctx == NULL )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
-    else if ( ( capacity == 0U ) ||
-              ( capacity >= MBEDTLS_KECCAK_F_STATE_SIZE_BITS ) ||
-              ( ( capacity % 8U ) != 0U ) )
+    else if( capacity == 0U ||
+             capacity >= MBEDTLS_KECCAK_F_STATE_SIZE_BITS ||
+             capacity % 8U != 0U )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
-    else if ( suffix_len > 8U )
+    else if( suffix_len > 8U )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
-    else if ( ctx->state != SPONGE_STATE_UNINIT )
+    else if( ctx->state != SPONGE_STATE_UNINIT )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_STATE );
     }
@@ -625,29 +646,29 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
     size_t remaining_bytes = size;
     size_t rate_bytes;
 
-    if ( ( ctx == NULL ) || ( data == NULL ) )
+    if( ( ctx == NULL ) || ( data == NULL ) )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
-    else if ( ctx->rate == 0U )
+    else if( ctx->rate == 0U )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_STATE );
     }
-    else if ( ctx->state > SPONGE_STATE_ABSORBING )
+    else if( ctx->state > SPONGE_STATE_ABSORBING )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_STATE );
     }
 
-    if ( remaining_bytes > 0U )
+    if( remaining_bytes > 0U )
     {
         rate_bytes = ctx->rate / 8U;
 
         /* Check if there are leftover bytes in the queue from previous invocations */
-        if ( ctx->queue_len > 0U )
+        if( ctx->queue_len > 0U )
         {
             size_t queue_free_bytes = (ctx->rate - ctx->queue_len) / 8U;
 
-            if ( remaining_bytes >= queue_free_bytes )
+            if( remaining_bytes >= queue_free_bytes )
             {
                 /* Enough data to fill the queue */
                 memcpy( &ctx->queue[ctx->queue_len / 8U],
@@ -659,7 +680,8 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
                 data_offset     += queue_free_bytes;
                 remaining_bytes -= queue_free_bytes;
 
-                (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx, ctx->queue, ctx->rate );
+                (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx,
+                                                    ctx->queue, ctx->rate );
                 (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
             }
             else
@@ -677,9 +699,10 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
         }
 
         /* Process whole blocks */
-        while ( remaining_bytes >= rate_bytes )
+        while( remaining_bytes >= rate_bytes )
         {
-            (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx, &data[data_offset], ctx->rate );
+            (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx,
+                                                &data[data_offset], ctx->rate );
             (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
 
             data_offset     += rate_bytes;
@@ -687,7 +710,7 @@ int mbedtls_keccak_sponge_absorb( mbedtls_keccak_sponge_context *ctx,
         }
 
         /* Store leftovers in the queue */
-        if ( remaining_bytes > 0U )
+        if( remaining_bytes > 0U )
         {
             memcpy( ctx->queue, &data[data_offset], remaining_bytes );
             ctx->queue_len = remaining_bytes * 8U;
@@ -706,35 +729,35 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
     size_t queue_len_bytes;
     size_t rate_bytes;
 
-    if ( ( ctx == NULL ) || ( data == NULL ) )
+    if( ( ctx == NULL ) || ( data == NULL ) )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
-    else if ( ctx->rate == 0U )
+    else if( ctx->rate == 0U )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_STATE );
     }
-    else if ( ctx->state > SPONGE_STATE_SQUEEZING )
+    else if( ctx->state > SPONGE_STATE_SQUEEZING )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_STATE );
     }
 
-    if ( ctx->state < SPONGE_STATE_SQUEEZING )
+    if( ctx->state < SPONGE_STATE_SQUEEZING )
     {
         mbedtls_keccak_sponge_finalize( ctx );
     }
 
-    if ( size > 0U )
+    if( size > 0U )
     {
         rate_bytes      = ctx->rate / 8U;
         queue_offset    = (ctx->rate - ctx->queue_len) / 8U;
         queue_len_bytes = ctx->queue_len / 8U;
 
         /* Consume data from the queue */
-        if ( size < queue_len_bytes )
+        if( size < queue_len_bytes )
         {
             /* Not enough output requested to empty the queue */
-            memcpy ( data, &ctx->queue[queue_offset], size);
+            memcpy( data, &ctx->queue[queue_offset], size);
 
             ctx->queue_len -= size * 8U;
             size = 0U;
@@ -743,7 +766,7 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
         {
             /* Consume all data from the output queue */
 
-            memcpy (data, &ctx->queue[queue_offset], queue_len_bytes );
+            memcpy( data, &ctx->queue[queue_offset], queue_len_bytes );
 
             data_offset += queue_len_bytes;
             size        -= queue_len_bytes;
@@ -752,19 +775,19 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
         }
 
         /* Process whole blocks */
-        while ( size >= rate_bytes )
+        while( size >= rate_bytes )
         {
             (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
             (void) mbedtls_keccak_f_read_binary( &ctx->keccak_f_ctx,
-                                                &data[data_offset],
-                                                rate_bytes );
+                                                 &data[data_offset],
+                                                 rate_bytes );
 
             data_offset += rate_bytes;
             size        -= rate_bytes;
         }
 
         /* Process last (partial) block */
-        if ( size > 0U )
+        if( size > 0U )
         {
             (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
             (void) mbedtls_keccak_f_read_binary( &ctx->keccak_f_ctx,
@@ -776,7 +799,7 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
             ctx->queue_len = ctx->rate - ( size  * 8U );
         }
 
-        if ( ctx->queue_len == 0U )
+        if( ctx->queue_len == 0U )
         {
             /* Generate next block of output for future calls */
             (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
@@ -794,12 +817,13 @@ int mbedtls_keccak_sponge_squeeze( mbedtls_keccak_sponge_context *ctx,
 int mbedtls_keccak_sponge_process( mbedtls_keccak_sponge_context *ctx,
                                    const unsigned char *input )
 {
-    if ( ( ctx == NULL ) || ( input == NULL ) )
+    if( ( ctx == NULL ) || ( input == NULL ) )
     {
         return( MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA );
     }
 
-    (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx, input, ctx->rate );
+    (void) mbedtls_keccak_f_xor_binary( &ctx->keccak_f_ctx,
+                                        input, ctx->rate );
     (void) mbedtls_keccak_f_permute( &ctx->keccak_f_ctx );
 
     return( 0 );
