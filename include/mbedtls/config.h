@@ -2504,7 +2504,7 @@
 #define MBEDTLS_SHA3_C
 
 /**
- * \def MBEDTLS_SHA3_C
+ * \def MBEDTLS_SHAKE_C
  *
  * Enable the SHA-3 eXtensible Output Functions (XOF).
  *
