@@ -34,14 +34,7 @@
 #define MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA                  -0x0057  /**< Bad input parameters to function. */
 #define MBEDTLS_ERR_SHAKE_HW_ACCEL_FAILED                 -0x0059  /**< SHAKE hardware accelerator failed. */
 
-#if !defined(MBEDTLS_SHAKE_ALT)
-// Regular implementation
-
 #include "keccak.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef enum
 {
@@ -50,12 +43,23 @@ typedef enum
 }
 mbedtls_shake_type_t;
 
+#if !defined(MBEDTLS_SHAKE_ALT)
+// Regular implementation
+
 typedef struct
 {
     mbedtls_keccak_sponge_context sponge_ctx;
     size_t block_size;  /* block size in bytes */
 }
 mbedtls_shake_context;
+
+#else  /* MBEDTLS_SHAKE_ALT */
+#include "shake_alt.h"
+#endif /* MBEDTLS_SHAKE_ALT */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief          Initialize a SHAKE context
@@ -120,18 +124,6 @@ int mbedtls_shake_output( mbedtls_shake_context *ctx,
                           size_t olen );
 
 int mbedtls_shake_process( mbedtls_shake_context *ctx, const unsigned char* input );
-
-#ifdef __cplusplus
-}
-#endif
-
-#else  /* MBEDTLS_SHAKE_ALT */
-#include "shake_alt.h"
-#endif /* MBEDTLS_SHAKE_ALT */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * \brief          Generate arbitrary SHAKE output from some input bytes.

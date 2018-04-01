@@ -34,14 +34,7 @@
 #define MBEDTLS_ERR_SHA3_BAD_INPUT_DATA                   -0x0053  /**< Bad input parameters to function. */
 #define MBEDTLS_ERR_SHA3_HW_ACCEL_FAILED                  -0x0055  /**< SHA3 hardware accelerator failed. */
 
-#if !defined(MBEDTLS_SHA3_ALT)
-// Regular implementation
-
 #include "keccak.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef enum
 {
@@ -52,6 +45,9 @@ typedef enum
 }
 mbedtls_sha3_type_t;
 
+#if !defined(MBEDTLS_SHA3_ALT)
+// Regular implementation
+
 typedef struct
 {
     mbedtls_keccak_sponge_context sponge_ctx;
@@ -59,6 +55,14 @@ typedef struct
     size_t block_size;  /* block size in bytes */
 }
 mbedtls_sha3_context;
+
+#else  /* MBEDTLS_SHA3_ALT */
+#include "sha3_alt.h"
+#endif /* MBEDTLS_SHA3_ALT */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief          Initialize a SHA-3 context
@@ -123,18 +127,6 @@ int mbedtls_sha3_update( mbedtls_sha3_context *ctx,
 int mbedtls_sha3_finish( mbedtls_sha3_context *ctx, unsigned char* output );
 
 int mbedtls_sha3_process( mbedtls_sha3_context *ctx, const unsigned char* input );
-
-#ifdef __cplusplus
-}
-#endif
-
-#else  /* MBEDTLS_SHA3_ALT */
-#include "sha3_alt.h"
-#endif /* MBEDTLS_SHA3_ALT */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * \brief          Generate the SHA-3 hash of a buffer.

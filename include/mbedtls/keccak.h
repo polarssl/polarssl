@@ -41,10 +41,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if defined(MBEDTLS_KECCAK_F_ALT) || defined(MBEDTLS_KECCAK_SPONGE_ALT)
 #include "keccak_alt.h"
 #endif
@@ -57,6 +53,10 @@ typedef struct
 }
 mbedtls_keccak_f_context;
 #endif /* !defined(MBEDTLS_KECCAK_F_ALT) */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief               Initialize a Keccak-f[1600] context.
@@ -128,6 +128,10 @@ int mbedtls_keccak_f_read_binary( mbedtls_keccak_f_context *ctx,
                                   unsigned char *data,
                                   size_t size );
 
+#ifdef __cplusplus
+}
+#endif
+
 #if !defined(MBEDTLS_KECCAK_SPONGE_ALT)
 typedef struct
 {
@@ -141,6 +145,10 @@ typedef struct
 }
 mbedtls_keccak_sponge_context;
 #endif /* !defined(MBEDTLS_KECCAK_SPONGE_ALT) */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * \brief               Initialize a Keccak sponge context
