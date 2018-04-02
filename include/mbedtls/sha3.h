@@ -3,6 +3,11 @@
  *
  * \brief SHA-3 cryptographic hash functions (SHA3-224, SHA3-256, SHA3-384, SHA3-512)
  *
+ * Reference: National Institute of Standards and Technology (NIST).
+ * _SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions._
+ * FIPS PUB 202. August 2015.
+ * https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
+ *
  * \author Daniel King <damaki.gh@gmail.com>
  */
 /*  Copyright (C) 2006-2018, ARM Limited, All Rights Reserved
