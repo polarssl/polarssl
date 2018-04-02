@@ -492,6 +492,14 @@
 #error "MBEDTLS_X509_RSASSA_PSS_SUPPORT defined, but not all prerequisites"
 #endif
 
+#if defined(MBEDTLS_SHA3_C) && ( !defined(MBEDTLS_KECCAK_C) )
+#error "MBEDTLS_SHA3_C defined, but not all prerequisites"
+#endif
+
+#if defined(MBEDTLS_SHAKE_C) && ( !defined(MBEDTLS_KECCAK_C) )
+#error "MBEDTLS_SHAKE_C defined, but not all prerequisites"
+#endif
+
 #if defined(MBEDTLS_SSL_PROTO_SSL3) && ( !defined(MBEDTLS_MD5_C) ||     \
     !defined(MBEDTLS_SHA1_C) )
 #error "MBEDTLS_SSL_PROTO_SSL3 defined, but not all prerequisites"

@@ -107,6 +107,12 @@ extern const mbedtls_md_info_t mbedtls_sha256_info;
 extern const mbedtls_md_info_t mbedtls_sha384_info;
 extern const mbedtls_md_info_t mbedtls_sha512_info;
 #endif
+#if defined(MBEDTLS_SHA3_C)
+extern const mbedtls_md_info_t mbedtls_sha3_224_info;
+extern const mbedtls_md_info_t mbedtls_sha3_256_info;
+extern const mbedtls_md_info_t mbedtls_sha3_384_info;
+extern const mbedtls_md_info_t mbedtls_sha3_512_info;
+#endif
 
 #ifdef __cplusplus
 }

@@ -53,17 +53,18 @@ OBJS_CRYPTO=	aes.o		aesni.o		arc4.o		\
 		ccm.o		cipher.o	cipher_wrap.o	\
 		cmac.o		ctr_drbg.o	des.o		\
 		dhm.o		ecdh.o		ecdsa.o		\
-		ecjpake.o	ecp.o				\
-		ecp_curves.o	entropy.o	entropy_poll.o	\
-		error.o		gcm.o		havege.o	\
-		hmac_drbg.o	md.o		md2.o		\
+		ecjpake.o	ecp.o		ecp_curves.o	\
+		entropy.o	entropy_poll.o	error.o		\
+		gcm.o		havege.o	hmac_drbg.o	\
+		keccak.o	md.o		md2.o		\
 		md4.o		md5.o		md_wrap.o	\
 		memory_buffer_alloc.o		oid.o		\
 		padlock.o	pem.o		pk.o		\
 		pk_wrap.o	pkcs12.o	pkcs5.o		\
 		pkparse.o	pkwrite.o	platform.o	\
 		ripemd160.o	rsa_internal.o	rsa.o  		\
-		sha1.o		sha256.o	sha512.o	\
+		sha1.o		sha256.o			\
+		sha3.o		sha512.o	shake.o		\
 		threading.o	timing.o	version.o	\
 		version_features.o		xtea.o
 

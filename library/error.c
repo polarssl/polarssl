@@ -105,6 +105,10 @@
 #include "mbedtls/hmac_drbg.h"
 #endif
 
+#if defined(MBEDTLS_KECCAK_C)
+#include "mbedtls/keccak.h"
+#endif
+
 #if defined(MBEDTLS_MD_C)
 #include "mbedtls/md.h"
 #endif
@@ -165,8 +169,16 @@
 #include "mbedtls/sha256.h"
 #endif
 
+#if defined(MBEDTLS_SHA3_C)
+#include "mbedtls/sha3.h"
+#endif
+
 #if defined(MBEDTLS_SHA512_C)
 #include "mbedtls/sha512.h"
+#endif
+
+#if defined(MBEDTLS_SHAKE_C)
+#include "mbedtls/shake.h"
 #endif
 
 #if defined(MBEDTLS_SSL_TLS_C)
@@ -707,6 +719,15 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
         mbedtls_snprintf( buf, buflen, "HMAC_DRBG - The entropy source failed" );
 #endif /* MBEDTLS_HMAC_DRBG_C */
 
+#if defined(MBEDTLS_KECCAK_C)
+    if( use_ret == -(MBEDTLS_ERR_KECCAK_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "KECCAK - Bad input parameters to function" );
+    if( use_ret == -(MBEDTLS_ERR_KECCAK_BAD_STATE) )
+        mbedtls_snprintf( buf, buflen, "KECCAK - The requested operation cannot be performed with the current context state" );
+    if( use_ret == -(MBEDTLS_ERR_KECCAK_HW_ACCEL_FAILED) )
+        mbedtls_snprintf( buf, buflen, "KECCAK - SHAKE hardware accelerator failed" );
+#endif /* MBEDTLS_KECCAK_C */
+
 #if defined(MBEDTLS_MD2_C)
     if( use_ret == -(MBEDTLS_ERR_MD2_HW_ACCEL_FAILED) )
         mbedtls_snprintf( buf, buflen, "MD2 - MD2 hardware accelerator failed" );
@@ -774,10 +795,24 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
         mbedtls_snprintf( buf, buflen, "SHA256 - SHA-256 hardware accelerator failed" );
 #endif /* MBEDTLS_SHA256_C */
 
+#if defined(MBEDTLS_SHA3_C)
+    if( use_ret == -(MBEDTLS_ERR_SHA3_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "SHA3 - Bad input parameters to function" );
+    if( use_ret == -(MBEDTLS_ERR_SHA3_HW_ACCEL_FAILED) )
+        mbedtls_snprintf( buf, buflen, "SHA3 - SHA3 hardware accelerator failed" );
+#endif /* MBEDTLS_SHA3_C */
+
 #if defined(MBEDTLS_SHA512_C)
     if( use_ret == -(MBEDTLS_ERR_SHA512_HW_ACCEL_FAILED) )
         mbedtls_snprintf( buf, buflen, "SHA512 - SHA-512 hardware accelerator failed" );
 #endif /* MBEDTLS_SHA512_C */
+
+#if defined(MBEDTLS_SHAKE_C)
+    if( use_ret == -(MBEDTLS_ERR_SHAKE_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "SHAKE - Bad input parameters to function" );
+    if( use_ret == -(MBEDTLS_ERR_SHAKE_HW_ACCEL_FAILED) )
+        mbedtls_snprintf( buf, buflen, "SHAKE - SHAKE hardware accelerator failed" );
+#endif /* MBEDTLS_SHAKE_C */
 
 #if defined(MBEDTLS_THREADING_C)
     if( use_ret == -(MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE) )

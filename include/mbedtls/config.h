@@ -279,6 +279,8 @@
 //#define MBEDTLS_DHM_ALT
 //#define MBEDTLS_ECJPAKE_ALT
 //#define MBEDTLS_GCM_ALT
+//#define MBEDTLS_KECCAK_F_ALT
+//#define MBEDTLS_KECCAK_SPONGE_ALT
 //#define MBEDTLS_MD2_ALT
 //#define MBEDTLS_MD4_ALT
 //#define MBEDTLS_MD5_ALT
@@ -286,7 +288,9 @@
 //#define MBEDTLS_RSA_ALT
 //#define MBEDTLS_SHA1_ALT
 //#define MBEDTLS_SHA256_ALT
+//#define MBEDTLS_SHA3_ALT
 //#define MBEDTLS_SHA512_ALT
+//#define MBEDTLS_SHAKE_ALT
 //#define MBEDTLS_XTEA_ALT
 /*
  * When replacing the elliptic curve module, pleace consider, that it is
@@ -2105,6 +2109,20 @@
 #define MBEDTLS_HMAC_DRBG_C
 
 /**
+ * \def MBEDTLS_KECCAK_C
+ *
+ * Enable the Keccak-f[1600] primitive and the sponge construction based on it.
+ *
+ * Module:  library/keccak.c
+ * Caller:  library/sha3.c
+ *          library/shake.c
+ *
+ * This module adds support for the Keccak-f[1600] permutation and the
+ * Keccak Sponge.
+ */
+#define MBEDTLS_KECCAK_C
+
+/**
  * \def MBEDTLS_MD_C
  *
  * Enable the generic message digest layer.
@@ -2470,6 +2488,34 @@
  * This module adds support for SHA-384 and SHA-512.
  */
 #define MBEDTLS_SHA512_C
+
+/**
+ * \def MBEDTLS_SHA3_C
+ *
+ * Enable the SHA-3 cryptographic hash algorithms.
+ *
+ * Module:  library/sha3.c
+ * Caller:  library/md.c
+ *
+ * Requires: MBEDTLS_KECCAK_C
+ *
+ * This module adds support for SHA3-224, SHA3-256, SHA3-384, and SHA3-512.
+ */
+#define MBEDTLS_SHA3_C
+
+/**
+ * \def MBEDTLS_SHAKE_C
+ *
+ * Enable the SHA-3 eXtensible Output Functions (XOF).
+ *
+ * Module:  library/shake.c
+ * Caller:
+ *
+ * Requires: MBEDTLS_KECCAK_C
+ *
+ * This module adds support for SHAKE128 and SHAKE256.
+ */
+#define MBEDTLS_SHAKE_C
 
 /**
  * \def MBEDTLS_SSL_CACHE_C
