@@ -232,16 +232,29 @@ static int x509_get_crl_entry_ext( unsigned char **p,
     return( 0 );
 }
 
+static void x509_free_entries_list( mbedtls_x509_crl_entry *entry )
+{
+    mbedtls_x509_crl_entry *next;
+
+    while ( entry != NULL )
+    {
+        next = entry->next;
+        mbedtls_free( entry );
+        entry = next;
+    }
+}
+
 /*
  * X.509 CRL Entries
  */
 static int x509_get_entries( unsigned char **p,
                              const unsigned char *end,
-                             mbedtls_x509_crl_entry *entry )
+                             mbedtls_x509_crl *crl )
 {
     int ret;
-    size_t entry_len;
-    mbedtls_x509_crl_entry *cur_entry = entry;
+    size_t entry_len, i, num_entries = 0;
+    mbedtls_x509_crl_entry *head = NULL;
+    mbedtls_x509_crl_entry **cur_entry = &head;
 
     if( *p == end )
         return( 0 );
@@ -262,40 +275,87 @@ static int x509_get_entries( unsigned char **p,
         size_t len2;
         const unsigned char *end2;
 
+        *cur_entry = mbedtls_calloc( 1, sizeof( mbedtls_x509_crl_entry ) );
+        if( *cur_entry == NULL )
+        {
+            return( MBEDTLS_ERR_X509_ALLOC_FAILED );
+        }
+        num_entries++;
+
         if( ( ret = mbedtls_asn1_get_tag( p, end, &len2,
                 MBEDTLS_ASN1_SEQUENCE | MBEDTLS_ASN1_CONSTRUCTED ) ) != 0 )
         {
+            x509_free_entries_list( head );
             return( ret );
         }
 
-        cur_entry->raw.tag = **p;
-        cur_entry->raw.p = *p;
-        cur_entry->raw.len = len2;
+        (*cur_entry)->raw.tag = **p;
+        (*cur_entry)->raw.p = *p;
+        (*cur_entry)->raw.len = len2;
         end2 = *p + len2;
 
-        if( ( ret = mbedtls_x509_get_serial( p, end2, &cur_entry->serial ) ) != 0 )
+        if( ( ret = mbedtls_x509_get_serial( p, end2, &(*cur_entry)->serial ) ) != 0 )
+        {
+            x509_free_entries_list( head );
             return( ret );
+        }
 
         if( ( ret = mbedtls_x509_get_time( p, end2,
-                                   &cur_entry->revocation_date ) ) != 0 )
+                                   &(*cur_entry)->revocation_date ) ) != 0 )
+        {
+            x509_free_entries_list( head );
             return( ret );
+        }
 
         if( ( ret = x509_get_crl_entry_ext( p, end2,
-                                            &cur_entry->entry_ext ) ) != 0 )
-            return( ret );
-
-        if( *p < end )
+                                            &(*cur_entry)->entry_ext ) ) != 0 )
         {
-            cur_entry->next = mbedtls_calloc( 1, sizeof( mbedtls_x509_crl_entry ) );
-
-            if( cur_entry->next == NULL )
-                return( MBEDTLS_ERR_X509_ALLOC_FAILED );
-
-            cur_entry = cur_entry->next;
+            x509_free_entries_list( head );
+            return( ret );
         }
+
+        cur_entry = &(*cur_entry)->next;
     }
 
+    crl->entries = mbedtls_calloc( num_entries,
+                                   sizeof( mbedtls_x509_crl_entry* ) );
+    if( crl->entries == NULL )
+    {
+        x509_free_entries_list( head );
+        return( MBEDTLS_ERR_X509_ALLOC_FAILED );
+    }
+
+    /* put every entry into the static array that is then sorted with qsort() */
+    for( i = 0; head != NULL && i < num_entries; i++)
+    {
+        crl->entries[i] = head;
+        head = head->next;
+    }
+    crl->entries_num = num_entries;
+
+    qsort( crl->entries, num_entries, sizeof( mbedtls_x509_crl_entry *),
+           mbedtls_x509_crl_entry_cmp );
+
     return( 0 );
+}
+
+/*
+ * This function is passed to qsort() to sort the CRL entries array and later
+ * perform a binary search with bsearch().
+ */
+int mbedtls_x509_crl_entry_cmp( const void *arg1, const void *arg2 )
+{
+    const mbedtls_x509_crl_entry *e1 = *(const mbedtls_x509_crl_entry **)arg1;
+    const mbedtls_x509_crl_entry *e2 = *(const mbedtls_x509_crl_entry **)arg2;
+    int len_diff;
+
+    len_diff = e1->serial.len - e2->serial.len;
+    if( len_diff != 0 )
+    {
+        return( len_diff );
+    }
+
+    return( memcmp( e1->serial.p, e2->serial.p, e1->serial.len ) );
 }
 
 /*
@@ -471,7 +531,7 @@ int mbedtls_x509_crl_parse_der( mbedtls_x509_crl *chain,
      *                                   -- if present, MUST be v2
      *                        } OPTIONAL
      */
-    if( ( ret = x509_get_entries( &p, end, &crl->entry ) ) != 0 )
+    if( ( ret = x509_get_entries( &p, end, crl ) ) != 0 )
     {
         mbedtls_x509_crl_free( crl );
         return( ret );
@@ -635,7 +695,7 @@ int mbedtls_x509_crl_info( char *buf, size_t size, const char *prefix,
                    const mbedtls_x509_crl *crl )
 {
     int ret;
-    size_t n;
+    size_t i, n;
     char *p;
     const mbedtls_x509_crl_entry *entry;
 
@@ -665,14 +725,18 @@ int mbedtls_x509_crl_info( char *buf, size_t size, const char *prefix,
                    crl->next_update.min,  crl->next_update.sec );
     MBEDTLS_X509_SAFE_SNPRINTF;
 
-    entry = &crl->entry;
-
     ret = mbedtls_snprintf( p, n, "\n%sRevoked certificates:",
                                prefix );
     MBEDTLS_X509_SAFE_SNPRINTF;
 
-    while( entry != NULL && entry->raw.len != 0 )
+    for( i = 0; i < crl->entries_num; i++ )
     {
+        entry = crl->entries[i];
+        if( entry->raw.len == 0 )
+        {
+            break;
+        }
+
         ret = mbedtls_snprintf( p, n, "\n%sserial number: ",
                                prefix );
         MBEDTLS_X509_SAFE_SNPRINTF;
@@ -686,8 +750,6 @@ int mbedtls_x509_crl_info( char *buf, size_t size, const char *prefix,
                    entry->revocation_date.day,  entry->revocation_date.hour,
                    entry->revocation_date.min,  entry->revocation_date.sec );
         MBEDTLS_X509_SAFE_SNPRINTF;
-
-        entry = entry->next;
     }
 
     ret = mbedtls_snprintf( p, n, "\n%ssigned using  : ", prefix );
@@ -720,8 +782,7 @@ void mbedtls_x509_crl_free( mbedtls_x509_crl *crl )
     mbedtls_x509_crl *crl_prv;
     mbedtls_x509_name *name_cur;
     mbedtls_x509_name *name_prv;
-    mbedtls_x509_crl_entry *entry_cur;
-    mbedtls_x509_crl_entry *entry_prv;
+    size_t i;
 
     if( crl == NULL )
         return;
@@ -741,14 +802,12 @@ void mbedtls_x509_crl_free( mbedtls_x509_crl *crl )
             mbedtls_free( name_prv );
         }
 
-        entry_cur = crl_cur->entry.next;
-        while( entry_cur != NULL )
+        for( i = 0; i < crl_cur->entries_num; i++ )
         {
-            entry_prv = entry_cur;
-            entry_cur = entry_cur->next;
-            mbedtls_zeroize( entry_prv, sizeof( mbedtls_x509_crl_entry ) );
-            mbedtls_free( entry_prv );
+            mbedtls_zeroize( crl_cur->entries[i], sizeof( mbedtls_x509_crl_entry ) );
+            mbedtls_free( crl_cur->entries[i] );
         }
+        mbedtls_free( crl_cur->entries );
 
         if( crl_cur->raw.p != NULL )
         {

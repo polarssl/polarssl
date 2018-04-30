@@ -1631,21 +1631,21 @@ int mbedtls_x509_crt_check_extended_key_usage( const mbedtls_x509_crt *crt,
  */
 int mbedtls_x509_crt_is_revoked( const mbedtls_x509_crt *crt, const mbedtls_x509_crl *crl )
 {
-    const mbedtls_x509_crl_entry *cur = &crl->entry;
+    mbedtls_x509_crl_entry **entry, *key_ptr, key;
+    int ret = 0;
 
-    while( cur != NULL && cur->serial.len != 0 )
+    key.serial = crt->serial;
+
+    key_ptr = &key;
+    entry = bsearch( &key_ptr, crl->entries, crl->entries_num,
+                     sizeof( mbedtls_x509_crl_entry *),
+                     mbedtls_x509_crl_entry_cmp );
+    if ( entry != NULL && mbedtls_x509_time_is_past( &(*entry)->revocation_date ) )
     {
-        if( crt->serial.len == cur->serial.len &&
-            memcmp( crt->serial.p, cur->serial.p, crt->serial.len ) == 0 )
-        {
-            if( mbedtls_x509_time_is_past( &cur->revocation_date ) )
-                return( 1 );
-        }
-
-        cur = cur->next;
+       ret = 1;
     }
 
-    return( 0 );
+    return( ret );
 }
 
 /*

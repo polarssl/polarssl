@@ -82,7 +82,8 @@ typedef struct mbedtls_x509_crl
     mbedtls_x509_time this_update;
     mbedtls_x509_time next_update;
 
-    mbedtls_x509_crl_entry entry;   /**< The CRL entries containing the certificate revocation times for this CA. */
+    mbedtls_x509_crl_entry **entries; /**< The CRL entries containing the certificate revocation times for this CA. */
+    size_t entries_num;               /**< Number of CRL entries. */
 
     mbedtls_x509_buf crl_ext;
 
@@ -95,6 +96,18 @@ typedef struct mbedtls_x509_crl
     struct mbedtls_x509_crl *next;
 }
 mbedtls_x509_crl;
+
+/**
+ * \brief          Compare two CRL entry objects
+ *
+ * \param arg1     Pointer to the first entry to compare
+ * \param arg2     Pointer to the second entry to compare
+ *
+ * \return         an integer less than, equal to, or greater than zero if the
+ *                 first entry is respectively smaller than, equal to or greater
+ *                 than the second entry
+ */
+int mbedtls_x509_crl_entry_cmp( const void *arg1, const void *arg2 );
 
 /**
  * \brief          Parse a DER-encoded CRL and append it to the chained list
