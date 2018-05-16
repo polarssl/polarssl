@@ -8,7 +8,7 @@ script:
 - tests/scripts/recursion.pl library/*.c
 - tests/scripts/check-generated-files.sh
 - tests/scripts/check-doxy-blocks.pl
-- tests/scripts/check-names.sh
+- tests/scripts/check-names.py
 - tests/scripts/doxygen.sh
 - cmake -D CMAKE_BUILD_TYPE:String="Check" .
 - make
