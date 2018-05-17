@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 """
 This file is part of Mbed TLS (https://tls.mbed.org)
 
@@ -146,20 +146,17 @@ class NameCheck(object):
         try:
             shutil.copy("include/mbedtls/config.h",
                         "include/mbedtls/config.h.bak")
-            subprocess.run(
+            subprocess.check_output(
                 ["perl", "scripts/config.pl", "full"],
-                encoding=sys.stdout.encoding,
-                check=True
+                universal_newlines=True,
             )
             my_environment = os.environ.copy()
             my_environment["CFLAGS"] = "-fno-asynchronous-unwind-tables"
-            subprocess.run(
+            subprocess.check_output(
                 ["make", "clean", "lib"],
                 env=my_environment,
-                encoding=sys.stdout.encoding,
-                stdout=subprocess.PIPE,
+                universal_newlines=True,
                 stderr=subprocess.STDOUT,
-                check=True
             )
             shutil.move("include/mbedtls/config.h.bak",
                         "include/mbedtls/config.h")
@@ -167,13 +164,11 @@ class NameCheck(object):
             for lib in ["library/libmbedcrypto.a",
                         "library/libmbedtls.a",
                         "library/libmbedx509.a"]:
-                nm_output += subprocess.run(
+                nm_output += subprocess.check_output(
                     ["nm", "-og", lib],
-                    encoding=sys.stdout.encoding,
-                    stdout=subprocess.PIPE,
+                    universal_newlines=True,
                     stderr=subprocess.STDOUT,
-                    check=True
-                ).stdout
+                )
             for line in nm_output.splitlines():
                 if not re.match(r"^\S+: +U |^$|^\S+:$", line):
                     symbol = re.match(self.symbol_pattern, line)
@@ -182,10 +177,9 @@ class NameCheck(object):
                     else:
                         self.log.error(line)
             self.symbols.sort()
-            subprocess.run(
+            subprocess.check_output(
                 ["make", "clean"],
-                encoding=sys.stdout.encoding,
-                check=True
+                universal_newlines=True,
             )
         except subprocess.CalledProcessError as error:
             self.log.error(error)
