@@ -43,5 +43,5 @@ run_test()
 }
 
 run_test ./tests/scripts/check-doxy-blocks.pl
-run_test ./tests/scripts/check-names.sh
+run_test ./tests/scripts/check-names.py
 run_test ./tests/scripts/check-generated-files.sh

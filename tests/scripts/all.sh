@@ -415,7 +415,7 @@ tests/scripts/check-doxy-blocks.pl
 
 msg "test/build: declared and exported names" # < 3s
 cleanup
-tests/scripts/check-names.sh
+tests/scripts/check-names.py
 
 msg "test: doxygen warnings" # ~ 3s
 cleanup
