@@ -2200,6 +2200,7 @@ run_test    "Authentication: client has no cert, server required (SSLv3)" \
             -c "got a certificate request" \
             -c "got no certificate to send" \
             -S "x509_verify_cert() returned" \
+            -s "got NO-CRT alert from client" \
             -s "client has no certificate" \
             -s "! mbedtls_ssl_handshake returned" \
             -c "! mbedtls_ssl_handshake returned" \
@@ -2282,7 +2283,7 @@ run_test    "Authentication: client badcert, server none" \
              key_file=data_files/server5.key" \
             0 \
             -s "skip write certificate request" \
-            -C "skip parse certificate request" \
+            -C "ciphersuite doesn't allow certificate request" \
             -c "got no certificate request" \
             -c "skip write certificate" \
             -c "skip write certificate verify" \
@@ -2348,10 +2349,9 @@ run_test    "Authentication: client no cert, ssl3" \
             -S "skip write certificate request" \
             -C "skip parse certificate request" \
             -c "got a certificate request" \
-            -C "skip write certificate$" \
+            -s "got NO-CRT alert from client" \
             -c "skip write certificate verify" \
             -c "got no certificate to send" \
-            -s "SSLv3 client has no certificate" \
             -s "skip parse certificate verify" \
             -s "! Certificate was missing" \
             -S "! mbedtls_ssl_handshake returned" \
@@ -2592,7 +2592,7 @@ run_test    "SNI: client auth override: optional -> none" \
             "$P_CLI debug_level=3 server_name=localhost" \
             0 \
             -s "skip write certificate request" \
-            -C "skip parse certificate request" \
+            -C "ciphersuite doesn't allow certificate request" \
             -c "got no certificate request" \
             -c "skip write certificate" \
             -c "skip write certificate verify" \

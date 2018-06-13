@@ -359,12 +359,19 @@
 #if !defined(MBEDTLS_PSK_MAX_LEN)
 #define MBEDTLS_PSK_MAX_LEN            32 /* 256 bits */
 #endif
+#define MBEDTLS_PSK_LEN_BYTES       2
+
+#define MBEDTLS_RSA_PMS_LEN_BYTES   2
+#define MBEDTLS_RSA_PMS_VERSION_LEN 2
+#define MBEDTLS_RSA_PMS_RANDOM_LEN  46
+#define MBEDTLS_RSA_PMS_LEN                                             \
+    ( MBEDTLS_RSA_PMS_VERSION_LEN + MBEDTLS_RSA_PMS_RANDOM_LEN )
 
 /* Dummy type used only for its size */
 union mbedtls_ssl_premaster_secret
 {
 #if defined(MBEDTLS_KEY_EXCHANGE_RSA_ENABLED)
-    unsigned char _pms_rsa[48];                         /* RFC 5246 8.1.1 */
+    unsigned char _pms_rsa[ MBEDTLS_RSA_PMS_LEN ];     /* RFC 5246 8.1.1 */
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
     unsigned char _pms_dhm[MBEDTLS_MPI_MAX_SIZE];      /* RFC 5246 8.1.2 */
@@ -383,7 +390,10 @@ union mbedtls_ssl_premaster_secret
                                  + MBEDTLS_PSK_MAX_LEN];       /* RFC 4279 3 */
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED)
-    unsigned char _pms_rsa_psk[52 + MBEDTLS_PSK_MAX_LEN];      /* RFC 4279 4 */
+    unsigned char _pms_rsa_psk[ MBEDTLS_RSA_PMS_LEN_BYTES +
+                                MBEDTLS_RSA_PMS_LEN       +
+                                MBEDTLS_PSK_LEN_BYTES     +
+                                MBEDTLS_PSK_MAX_LEN ];         /* RFC 4279 4 */
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED)
     unsigned char _pms_ecdhe_psk[4 + MBEDTLS_ECP_MAX_BYTES
@@ -867,6 +877,11 @@ struct mbedtls_ssl_context
 
     int keep_current_message;   /*!< drop or reuse current message
                                      on next call to record layer? */
+
+    unsigned char send_alert;   /*!< Request sending an alert?
+                                     MBEDTLS_SSL_ALERT_LEVEL_FATAL or
+                                     MBEDTLS_SSL_ALERT_LEVEL_WARNING  */
+    unsigned char alert_type;   /*!< Type of alert if send_alert != 0 */
 
     /*
      * Record layer (outgoing data)
