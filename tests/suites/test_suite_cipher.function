@@ -757,7 +757,7 @@ void enc_dec_buf_multipart_different_size( int cipher_id, int key_len, int first
     first_length_dec = first_length_dec_val;
     second_length_dec = second_length_dec_val;
 
-    TEST_ASSERT( ( first_length_enc + second_length_enc ) == 
+    TEST_ASSERT( ( first_length_enc + second_length_enc ) ==
         ( first_length_dec + second_length_dec ) );
 
     length = first_length_enc + second_length_enc;
@@ -833,7 +833,7 @@ void enc_dec_buf_multipart_different_size( int cipher_id, int key_len, int first
     TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx_dec, encbuf, first_length_dec, decbuf, &outlen ) );
     TEST_ASSERT( (size_t)first_decrypt_output_len == outlen );
     totaloutlen = outlen;
-    TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx_dec, encbuf + first_length_dec, 
+    TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx_dec, encbuf + first_length_dec,
         second_length_dec, decbuf + totaloutlen, &outlen ) );
     TEST_ASSERT( (size_t)second_decrypt_output_len == outlen );
     totaloutlen += outlen;
