@@ -731,3 +731,127 @@ void check_padding( int pad_mode, char *input_str, int ret, int dlen_check )
         TEST_ASSERT( dlen == (size_t) dlen_check );
 }
 /* END_CASE */
+
+/* BEGIN_CASE */
+void enc_dec_buf_multipart_different_size( int cipher_id, int key_len, int first_length_enc_val,
+                            int second_length_enc_val, int first_length_dec_val, int second_length_dec_val,
+                            int pad_mode, int first_encrypt_output_len, int second_encrypt_output_len,
+                            int first_decrypt_output_len, int second_decrypt_output_len )
+{
+    size_t block_size;
+    size_t length, outlen, totaloutlen;
+    size_t first_length_enc, second_length_enc, first_length_dec, second_length_dec;
+    unsigned char key[32];
+    unsigned char iv[16];
+
+    mbedtls_cipher_context_t ctx_dec;
+    mbedtls_cipher_context_t ctx_enc;
+    const mbedtls_cipher_info_t *cipher_info;
+
+    unsigned char inbuf[64];
+    unsigned char encbuf[64];
+    unsigned char decbuf[64];
+
+    first_length_enc = first_length_enc_val;
+    second_length_enc = second_length_enc_val;
+    first_length_dec = first_length_dec_val;
+    second_length_dec = second_length_dec_val;
+
+    TEST_ASSERT( ( first_length_enc + second_length_enc ) ==
+        ( first_length_dec + second_length_dec ) );
+
+    length = first_length_enc + second_length_enc;
+    outlen = 0;
+    totaloutlen = 0;
+
+    memset( key, 0, 32 );
+    memset( iv , 0, 16 );
+
+    mbedtls_cipher_init( &ctx_dec );
+    mbedtls_cipher_init( &ctx_enc );
+
+    memset( inbuf, 5, 64 );
+    memset( encbuf, 0, 64 );
+    memset( decbuf, 0, 64 );
+
+    /* Initialise enc and dec contexts */
+    cipher_info = mbedtls_cipher_info_from_type( cipher_id );
+    TEST_ASSERT( NULL != cipher_info);
+
+    TEST_ASSERT( 0 == mbedtls_cipher_setup( &ctx_dec, cipher_info ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_setup( &ctx_enc, cipher_info ) );
+
+    TEST_ASSERT( 0 == mbedtls_cipher_setkey( &ctx_dec, key, key_len, MBEDTLS_DECRYPT ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_setkey( &ctx_enc, key, key_len, MBEDTLS_ENCRYPT ) );
+
+#if defined(MBEDTLS_CIPHER_MODE_WITH_PADDING)
+    if( -1 != pad_mode )
+    {
+        TEST_ASSERT( 0 == mbedtls_cipher_set_padding_mode( &ctx_dec, pad_mode ) );
+        TEST_ASSERT( 0 == mbedtls_cipher_set_padding_mode( &ctx_enc, pad_mode ) );
+    }
+#else
+    (void) pad_mode;
+#endif /* MBEDTLS_CIPHER_MODE_WITH_PADDING */
+
+    TEST_ASSERT( 0 == mbedtls_cipher_set_iv( &ctx_dec, iv, 16 ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_set_iv( &ctx_enc, iv, 16 ) );
+
+    TEST_ASSERT( 0 == mbedtls_cipher_reset( &ctx_dec ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_reset( &ctx_enc ) );
+
+#if defined(MBEDTLS_GCM_C)
+    TEST_ASSERT( 0 == mbedtls_cipher_update_ad( &ctx_dec, NULL, 0 ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_update_ad( &ctx_enc, NULL, 0 ) );
+#endif
+
+    block_size = mbedtls_cipher_get_block_size( &ctx_enc );
+    TEST_ASSERT( block_size != 0 );
+
+    /* encode length number of bytes from inbuf */
+    TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx_enc, inbuf, first_length_enc, encbuf, &outlen ) );
+    TEST_ASSERT( (size_t)first_encrypt_output_len == outlen );
+    totaloutlen = outlen;
+    TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx_enc, inbuf + first_length_enc,
+         second_length_enc, encbuf + totaloutlen, &outlen ) );
+    TEST_ASSERT( (size_t)second_encrypt_output_len == outlen );
+    totaloutlen += outlen;
+    TEST_ASSERT( totaloutlen == length ||
+                 ( totaloutlen % block_size == 0 &&
+                   totaloutlen < length &&
+                   totaloutlen + block_size > length ) );
+
+    TEST_ASSERT( 0 == mbedtls_cipher_finish( &ctx_enc, encbuf + totaloutlen, &outlen ) );
+    totaloutlen += outlen;
+    TEST_ASSERT( totaloutlen == length ||
+                 ( totaloutlen % block_size == 0 &&
+                   totaloutlen > length &&
+                   totaloutlen <= length + block_size ) );
+
+    /* decode the previously encoded string */
+    second_length_dec = totaloutlen - first_length_dec;
+    TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx_dec, encbuf, first_length_dec, decbuf, &outlen ) );
+    TEST_ASSERT( (size_t)first_decrypt_output_len == outlen );
+    totaloutlen = outlen;
+    TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx_dec, encbuf + first_length_dec,
+        second_length_dec, decbuf + totaloutlen, &outlen ) );
+    TEST_ASSERT( (size_t)second_decrypt_output_len == outlen );
+    totaloutlen += outlen;
+
+    TEST_ASSERT( totaloutlen == length ||
+                 ( totaloutlen % block_size == 0 &&
+                   totaloutlen < length &&
+                   totaloutlen + block_size >= length ) );
+
+    TEST_ASSERT( 0 == mbedtls_cipher_finish( &ctx_dec, decbuf + totaloutlen, &outlen ) );
+    totaloutlen += outlen;
+
+    TEST_ASSERT( totaloutlen == length );
+
+    TEST_ASSERT( 0 == memcmp(inbuf, decbuf, length) );
+
+exit:
+    mbedtls_cipher_free( &ctx_dec );
+    mbedtls_cipher_free( &ctx_enc );
+}
+/* END_CASE */
