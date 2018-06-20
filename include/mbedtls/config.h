@@ -89,6 +89,16 @@
 //#define MBEDTLS_NO_UDBL_DIVISION
 
 /**
+ * \def MBEDTLS_SIZE_OPTIMIZED_MULADDC
+ *
+ * The bignum makes manual loop unrolling for mbedtls_mpi multiplication.
+ * On some embedded platforms this generates rather big code. If
+ * code size is preferred over the speed, this macro removes the loop
+ * unrolling, and leaves it to the compiler.
+ */
+//#define MBEDTLS_SIZE_OPTIMIZED_MULADDC
+
+/**
  * \def MBEDTLS_HAVE_SSE2
  *
  * CPU supports SSE2 instruction set.

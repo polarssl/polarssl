@@ -1137,6 +1137,7 @@ void mpi_mul_hlp( size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mp
         MULADDC_STOP
     }
 #else /* MULADDC_HUIT */
+#if !defined(MBEDTLS_SIZE_OPTIMIZED_MULADDC)
     for( ; i >= 16; i -= 16 )
     {
         MULADDC_INIT
@@ -1162,6 +1163,7 @@ void mpi_mul_hlp( size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mp
         MULADDC_CORE   MULADDC_CORE
         MULADDC_STOP
     }
+#endif
 
     for( ; i > 0; i-- )
     {
