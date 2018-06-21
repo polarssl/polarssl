@@ -150,7 +150,6 @@ if(USE_SHARED_MBEDTLS_LIBRARY)
 
     add_library(mbedx509 SHARED ${src_x509})
     set_target_properties(mbedx509 PROPERTIES VERSION 2.11.0 SOVERSION 0)
-
     target_link_libraries(mbedx509 ${libs} mbedcrypto)
 
     add_library(mbedtls SHARED ${src_tls})
