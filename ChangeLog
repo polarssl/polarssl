@@ -1,5 +1,9 @@
 mbed TLS ChangeLog (Sorted per branch, date)
 
+= mbed TLS x.x.x branch released xxxx-xx-xx
+   * Fix compilation on Windows when building shared library, by setting
+     library search path to CMAKE_CURRENT_BINARY_DIR. #1130
+
 = mbed TLS 2.11.0 branch released 2018-06-18
 
 Features
