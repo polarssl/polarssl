@@ -2266,7 +2266,7 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
         return( MBEDTLS_ERR_SSL_PK_TYPE_MISMATCH );
     }
 
-    peer_key = mbedtls_pk_ec( ssl->session_negotiate->peer_cert->pk );
+    peer_key = mbedtls_pk_ec( &ssl->session_negotiate->peer_cert->pk );
 
     if( ( ret = mbedtls_ecdh_get_params( &ssl->handshake->ecdh_ctx, peer_key,
                                  MBEDTLS_ECDH_THEIRS ) ) != 0 )

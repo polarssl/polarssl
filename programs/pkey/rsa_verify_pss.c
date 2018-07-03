@@ -96,7 +96,7 @@ int main( int argc, char *argv[] )
         goto exit;
     }
 
-    mbedtls_rsa_set_padding( mbedtls_pk_rsa( pk ), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
+    mbedtls_rsa_set_padding( mbedtls_pk_rsa( &pk ), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
 
     /*
      * Extract the RSA signature from the file

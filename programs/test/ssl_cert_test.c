@@ -214,21 +214,21 @@ int main( void )
             goto exit;
         }
 
-        ret = mbedtls_mpi_cmp_mpi(&mbedtls_pk_rsa( pk )->N, &mbedtls_pk_rsa( clicert.pk )->N);
+        ret = mbedtls_mpi_cmp_mpi(&mbedtls_pk_rsa( &pk )->N, &mbedtls_pk_rsa( &clicert.pk )->N);
         if( ret != 0 )
         {
             mbedtls_printf( " failed\n  !  mbedtls_mpi_cmp_mpi for N returned %d\n\n", ret );
             goto exit;
         }
 
-        ret = mbedtls_mpi_cmp_mpi(&mbedtls_pk_rsa( pk )->E, &mbedtls_pk_rsa( clicert.pk )->E);
+        ret = mbedtls_mpi_cmp_mpi(&mbedtls_pk_rsa( &pk )->E, &mbedtls_pk_rsa( &clicert.pk )->E);
         if( ret != 0 )
         {
             mbedtls_printf( " failed\n  !  mbedtls_mpi_cmp_mpi for E returned %d\n\n", ret );
             goto exit;
         }
 
-        ret = mbedtls_rsa_check_privkey( mbedtls_pk_rsa( pk ) );
+        ret = mbedtls_rsa_check_privkey( mbedtls_pk_rsa( &pk ) );
         if( ret != 0 )
         {
             mbedtls_printf( " failed\n  !  mbedtls_rsa_check_privkey returned %d\n\n", ret );

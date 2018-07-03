@@ -328,7 +328,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_GENPRIME)
     if( opt.type == MBEDTLS_PK_RSA )
     {
-        ret = mbedtls_rsa_gen_key( mbedtls_pk_rsa( key ), mbedtls_ctr_drbg_random, &ctr_drbg,
+        ret = mbedtls_rsa_gen_key( mbedtls_pk_rsa( &key ), mbedtls_ctr_drbg_random, &ctr_drbg,
                                    opt.rsa_keysize, 65537 );
         if( ret != 0 )
         {
@@ -341,7 +341,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_ECP_C)
     if( opt.type == MBEDTLS_PK_ECKEY )
     {
-        ret = mbedtls_ecp_gen_key( opt.ec_curve, mbedtls_pk_ec( key ),
+        ret = mbedtls_ecp_gen_key( opt.ec_curve, mbedtls_pk_ec( &key ),
                                    mbedtls_ctr_drbg_random, &ctr_drbg );
         if( ret != 0 )
         {
@@ -364,7 +364,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_RSA_C)
     if( mbedtls_pk_get_type( &key ) == MBEDTLS_PK_RSA )
     {
-        mbedtls_rsa_context *rsa = mbedtls_pk_rsa( key );
+        mbedtls_rsa_context *rsa = mbedtls_pk_rsa( &key );
 
         if( ( ret = mbedtls_rsa_export    ( rsa, &N, &P, &Q, &D, &E ) ) != 0 ||
             ( ret = mbedtls_rsa_export_crt( rsa, &DP, &DQ, &QP ) )      != 0 )
@@ -387,7 +387,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_ECP_C)
     if( mbedtls_pk_get_type( &key ) == MBEDTLS_PK_ECKEY )
     {
-        mbedtls_ecp_keypair *ecp = mbedtls_pk_ec( key );
+        mbedtls_ecp_keypair *ecp = mbedtls_pk_ec( &key );
         mbedtls_printf( "curve: %s\n",
                 mbedtls_ecp_curve_info_from_grp_id( ecp->grp.id )->name );
         mbedtls_mpi_write_file( "X_Q:   ", &ecp->Q.X, 16, NULL );

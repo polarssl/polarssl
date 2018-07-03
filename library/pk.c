@@ -222,7 +222,7 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
         if( sig_len < mbedtls_pk_get_len( ctx ) )
             return( MBEDTLS_ERR_RSA_VERIFY_FAILED );
 
-        ret = mbedtls_rsa_rsassa_pss_verify_ext( mbedtls_pk_rsa( *ctx ),
+        ret = mbedtls_rsa_rsassa_pss_verify_ext( mbedtls_pk_rsa( ctx ),
                 NULL, NULL, MBEDTLS_RSA_PUBLIC,
                 md_alg, (unsigned int) hash_len, hash,
                 pss_opts->mgf1_hash_id,

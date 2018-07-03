@@ -138,9 +138,9 @@ typedef struct
  * \warning You must make sure the PK context actually holds an RSA context
  * before using this function!
  */
-static inline mbedtls_rsa_context *mbedtls_pk_rsa( const mbedtls_pk_context pk )
+static inline mbedtls_rsa_context *mbedtls_pk_rsa( const mbedtls_pk_context *pk )
 {
-    return( (mbedtls_rsa_context *) (pk).pk_ctx );
+    return( (mbedtls_rsa_context *) pk->pk_ctx );
 }
 #endif /* MBEDTLS_RSA_C */
 
@@ -151,9 +151,9 @@ static inline mbedtls_rsa_context *mbedtls_pk_rsa( const mbedtls_pk_context pk )
  * \warning You must make sure the PK context actually holds an EC context
  * before using this function!
  */
-static inline mbedtls_ecp_keypair *mbedtls_pk_ec( const mbedtls_pk_context pk )
+static inline mbedtls_ecp_keypair *mbedtls_pk_ec( const mbedtls_pk_context *pk )
 {
-    return( (mbedtls_ecp_keypair *) (pk).pk_ctx );
+    return( (mbedtls_ecp_keypair *) pk->pk_ctx );
 }
 #endif /* MBEDTLS_ECP_C */
 

@@ -194,7 +194,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_RSA_C)
         if( mbedtls_pk_get_type( &pk ) == MBEDTLS_PK_RSA )
         {
-            mbedtls_rsa_context *rsa = mbedtls_pk_rsa( pk );
+            mbedtls_rsa_context *rsa = mbedtls_pk_rsa( &pk );
 
             if( ( ret = mbedtls_rsa_export    ( rsa, &N, &P, &Q, &D, &E ) ) != 0 ||
                 ( ret = mbedtls_rsa_export_crt( rsa, &DP, &DQ, &QP ) )      != 0 )
@@ -217,7 +217,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_ECP_C)
         if( mbedtls_pk_get_type( &pk ) == MBEDTLS_PK_ECKEY )
         {
-            mbedtls_ecp_keypair *ecp = mbedtls_pk_ec( pk );
+            mbedtls_ecp_keypair *ecp = mbedtls_pk_ec( &pk );
             mbedtls_mpi_write_file( "Q(X): ", &ecp->Q.X, 16, NULL );
             mbedtls_mpi_write_file( "Q(Y): ", &ecp->Q.Y, 16, NULL );
             mbedtls_mpi_write_file( "Q(Z): ", &ecp->Q.Z, 16, NULL );
@@ -252,7 +252,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_RSA_C)
         if( mbedtls_pk_get_type( &pk ) == MBEDTLS_PK_RSA )
         {
-            mbedtls_rsa_context *rsa = mbedtls_pk_rsa( pk );
+            mbedtls_rsa_context *rsa = mbedtls_pk_rsa( &pk );
 
             if( ( ret = mbedtls_rsa_export( rsa, &N, NULL, NULL,
                                             NULL, &E ) ) != 0 )
@@ -268,7 +268,7 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_ECP_C)
         if( mbedtls_pk_get_type( &pk ) == MBEDTLS_PK_ECKEY )
         {
-            mbedtls_ecp_keypair *ecp = mbedtls_pk_ec( pk );
+            mbedtls_ecp_keypair *ecp = mbedtls_pk_ec( &pk );
             mbedtls_mpi_write_file( "Q(X): ", &ecp->Q.X, 16, NULL );
             mbedtls_mpi_write_file( "Q(Y): ", &ecp->Q.Y, 16, NULL );
             mbedtls_mpi_write_file( "Q(Z): ", &ecp->Q.Z, 16, NULL );

@@ -698,7 +698,7 @@ int benchmark( int argc, char *argv[] )
             mbedtls_pk_init( &pk );
             mbedtls_pk_parse_key( &pk, (const unsigned char *) rsa_keys[i],
                                                        strlen( rsa_keys[i] ) + 1, NULL, 0 );
-            rsa = mbedtls_pk_rsa( pk );
+            rsa = mbedtls_pk_rsa( &pk );
 
             mbedtls_snprintf( title, sizeof( title ), "RSA-%d", mbedtls_pk_get_bitlen( &pk ) );
 

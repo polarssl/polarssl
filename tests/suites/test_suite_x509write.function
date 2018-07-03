@@ -135,7 +135,7 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
     if( rsa_alt == 1 && mbedtls_pk_get_type( &issuer_key ) == MBEDTLS_PK_RSA )
     {
         TEST_ASSERT( mbedtls_pk_setup_rsa_alt( &issuer_key_alt,
-                                            mbedtls_pk_rsa( issuer_key ),
+                                            mbedtls_pk_rsa( &issuer_key ),
                                             mbedtls_rsa_decrypt_func,
                                             mbedtls_rsa_sign_func,
                                             mbedtls_rsa_key_len_func ) == 0 );

@@ -206,7 +206,7 @@ static int x509_profile_check_key( const mbedtls_x509_crt_profile *profile,
         pk_alg == MBEDTLS_PK_ECKEY ||
         pk_alg == MBEDTLS_PK_ECKEY_DH )
     {
-        const mbedtls_ecp_group_id gid = mbedtls_pk_ec( *pk )->grp.id;
+        const mbedtls_ecp_group_id gid = mbedtls_pk_ec( pk )->grp.id;
 
         if( ( profile->allowed_curves & MBEDTLS_X509_ID_FLAG( gid ) ) != 0 )
             return( 0 );

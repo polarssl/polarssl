@@ -661,7 +661,7 @@ static int ssl_check_key_curve( mbedtls_pk_context *pk,
                                 const mbedtls_ecp_curve_info **curves )
 {
     const mbedtls_ecp_curve_info **crv = curves;
-    mbedtls_ecp_group_id grp_id = mbedtls_pk_ec( *pk )->grp.id;
+    mbedtls_ecp_group_id grp_id = mbedtls_pk_ec( pk )->grp.id;
 
     while( *crv != NULL )
     {
@@ -2816,7 +2816,7 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
     }
 
     if( ( ret = mbedtls_ecdh_get_params( &ssl->handshake->ecdh_ctx,
-                                 mbedtls_pk_ec( *mbedtls_ssl_own_key( ssl ) ),
+                                 mbedtls_pk_ec( mbedtls_ssl_own_key( ssl ) ),
                                  MBEDTLS_ECDH_OURS ) ) != 0 )
     {
         MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdh_get_params" ), ret );

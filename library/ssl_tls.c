@@ -4653,7 +4653,7 @@ int mbedtls_ssl_parse_certificate( mbedtls_ssl_context *ssl )
 
             /* If certificate uses an EC key, make sure the curve is OK */
             if( mbedtls_pk_can_do( pk, MBEDTLS_PK_ECKEY ) &&
-                mbedtls_ssl_check_curve( ssl, mbedtls_pk_ec( *pk )->grp.id ) != 0 )
+                mbedtls_ssl_check_curve( ssl, mbedtls_pk_ec( pk )->grp.id ) != 0 )
             {
                 ssl->session_negotiate->verify_result |= MBEDTLS_X509_BADCERT_BAD_KEY;
 

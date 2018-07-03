@@ -632,15 +632,15 @@ int mbedtls_pk_parse_subpubkey( unsigned char **p, const unsigned char *end,
 #if defined(MBEDTLS_RSA_C)
     if( pk_alg == MBEDTLS_PK_RSA )
     {
-        ret = pk_get_rsapubkey( p, end, mbedtls_pk_rsa( *pk ) );
+        ret = pk_get_rsapubkey( p, end, mbedtls_pk_rsa( pk ) );
     } else
 #endif /* MBEDTLS_RSA_C */
 #if defined(MBEDTLS_ECP_C)
     if( pk_alg == MBEDTLS_PK_ECKEY_DH || pk_alg == MBEDTLS_PK_ECKEY )
     {
-        ret = pk_use_ecparams( &alg_params, &mbedtls_pk_ec( *pk )->grp );
+        ret = pk_use_ecparams( &alg_params, &mbedtls_pk_ec( pk )->grp );
         if( ret == 0 )
-            ret = pk_get_ecpubkey( p, end, mbedtls_pk_ec( *pk ) );
+            ret = pk_get_ecpubkey( p, end, mbedtls_pk_ec( pk ) );
     } else
 #endif /* MBEDTLS_ECP_C */
         ret = MBEDTLS_ERR_PK_UNKNOWN_PK_ALG;
@@ -986,7 +986,7 @@ static int pk_parse_key_pkcs8_unencrypted_der(
 #if defined(MBEDTLS_RSA_C)
     if( pk_alg == MBEDTLS_PK_RSA )
     {
-        if( ( ret = pk_parse_key_pkcs1_der( mbedtls_pk_rsa( *pk ), p, len ) ) != 0 )
+        if( ( ret = pk_parse_key_pkcs1_der( mbedtls_pk_rsa( pk ), p, len ) ) != 0 )
         {
             mbedtls_pk_free( pk );
             return( ret );
@@ -996,8 +996,8 @@ static int pk_parse_key_pkcs8_unencrypted_der(
 #if defined(MBEDTLS_ECP_C)
     if( pk_alg == MBEDTLS_PK_ECKEY || pk_alg == MBEDTLS_PK_ECKEY_DH )
     {
-        if( ( ret = pk_use_ecparams( &params, &mbedtls_pk_ec( *pk )->grp ) ) != 0 ||
-            ( ret = pk_parse_key_sec1_der( mbedtls_pk_ec( *pk ), p, len )  ) != 0 )
+        if( ( ret = pk_use_ecparams( &params, &mbedtls_pk_ec( pk )->grp ) ) != 0 ||
+            ( ret = pk_parse_key_sec1_der( mbedtls_pk_ec( pk ), p, len )  ) != 0 )
         {
             mbedtls_pk_free( pk );
             return( ret );
@@ -1166,7 +1166,7 @@ int mbedtls_pk_parse_key( mbedtls_pk_context *pk,
     {
         pk_info = mbedtls_pk_info_from_type( MBEDTLS_PK_RSA );
         if( ( ret = mbedtls_pk_setup( pk, pk_info ) ) != 0 ||
-            ( ret = pk_parse_key_pkcs1_der( mbedtls_pk_rsa( *pk ),
+            ( ret = pk_parse_key_pkcs1_der( mbedtls_pk_rsa( pk ),
                                             pem.buf, pem.buflen ) ) != 0 )
         {
             mbedtls_pk_free( pk );
@@ -1197,7 +1197,7 @@ int mbedtls_pk_parse_key( mbedtls_pk_context *pk,
         pk_info = mbedtls_pk_info_from_type( MBEDTLS_PK_ECKEY );
 
         if( ( ret = mbedtls_pk_setup( pk, pk_info ) ) != 0 ||
-            ( ret = pk_parse_key_sec1_der( mbedtls_pk_ec( *pk ),
+            ( ret = pk_parse_key_sec1_der( mbedtls_pk_ec( pk ),
                                            pem.buf, pem.buflen ) ) != 0 )
         {
             mbedtls_pk_free( pk );
@@ -1312,7 +1312,7 @@ int mbedtls_pk_parse_key( mbedtls_pk_context *pk,
 
     pk_info = mbedtls_pk_info_from_type( MBEDTLS_PK_RSA );
     if( ( ret = mbedtls_pk_setup( pk, pk_info ) ) != 0 ||
-        ( ret = pk_parse_key_pkcs1_der( mbedtls_pk_rsa( *pk ),
+        ( ret = pk_parse_key_pkcs1_der( mbedtls_pk_rsa( pk ),
                                         key, keylen ) ) != 0 )
     {
         mbedtls_pk_free( pk );
@@ -1328,7 +1328,7 @@ int mbedtls_pk_parse_key( mbedtls_pk_context *pk,
 
     pk_info = mbedtls_pk_info_from_type( MBEDTLS_PK_ECKEY );
     if( ( ret = mbedtls_pk_setup( pk, pk_info ) ) != 0 ||
-        ( ret = pk_parse_key_sec1_der( mbedtls_pk_ec( *pk ),
+        ( ret = pk_parse_key_sec1_der( mbedtls_pk_ec( pk ),
                                        key, keylen ) ) != 0 )
     {
         mbedtls_pk_free( pk );
@@ -1378,7 +1378,7 @@ int mbedtls_pk_parse_public_key( mbedtls_pk_context *ctx,
         if( ( ret = mbedtls_pk_setup( ctx, pk_info ) ) != 0 )
             return( ret );
 
-        if ( ( ret = pk_get_rsapubkey( &p, p + pem.buflen, mbedtls_pk_rsa( *ctx ) ) ) != 0 )
+        if ( ( ret = pk_get_rsapubkey( &p, p + pem.buflen, mbedtls_pk_rsa( ctx ) ) ) != 0 )
             mbedtls_pk_free( ctx );
 
         mbedtls_pem_free( &pem );
@@ -1427,7 +1427,7 @@ int mbedtls_pk_parse_public_key( mbedtls_pk_context *ctx,
         return( ret );
 
     p = (unsigned char *)key;
-    ret = pk_get_rsapubkey( &p, p + keylen, mbedtls_pk_rsa( *ctx ) );
+    ret = pk_get_rsapubkey( &p, p + keylen, mbedtls_pk_rsa( ctx ) );
     if( ret == 0 )
     {
         return( ret );
