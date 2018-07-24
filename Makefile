@@ -108,3 +108,12 @@ apidoc:
 apidoc_clean:
 	rm -rf apidoc
 endif
+
+## Editor navigation files
+C_SOURCE_FILES = $(wildcard include/*/*.h library/*.[hc] programs/*/*.[hc] tests/suites/*.function)
+tags: $(C_SOURCE_FILES)
+	ctags -o $@ $(C_SOURCE_FILES)
+TAGS: $(C_SOURCE_FILES)
+	etags -o $@ $(C_SOURCE_FILES)
+GPATH GRTAGS GSYMS GTAGS: $(C_SOURCE_FILES)
+	ls $(C_SOURCE_FILES) | gtags -f - --gtagsconf .globalrc

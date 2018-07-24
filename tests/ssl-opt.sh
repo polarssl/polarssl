@@ -62,61 +62,86 @@ PRESERVE_LOGS=0
 SRV_PORT=$(($$ % 10000 + 10000))
 PXY_PORT=$((SRV_PORT + 10000))
 
+# Extra options for the test programs, to be added on the command line.
+# Allow SHA-1 by default, because many of our test certificates use it.
+P_SRV_EXTRA="allow_sha1=1"
+P_CLI_EXTRA="allow_sha1=1"
+P_PXY_EXTRA=""
+
 print_usage() {
-    echo "Usage: $0 [options]"
-    printf "  -h|--help\tPrint this help.\n"
-    printf "  -m|--memcheck\tCheck memory leaks and errors.\n"
-    printf "  -f|--filter\tOnly matching tests are executed (BRE; default: '$FILTER')\n"
-    printf "  -e|--exclude\tMatching tests are excluded (BRE; default: '$EXCLUDE')\n"
-    printf "  -n|--number\tExecute only numbered test (comma-separated, e.g. '245,256')\n"
-    printf "  -s|--show-numbers\tShow test numbers in front of test names\n"
-    printf "  -p|--preserve-logs\tPreserve logs of successful tests as well\n"
-    printf "     --port\tTCP/UDP port (default: randomish 1xxxx)\n"
-    printf "     --proxy-port\tTCP/UDP proxy port (default: randomish 2xxxx)\n"
-    printf "     --seed\tInteger seed value to use for this test run\n"
+    cat <<EOF
+Usage: $0 [options]
+     --client-opt=ARG   Additional option(s) to pass to $P_CLI
+  -e|--exclude=BRE      Matching tests are excluded (default: '$EXCLUDE')
+  -f|--filter=BRE       Only matching tests are executed (default: '$FILTER')
+  -h|--help             Print this help
+  -n|--number           Execute only numbered tests (comma-separated)
+  -m|--memcheck         Check memory leaks and errors
+     --port=NUM         TCP/UDP port (default: randomish 1xxxx)
+  -p|--preserve-logs    Preserve logs of successful tests as well
+     --proxy-opt=ARG    Additional option(s) to pass to $P_PXY
+     --proxy-port=NUM   TCP/UDP proxy port (default: randomish 2xxxx)
+     --seed=NUM         Integer seed value to use for this test run
+     --server-opt=ARG   Additional option(s) to pass to $P_SRV
+  -s|--show-numbers     Show test numbers in front of test names
+EOF
 }
 
 get_options() {
-    while [ $# -gt 0 ]; do
-        case "$1" in
-            -f|--filter)
-                shift; FILTER=$1
-                ;;
-            -e|--exclude)
-                shift; EXCLUDE=$1
-                ;;
-            -m|--memcheck)
-                MEMCHECK=1
-                ;;
-            -n|--number)
-                shift; RUN_TEST_NUMBER=$1
-                ;;
-            -s|--show-numbers)
-                SHOW_TEST_NUMBER=1
-                ;;
-            -p|--preserve-logs)
-                PRESERVE_LOGS=1
-                ;;
-            --port)
-                shift; SRV_PORT=$1
-                ;;
-            --proxy-port)
-                shift; PXY_PORT=$1
-                ;;
-            --seed)
-                shift; SEED="$1"
-                ;;
-            -h|--help)
+    opt=
+    while [ $# -gt 0 ] || [ -n "$opt" ]; do
+        if [ -z "$opt" ]; then
+            opt="$1"
+            shift
+        fi
+        target= append=
+        case "${opt%%=*}" in
+            --client-opt) target=P_CLI_EXTRA append=1;;
+            -e*|--exclude) target=EXCLUDE;;
+            -f*|--filter) target=FILTER;;
+            -m*|--memcheck) MEMCHECK=1;;
+            -n*|--number) target=RUN_TEST_NUMBER;;
+            --port) target=SRV_PORT;;
+            -p*|--preserve-logs) PRESERVE_LOGS=1;;
+            --proxy-opt) target=P_PXY_EXTRA append=1;;
+            --proxy-port) target=PXY_PORT;;
+            --seed) target=SEED;;
+            --server-opt) target=P_SRV_EXTRA append=1;;
+            -s*|--show-numbers) SHOW_TEST_NUMBER=1;;
+            -h*|--help)
                 print_usage
                 exit 0
                 ;;
             *)
-                echo "Unknown argument: '$1'"
-                print_usage
+                echo >&2 "Unknown argument: '$opt'"
+                print_usage >&2
                 exit 1
                 ;;
         esac
-        shift
+        if [ -n "$target" ]; then
+            case "$opt" in
+                --*=*) value="${opt#*=}";;
+                --*|-?)
+                    if [ $# -eq 0 ]; then
+                        echo >&2 "Missing argument for $opt"
+                        exit 1
+                    fi
+                    value="$1"; shift;;
+                *) value="${opt##??}";;
+            esac
+            if [ -n "$append" ]; then
+                eval "$target=\"\$$target \$value\""
+            else
+                eval "$target=\$value"
+            fi
+            opt=
+        else
+            case "$opt" in
+                -[!-]?*) # bundled short options
+                    opt=-"${opt#??}";;
+                *) opt=;;
+            esac
+        fi
     done
 }
 
@@ -709,17 +734,13 @@ SRV_DELAY_SECONDS=0
 
 # fix commands to use this port, force IPv4 while at it
 # +SRV_PORT will be replaced by either $SRV_PORT or $PXY_PORT later
-P_SRV="$P_SRV server_addr=127.0.0.1 server_port=$SRV_PORT"
-P_CLI="$P_CLI server_addr=127.0.0.1 server_port=+SRV_PORT"
-P_PXY="$P_PXY server_addr=127.0.0.1 server_port=$SRV_PORT listen_addr=127.0.0.1 listen_port=$PXY_PORT ${SEED:+"seed=$SEED"}"
+P_SRV="$P_SRV server_addr=127.0.0.1 server_port=$SRV_PORT $P_SRV_EXTRA"
+P_CLI="$P_CLI server_addr=127.0.0.1 server_port=+SRV_PORT $P_CLI_EXTRA"
+P_PXY="$P_PXY server_addr=127.0.0.1 server_port=$SRV_PORT listen_addr=127.0.0.1 listen_port=$PXY_PORT ${SEED:+"seed=$SEED"} $P_PXY_EXTRA"
 O_SRV="$O_SRV -accept $SRV_PORT -dhparam data_files/dhparams.pem"
 O_CLI="$O_CLI -connect localhost:+SRV_PORT"
 G_SRV="$G_SRV -p $SRV_PORT"
 G_CLI="$G_CLI -p +SRV_PORT localhost"
-
-# Allow SHA-1, because many of our test certificates use it
-P_SRV="$P_SRV allow_sha1=1"
-P_CLI="$P_CLI allow_sha1=1"
 
 # Also pick a unique name for intermediate files
 SRV_OUT="srv_out.$$"
