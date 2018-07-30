@@ -159,7 +159,7 @@ exit:
 }
 /* END_CASE */
 
-/* BEGIN_CASE depends_on:MBEDTLS_SELF_TEST */
+/* BEGIN_CASE depends_on:MBEDTLS_SELF_TEST:MBEDTLS_AES_C */
 void gcm_selftest()
 {
     TEST_ASSERT( mbedtls_gcm_self_test( 1 ) == 0 );

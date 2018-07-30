@@ -30,7 +30,13 @@ void mbedtls_cmac_null_args( )
     TEST_ASSERT( mbedtls_cipher_cmac_update( &ctx, test_data, 16 ) ==
                                          MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
 
+#if defined(MBEDTLS_AES_C)
     cipher_info = mbedtls_cipher_info_from_type( MBEDTLS_CIPHER_AES_128_ECB );
+#elif defined(MBEDTLS_DES_C)
+    cipher_info = mbedtls_cipher_info_from_type( MBEDTLS_CIPHER_DES_EDE3_ECB );
+#else /* !defined(MBEDTLS_AES_C) && !defined(MBEDTLS_AES_C) */
+    TEST_ASSERT( ! "MBEDTLS_CMAC_C defined, but no underlying block cipher!" );
+#endif
     TEST_ASSERT( mbedtls_cipher_setup( &ctx, cipher_info ) == 0 );
 
     TEST_ASSERT( mbedtls_cipher_cmac_starts( NULL, test_key, 128 ) ==
@@ -78,6 +84,7 @@ void mbedtls_cmac_null_args( )
                                       NULL ) ==
                                             MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
 
+#if defined(MBEDTLS_AES_C)
     TEST_ASSERT( mbedtls_aes_cmac_prf_128( NULL, 16,
                                            test_data, 16,
                                            test_output ) ==
@@ -92,6 +99,7 @@ void mbedtls_cmac_null_args( )
                                            test_data, 16,
                                            NULL ) ==
                                               MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+#endif /* MBEDTLS_AES_C */
 
 exit:
     mbedtls_cipher_free( &ctx );

@@ -1126,7 +1126,7 @@ exit:
 }
 /* END_CASE */
 
-/* BEGIN_CASE depends_on:MBEDTLS_ENTROPY_C:ENTROPY_HAVE_STRONG */
+/* BEGIN_CASE depends_on:MBEDTLS_CTR_DRBG_C:MBEDTLS_ENTROPY_C:ENTROPY_HAVE_STRONG */
 void mbedtls_rsa_validate_params( int radix_N, char *input_N,
                                   int radix_P, char *input_P,
                                   int radix_Q, char *input_Q,
@@ -1190,7 +1190,7 @@ exit:
 }
 /* END_CASE */
 
-/* BEGIN_CASE depends_on:MBEDTLS_CTR_DRBG_C:MBEDTLS_ENTROPY_C */
+/* BEGIN_CASE  */
 void mbedtls_rsa_export_raw( char *input_N, char *input_P,
                              char *input_Q, char *input_D,
                              char *input_E, int is_priv,

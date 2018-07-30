@@ -1,7 +1,3 @@
-Decrypt empty buffer
-depends_on:MBEDTLS_CHACHAPOLY_C:
-dec_empty_buf:
-
 ChaCha20+Poly1305 Encrypt and decrypt 0 bytes
 depends_on:MBEDTLS_CHACHAPOLY_C
 enc_dec_buf:MBEDTLS_CIPHER_CHACHA20_POLY1305:"CHACHA20-POLY1305":256:0:-1
