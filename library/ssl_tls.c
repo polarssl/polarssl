@@ -1297,15 +1297,29 @@ static void ssl_mac( mbedtls_md_context_t *md_ctx,
 }
 #endif /* MBEDTLS_SSL_PROTO_SSL3 */
 
-#if defined(MBEDTLS_ARC4_C) || defined(MBEDTLS_CIPHER_NULL_CIPHER) ||     \
-    ( defined(MBEDTLS_CIPHER_MODE_CBC) &&                                  \
-      ( defined(MBEDTLS_AES_C) || defined(MBEDTLS_CAMELLIA_C) || defined(MBEDTLS_ARIA_C)) )
-#define SSL_SOME_MODES_USE_MAC
+/* Enabled ciphersuites are listed in ssl_ciphersuites.c. A particular
+ * ciphersuite is compile-time enabled if and only if all its underlying
+ * cryptographic primitives as well the underlying key exchange are.
+ * As any family of ciphersuites sharing a common key exchange contains
+ * a CBC-based ciphersuite, the following definition is an accurate
+ * reflection of the presence of a CBC-based ciphersuite. */
+#if defined(MBEDTLS_CIPHER_MODE_CBC) &&                                 \
+    ( defined(MBEDTLS_AES_C)      ||                                    \
+      defined(MBEDTLS_CAMELLIA_C) ||                                    \
+      defined(MBEDTLS_ARIA_C )    ||                                    \
+      defined(MBEDTLS_DES_C) )
+#define SSL_SOME_SUITES_USE_CBC
+#endif
+
+#if defined(MBEDTLS_ARC4_C)             ||      \
+    defined(MBEDTLS_CIPHER_NULL_CIPHER) ||      \
+    defined(SSL_SOME_SUITES_USE_CBC)
+#define SSL_SOME_SUITES_USE_MAC
 #endif
 
 /* The function below is only used in the Lucky 13 counter-measure in
  * ssl_decrypt_buf(). These are the defines that guard the call site. */
-#if defined(SSL_SOME_MODES_USE_MAC) && \
+#if defined(SSL_SOME_SUITES_USE_MAC) && \
     ( defined(MBEDTLS_SSL_PROTO_TLS1) || \
       defined(MBEDTLS_SSL_PROTO_TLS1_1) || \
       defined(MBEDTLS_SSL_PROTO_TLS1_2) )
@@ -1322,7 +1336,7 @@ static void ssl_read_memory( unsigned char *p, size_t len )
     force = acc;
     (void) force;
 }
-#endif /* SSL_SOME_MODES_USE_MAC && ( TLS1 || TLS1_1 || TLS1_2 ) */
+#endif /* SSL_SOME_SUITES_USE_MAC && ( TLS1 || TLS1_1 || TLS1_2 ) */
 
 /*
  * Encryption/decryption functions
@@ -1356,7 +1370,7 @@ static int ssl_encrypt_buf( mbedtls_ssl_context *ssl )
     /*
      * Add MAC before if needed
      */
-#if defined(SSL_SOME_MODES_USE_MAC)
+#if defined(SSL_SOME_SUITES_USE_MAC)
     if( mode == MBEDTLS_MODE_STREAM ||
         ( mode == MBEDTLS_MODE_CBC
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
@@ -1409,7 +1423,7 @@ static int ssl_encrypt_buf( mbedtls_ssl_context *ssl )
         ssl->out_msglen += ssl->transform_out->maclen;
         auth_done++;
     }
-#endif /* AEAD not the only option */
+#endif /* SSL_SOME_SUITES_USE_MAC */
 
     /*
      * Encrypt
@@ -1542,8 +1556,7 @@ static int ssl_encrypt_buf( mbedtls_ssl_context *ssl )
     }
     else
 #endif /* MBEDTLS_GCM_C || MBEDTLS_CCM_C */
-#if defined(MBEDTLS_CIPHER_MODE_CBC) &&                                    \
-    ( defined(MBEDTLS_AES_C) || defined(MBEDTLS_CAMELLIA_C) || defined(MBEDTLS_ARIA_C) )
+#if defined(SSL_SOME_SUITES_USE_CBC)
     if( mode == MBEDTLS_MODE_CBC )
     {
         int ret;
@@ -1658,8 +1671,7 @@ static int ssl_encrypt_buf( mbedtls_ssl_context *ssl )
 #endif /* MBEDTLS_SSL_ENCRYPT_THEN_MAC */
     }
     else
-#endif /* MBEDTLS_CIPHER_MODE_CBC &&
-          ( MBEDTLS_AES_C || MBEDTLS_CAMELLIA_C || MBEDTLS_ARIA_C ) */
+#endif /* SSL_SOME_SUITES_USE_CBC */
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
         return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
@@ -1681,7 +1693,7 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
 {
     mbedtls_cipher_mode_t mode;
     int auth_done = 0;
-#if defined(SSL_SOME_MODES_USE_MAC)
+#if defined(SSL_SOME_SUITES_USE_CBC)
     size_t padlen = 0, correct = 1;
 #endif
 
@@ -1831,8 +1843,7 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
     }
     else
 #endif /* MBEDTLS_GCM_C || MBEDTLS_CCM_C */
-#if defined(MBEDTLS_CIPHER_MODE_CBC) &&                                    \
-    ( defined(MBEDTLS_AES_C) || defined(MBEDTLS_CAMELLIA_C) || defined(MBEDTLS_ARIA_C) )
+#if defined(SSL_SOME_SUITES_USE_CBC)
     if( mode == MBEDTLS_MODE_CBC )
     {
         /*
@@ -2045,8 +2056,7 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
         ssl->in_msglen -= padlen;
     }
     else
-#endif /* MBEDTLS_CIPHER_MODE_CBC &&
-          ( MBEDTLS_AES_C || MBEDTLS_CAMELLIA_C || MBEDTLS_ARIA_C ) */
+#endif /* SSL_SOME_SUITES_USE_CBC */
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
         return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
@@ -2061,7 +2071,7 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
      * Authenticate if not done yet.
      * Compute the MAC regardless of the padding result (RFC4346, CBCTIME).
      */
-#if defined(SSL_SOME_MODES_USE_MAC)
+#if defined(SSL_SOME_SUITES_USE_MAC)
     if( auth_done == 0 )
     {
         unsigned char mac_expect[MBEDTLS_SSL_MAC_ADD];
@@ -2209,7 +2219,7 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
         if( correct == 0 )
             return( MBEDTLS_ERR_SSL_INVALID_MAC );
     }
-#endif /* SSL_SOME_MODES_USE_MAC */
+#endif /* SSL_SOME_SUITES_USE_MAC */
 
     /* Make extra sure authentication was performed, exactly once */
     if( auth_done != 1 )

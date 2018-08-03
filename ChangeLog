@@ -5,6 +5,8 @@ mbed TLS ChangeLog (Sorted per branch, date)
 Bugfix
    * Fixes an issue with MBEDTLS_CHACHAPOLY_C which would not compile if
      MBEDTLS_ARC4_C and MBEDTLS_CIPHER_NULL_CIPHER weren't also defined. #1890
+   * Fix the internal definition of SSL_SOME_MODES_USE_MAC which previously
+     did not consider the presence of 3DES.
 
 = mbed TLS 2.12.0 branch released 2018-07-25
 
