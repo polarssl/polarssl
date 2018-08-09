@@ -55,6 +55,9 @@ SHOW_TEST_NUMBER=0
 RUN_TEST_NUMBER=''
 
 PRESERVE_LOGS=0
+ON_TARGET=0
+TARGET_SERIAL=''
+LIST_TESTS=0
 
 # Pick a "unique" server port in the range 10000-19999, and a proxy
 # port which is this plus 10000. Each port number may be independently
@@ -71,9 +74,14 @@ print_usage() {
     printf "  -n|--number\tExecute only numbered test (comma-separated, e.g. '245,256')\n"
     printf "  -s|--show-numbers\tShow test numbers in front of test names\n"
     printf "  -p|--preserve-logs\tPreserve logs of successful tests as well\n"
+    printf "  -L|--list\tList tests\n"
     printf "     --port\tTCP/UDP port (default: randomish 1xxxx)\n"
     printf "     --proxy-port\tTCP/UDP proxy port (default: randomish 2xxxx)\n"
     printf "     --seed\tInteger seed value to use for this test run\n"
+    printf "     --on-target\tExecute on-target tests only\n"
+    printf "     --target-serial\tExecute on-target tests only\n"
+    printf "     --flasher\tSpecify flashing application and binary to flash\n"
+    printf "              \t(e.g. mbed-os-flasher.sh '/media/MBED,BUILD/K64F/GCC_ARM/mbed-os-sslclient.bin')\n"
 }
 
 get_options() {
@@ -105,6 +113,15 @@ get_options() {
                 ;;
             --seed)
                 shift; SEED="$1"
+                ;;
+            --on-target)
+                ON_TARGET=1
+                ;;
+            --target-serial)
+                shift; TARGET_SERIAL="$1"
+                ;;
+            -L|--list)
+                LIST_TESTS=1
                 ;;
             -h|--help)
                 print_usage
@@ -382,6 +399,11 @@ wait_client_done() {
     kill $DOG_PID >/dev/null 2>&1
     wait $DOG_PID
 
+    if [ "$ON_TARGET" = "1" ]; then
+        if grep '===FRONTEND_INACTIVE===' $CLI_OUT >/dev/null; then
+            echo "===CLIENT_TIMEOUT===" >> $CLI_OUT
+        fi
+    fi
     echo "EXIT: $CLI_EXIT" >> $CLI_OUT
 
     sleep $SRV_DELAY_SECONDS
@@ -395,6 +417,41 @@ detect_dtls() {
     else
         DTLS=0
     fi
+}
+
+on_target_included_testsuite=".*|"
+on_target_not_included_testsuite="DTLS|"
+
+filter_on_target_test() {
+    test_name="$1"
+    idx=1
+    SKIP_NEXT="YES"
+    while "true"; do
+        v=`echo $on_target_included_testsuite|cut -d"|" -f $idx`
+        if [ "X${v:-X}" = "XX" ]; then
+            break # break on end of list
+        fi
+        if echo $test_name|grep "$v" > /dev/null; then
+            SKIP_NEXT="NO"
+            break
+        fi
+        idx=$(( $idx + 1 ))
+    done
+    if [ $SKIP_NEXT = "YES" ]; then
+        return
+    fi
+    idx=1
+    while "true"; do
+        v=`echo $on_target_not_included_testsuite|cut -d"|" -f $idx`
+        if [ "X${v:-X}" = "XX" ]; then
+            break # break on end of list
+        fi
+        if echo $test_name|grep "$v" > /dev/null; then
+            SKIP_NEXT="YES"
+            break
+        fi
+        idx=$(( $idx + 1 ))
+    done
 }
 
 # Usage: run_test name [-p proxy_cmd] srv_cmd cli_cmd cli_exit [option [...]]
@@ -416,7 +473,17 @@ run_test() {
         return
     fi
 
-    print_name "$NAME"
+    if [ "$ON_TARGET" = "1" ]; then
+        filter_on_target_test "$NAME"
+    fi
+
+    if [ "$LIST_TESTS" = "1" ]; then
+        if [ "$SKIP_NEXT" = "NO" ]; then
+            echo "$NAME"
+        fi
+    else
+        print_name "$NAME"
+    fi
 
     # Do we only run numbered tests?
     if [ "X$RUN_TEST_NUMBER" = "X" ]; then :
@@ -428,8 +495,14 @@ run_test() {
     # should we skip?
     if [ "X$SKIP_NEXT" = "XYES" ]; then
         SKIP_NEXT="NO"
-        echo "SKIP"
+        if [ "$LIST_TESTS" = "0" ]; then
+            echo "SKIP"
+        fi
         SKIPS=$(( $SKIPS + 1 ))
+        return
+    fi
+
+    if [ "$LIST_TESTS" = "1" ]; then
         return
     fi
 
@@ -467,13 +540,14 @@ run_test() {
         fi
     fi
 
-    TIMES_LEFT=2
+    TIMES_LEFT=1
     while [ $TIMES_LEFT -gt 0 ]; do
         TIMES_LEFT=$(( $TIMES_LEFT - 1 ))
 
         # run the commands
         if [ -n "$PXY_CMD" ]; then
             echo "$PXY_CMD" > $PXY_OUT
+            echo "$PXY_CMD"
             $PXY_CMD >> $PXY_OUT 2>&1 &
             PXY_PID=$!
             # assume proxy starts faster than server
@@ -498,6 +572,15 @@ run_test() {
         if [ -n "$PXY_CMD" ]; then
             kill $PXY_PID >/dev/null 2>&1
             wait $PXY_PID
+        fi
+
+        if [ "$ON_TARGET" = "1" ]; then
+            # skip tests failed due to unsupported chiphersuite
+            if grep 'forced ciphersuite not allowed' $CLI_OUT >/dev/null; then
+                echo "SKIP"
+                SKIPS=$(( $SKIPS + 1 ))
+                return
+            fi
         fi
 
         # retry only on timeouts
@@ -652,6 +735,28 @@ cleanup() {
 
 get_options "$@"
 
+# Validate --on-target option that needs --flasher option as well.
+echo "ON_TARGET $ON_TARGET PRESERVE_LOGS $PRESERVE_LOGS"
+if [ "$ON_TARGET" -gt 0 ]; then
+    echo "ON_TARGET $ON_TARGET"
+fi
+if [ "$LIST_TESTS" = "0" ]; then
+    echo "LIST_TESTS $LIST_TESTS"
+fi
+
+if [ "$ON_TARGET" = "1" -a "$LIST_TESTS" = "0" ]; then
+    if [ "$TARGET_SERIAL" = "" ]; then
+        echo "Option '--target-serial' not supplied with option '--on-target'!"
+        print_usage
+        exit 1
+    fi
+fi
+
+# Change client to programs/host/frontend for on target testing
+if [ "$ON_TARGET" = 1 ]; then
+    P_CLI="../programs/host/frontend"
+fi
+
 # sanity checks, avoid an avalanche of errors
 P_SRV_BIN="${P_SRV%%[  ]*}"
 P_CLI_BIN="${P_CLI%%[  ]*}"
@@ -695,6 +800,9 @@ MAIN_PID="$$"
 if [ "$MEMCHECK" -gt 0 ]; then
     START_DELAY=6
     DOG_DELAY=60
+elif [ "$ON_TARGET" -gt 0 ]; then
+    START_DELAY=6
+    DOG_DELAY=300
 else
     START_DELAY=2
     DOG_DELAY=20
@@ -710,6 +818,9 @@ SRV_DELAY_SECONDS=0
 # fix commands to use this port, force IPv4 while at it
 # +SRV_PORT will be replaced by either $SRV_PORT or $PXY_PORT later
 P_SRV="$P_SRV server_addr=127.0.0.1 server_port=$SRV_PORT"
+if [ "$ON_TARGET" = 1 ]; then
+    P_CLI="$P_CLI -p $TARGET_SERIAL"
+fi
 P_CLI="$P_CLI server_addr=127.0.0.1 server_port=+SRV_PORT"
 P_PXY="$P_PXY server_addr=127.0.0.1 server_port=$SRV_PORT listen_addr=127.0.0.1 listen_port=$PXY_PORT ${SEED:+"seed=$SEED"}"
 O_SRV="$O_SRV -accept $SRV_PORT -dhparam data_files/dhparams.pem"
@@ -5166,9 +5277,13 @@ run_test    "DTLS proxy: 3d, gnutls server, fragmentation, nbio" \
             -s "Extra-header:" \
             -c "Extra-header:"
 
+if [ "$LIST_TESTS" = "1" ]; then
+    exit 0
+fi
 # Final report
 
 echo "------------------------------------------------------------------------"
+echo "FAILS=$FAILS"
 
 if [ $FAILS = 0 ]; then
     printf "PASSED"

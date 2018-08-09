@@ -1003,6 +1003,17 @@
 #define MBEDTLS_FS_IO
 
 /**
+ * \def MBEDTLS_FS_IO_ALT
+ *
+ * Provide your own alternative filesystem implementation.
+ *
+ * Requires: MBEDTLS_FS_IO
+ *
+ * Module:  library/fsio.c
+ */
+//#define MBEDTLS_FS_IO_ALT
+
+/**
  * \def MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
  *
  * Do not add default entropy sources. These are the platform specific,
@@ -2882,6 +2893,42 @@
  * Caller:
  */
 #define MBEDTLS_XTEA_C
+
+/**
+ * \def MBEDTLS_SERIALIZE_C
+ *
+ * Enable the serialization module. This is needed for delegating file system
+ * operations to another process or machine.
+ *
+ * Module:  library/serialize.c
+ * Caller:  library/net_sockets_serialize.c
+ * Caller:  library/fsio.c
+ */
+//#define MBEDTLS_SERIALIZE_C
+
+/**
+ * \def MBEDTLS_NET_OFFLOAD_C
+ *
+ * Used on target to offload network communication to the host over serial
+ * serial interface.
+ *
+ * Module:  library/net_sockets_serialize.c
+ */
+//#define MBEDTLS_NET_OFFLOAD_C
+
+/**
+ * \def MBEDTLS_SERIALIZE_FORK_FRONTEND_C
+ *
+ * Enable testing of serialization module on a host machine using a frontend.
+ *
+ * Module:  library/serialize.c
+ *
+ * Requires: MBEDTLS_SERIALIZE_C
+ *
+ * Caller:  library/net_sockets/serialize.c
+ *          library/fsio.c
+ */
+//#define MBEDTLS_SERIALIZE_FORK_FRONTEND_C
 
 /* \} name SECTION: mbed TLS modules */
 

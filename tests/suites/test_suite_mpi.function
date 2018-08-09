@@ -115,7 +115,7 @@ void mbedtls_mpi_read_file( int radix_X, char *input_file, char *input_A,
     unsigned char str[1000];
     unsigned char buf[1000];
     size_t buflen;
-    FILE *file;
+    mbedtls_file_t file;
     int ret;
 
     memset( buf, 0x00, 1000 );
@@ -123,10 +123,10 @@ void mbedtls_mpi_read_file( int radix_X, char *input_file, char *input_A,
 
     mbedtls_mpi_init( &X );
 
-    file = fopen( input_file, "r" );
-    TEST_ASSERT( file != NULL );
+    file = mbedtls_fopen( input_file, "r" );
+    TEST_ASSERT( file != MBEDTLS_FILE_INVALID );
     ret = mbedtls_mpi_read_file( &X, radix_X, file );
-    fclose(file);
+    mbedtls_fclose(file);
     TEST_ASSERT( ret == result );
 
     if( result == 0 )
@@ -149,23 +149,23 @@ void mbedtls_mpi_write_file( int radix_X, char *input_X, int output_radix,
                      char *output_file )
 {
     mbedtls_mpi X, Y;
-    FILE *file_out, *file_in;
+    mbedtls_file_t file_out, file_in;
     int ret;
 
     mbedtls_mpi_init( &X ); mbedtls_mpi_init( &Y );
 
     TEST_ASSERT( mbedtls_mpi_read_string( &X, radix_X, input_X ) == 0 );
 
-    file_out = fopen( output_file, "w" );
-    TEST_ASSERT( file_out != NULL );
+    file_out = mbedtls_fopen( output_file, "w" );
+    TEST_ASSERT( file_out != MBEDTLS_FILE_INVALID );
     ret = mbedtls_mpi_write_file( NULL, &X, output_radix, file_out );
-    fclose(file_out);
+    mbedtls_fclose(file_out);
     TEST_ASSERT( ret == 0 );
 
-    file_in = fopen( output_file, "r" );
-    TEST_ASSERT( file_in != NULL );
+    file_in = mbedtls_fopen( output_file, "r" );
+    TEST_ASSERT( file_in != MBEDTLS_FILE_INVALID );
     ret = mbedtls_mpi_read_file( &Y, output_radix, file_in );
-    fclose(file_in);
+    mbedtls_fclose(file_in);
     TEST_ASSERT( ret == 0 );
 
     TEST_ASSERT( mbedtls_mpi_cmp_mpi( &X, &Y ) == 0 );

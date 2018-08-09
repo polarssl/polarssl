@@ -545,32 +545,32 @@ exit:
  */
 static int load_file( const char *path, unsigned char **buf, size_t *n )
 {
-    FILE *f;
+    mbedtls_file_t f;
     long size;
 
-    if( ( f = fopen( path, "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "rb" ) ) == MBEDTLS_FILE_INVALID )
         return( MBEDTLS_ERR_DHM_FILE_IO_ERROR );
 
-    fseek( f, 0, SEEK_END );
-    if( ( size = ftell( f ) ) == -1 )
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_END );
+    if( ( size = mbedtls_ftell( f ) ) == -1 )
     {
-        fclose( f );
+        mbedtls_fclose( f );
         return( MBEDTLS_ERR_DHM_FILE_IO_ERROR );
     }
-    fseek( f, 0, SEEK_SET );
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_SET );
 
     *n = (size_t) size;
 
     if( *n + 1 == 0 ||
         ( *buf = mbedtls_calloc( 1, *n + 1 ) ) == NULL )
     {
-        fclose( f );
+        mbedtls_fclose( f );
         return( MBEDTLS_ERR_DHM_ALLOC_FAILED );
     }
 
-    if( fread( *buf, 1, *n, f ) != *n )
+    if( mbedtls_fread( *buf, *n, f ) != *n )
     {
-        fclose( f );
+        mbedtls_fclose( f );
 
         mbedtls_platform_zeroize( *buf, *n + 1 );
         mbedtls_free( *buf );
@@ -578,7 +578,7 @@ static int load_file( const char *path, unsigned char **buf, size_t *n )
         return( MBEDTLS_ERR_DHM_FILE_IO_ERROR );
     }
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     (*buf)[*n] = '\0';
 

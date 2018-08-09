@@ -76,7 +76,7 @@ int main( int argc, char **argv )
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     const char *pers = "dh_genprime";
-    FILE *fout;
+    mbedtls_file_t fout;
     int nbits = DFL_BITS;
     int i;
     char *p, *q;
@@ -165,7 +165,7 @@ int main( int argc, char **argv )
     mbedtls_printf( " ok\n  . Exporting the value in dh_prime.txt..." );
     fflush( stdout );
 
-    if( ( fout = fopen( "dh_prime.txt", "wb+" ) ) == NULL )
+    if( ( fout = mbedtls_fopen( "dh_prime.txt", "wb+" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( " failed\n  ! Could not create dh_prime.txt\n\n" );
         goto exit;
@@ -175,12 +175,12 @@ int main( int argc, char **argv )
         ( ret = mbedtls_mpi_write_file( "G = ", &G, 16, fout ) != 0 ) )
     {
         mbedtls_printf( " failed\n  ! mbedtls_mpi_write_file returned %d\n\n", ret );
-        fclose( fout );
+        mbedtls_fclose( fout );
         goto exit;
     }
 
     mbedtls_printf( " ok\n\n" );
-    fclose( fout );
+    mbedtls_fclose( fout );
 
     exit_code = MBEDTLS_EXIT_SUCCESS;
 

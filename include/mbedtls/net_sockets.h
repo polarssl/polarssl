@@ -86,7 +86,11 @@ extern "C" {
  */
 typedef struct
 {
+#ifdef MBEDTLS_NET_OFFLOAD_C
+    int16_t fd;         /**< The underlying file descriptor                 */
+#else /* MBEDTLS_NET_OFFLOAD_C */
     int fd;             /**< The underlying file descriptor                 */
+#endif /* MBEDTLS_NET_OFFLOAD_C */
 }
 mbedtls_net_context;
 

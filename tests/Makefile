@@ -2,7 +2,7 @@
 # To compile on SunOS: add "-lsocket -lnsl" to LDFLAGS
 # To compile with PKCS11: add "-lpkcs11-helper" to LDFLAGS
 
-CFLAGS	?= -O2
+CFLAGS	?=
 WARNING_CFLAGS ?= -Wall -W -Wdeclaration-after-statement -Wno-unused-function -Wno-unused-value
 LDFLAGS ?=
 
@@ -25,6 +25,8 @@ endif
 
 ifdef DEBUG
 LOCAL_CFLAGS += -g3
+else
+CFLAGS += -O2
 endif
 
 # if we're running on Windows, build for Windows
@@ -97,7 +99,8 @@ APPS =	test_suite_aes.ecb$(EXEXT)	test_suite_aes.cbc$(EXEXT)	\
 	test_suite_rsa$(EXEXT)		test_suite_shax$(EXEXT)		\
 	test_suite_ssl$(EXEXT)		test_suite_timing$(EXEXT)			\
 	test_suite_x509parse$(EXEXT)	test_suite_x509write$(EXEXT)	\
-	test_suite_xtea$(EXEXT)		test_suite_version$(EXEXT)
+	test_suite_xtea$(EXEXT)		test_suite_version$(EXEXT)	\
+    test_suite_fs_abstraction$(EXEXT)
 
 .SILENT:
 
@@ -225,6 +228,10 @@ test_suite_hmac_drbg.nopr.c : suites/test_suite_hmac_drbg.function suites/test_s
 test_suite_hmac_drbg.pr.c : suites/test_suite_hmac_drbg.function suites/test_suite_hmac_drbg.pr.data scripts/generate_code.pl suites/helpers.function suites/main_test.function
 	echo "  Gen   $@"
 	perl scripts/generate_code.pl suites test_suite_hmac_drbg test_suite_hmac_drbg.pr
+
+test_suite_fs_abstraction.c : suites/test_suite_fs_abstraction.function suites/test_suite_fs_abstraction.data scripts/generate_code.pl suites/helpers.function suites/main_test.function
+	echo "  Gen   $@"
+	perl scripts/generate_code.pl suites test_suite_fs_abstraction test_suite_fs_abstraction
 
 %.c : suites/%.function suites/%.data scripts/generate_code.pl suites/helpers.function suites/main_test.function
 	echo "  Gen   $@"
@@ -510,6 +517,10 @@ test_suite_aria$(EXEXT): test_suite_aria.c $(DEP)
 	echo "  CC    $<"
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) $<	$(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
 
+test_suite_fs_abstraction$(EXEXT): test_suite_fs_abstraction.c $(DEP)
+	echo "  CC    $<"
+	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) $<	$(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
+
 clean:
 ifndef WINDOWS
 	rm -f $(APPS) *.c
@@ -518,6 +529,6 @@ else
 endif
 
 check: $(APPS)
-	perl scripts/run-test-suites.pl
+	perl scripts/run-test-suites.pl -v
 
 test: check

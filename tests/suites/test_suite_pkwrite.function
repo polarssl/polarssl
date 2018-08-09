@@ -16,7 +16,7 @@ void pk_write_pubkey_check( char *key_file )
     unsigned char buf[5000];
     unsigned char check_buf[5000];
     int ret;
-    FILE *f;
+    mbedtls_file_t f;
     size_t ilen;
 
     memset( buf, 0, sizeof( buf ) );
@@ -28,10 +28,10 @@ void pk_write_pubkey_check( char *key_file )
     ret = mbedtls_pk_write_pubkey_pem( &key, buf, sizeof( buf ));
     TEST_ASSERT( ret == 0 );
 
-    f = fopen( key_file, "r" );
-    TEST_ASSERT( f != NULL );
-    ilen = fread( check_buf, 1, sizeof( check_buf ), f );
-    fclose( f );
+    f = mbedtls_fopen( key_file, "r" );
+    TEST_ASSERT( f != MBEDTLS_FILE_INVALID );
+    ilen = mbedtls_fread( check_buf, sizeof( check_buf ), f );
+    mbedtls_fclose( f );
 
     TEST_ASSERT( ilen == strlen( (char *) buf ) );
     TEST_ASSERT( memcmp( (char *) buf, (char *) check_buf, ilen ) == 0 );
@@ -48,7 +48,7 @@ void pk_write_key_check( char *key_file )
     unsigned char buf[5000];
     unsigned char check_buf[5000];
     int ret;
-    FILE *f;
+    mbedtls_file_t f;
     size_t ilen;
 
     memset( buf, 0, sizeof( buf ) );
@@ -60,10 +60,10 @@ void pk_write_key_check( char *key_file )
     ret = mbedtls_pk_write_key_pem( &key, buf, sizeof( buf ));
     TEST_ASSERT( ret == 0 );
 
-    f = fopen( key_file, "r" );
-    TEST_ASSERT( f != NULL );
-    ilen = fread( check_buf, 1, sizeof( check_buf ), f );
-    fclose( f );
+    f = mbedtls_fopen( key_file, "r" );
+    TEST_ASSERT( f != MBEDTLS_FILE_INVALID );
+    ilen = mbedtls_fread( check_buf, sizeof( check_buf ), f );
+    mbedtls_fclose( f );
 
     TEST_ASSERT( ilen == strlen( (char *) buf ) );
     TEST_ASSERT( memcmp( (char *) buf, (char *) check_buf, ilen ) == 0 );

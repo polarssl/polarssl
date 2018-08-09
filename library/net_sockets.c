@@ -30,7 +30,7 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
-#if defined(MBEDTLS_NET_C)
+#if defined(MBEDTLS_NET_C) && !defined(MBEDTLS_NET_OFFLOAD_C)
 
 #if !defined(unix) && !defined(__unix__) && !defined(__unix) && \
     !defined(__APPLE__) && !defined(_WIN32) && !defined(__QNXNTO__) && \
