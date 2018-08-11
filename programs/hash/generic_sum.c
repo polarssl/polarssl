@@ -39,7 +39,7 @@
 #if defined(MBEDTLS_MD_C) && defined(MBEDTLS_FS_IO)
 #include "mbedtls/md.h"
 
-#include <stdio.h>
+#include "mbedtls/fsio.h"
 #include <string.h>
 #endif
 
@@ -82,7 +82,7 @@ static int generic_check( const mbedtls_md_info_t *md_info, char *filename )
 {
     int i;
     size_t n;
-    FILE *f;
+    mbedtls_file_t f;
     int nb_err1, nb_err2;
     int nb_tot1, nb_tot2;
     unsigned char sum[MBEDTLS_MD_MAX_SIZE];
@@ -94,7 +94,7 @@ static int generic_check( const mbedtls_md_info_t *md_info, char *filename )
     char buf[MBEDTLS_MD_MAX_SIZE * 2 + 1];
 #endif
 
-    if( ( f = fopen( filename, "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( filename, "rb" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( "failed to open: %s\n", filename );
         return( 1 );
@@ -107,7 +107,7 @@ static int generic_check( const mbedtls_md_info_t *md_info, char *filename )
 
     n = sizeof( line );
 
-    while( fgets( line, (int) n - 1, f ) != NULL )
+    while( mbedtls_fgets( line, (int) n - 1, f ) != NULL )
     {
         n = strlen( line );
 
@@ -165,7 +165,7 @@ static int generic_check( const mbedtls_md_info_t *md_info, char *filename )
                 "not match\n", nb_err2, nb_tot2 );
     }
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     return( nb_err1 != 0 || nb_err2 != 0 );
 }

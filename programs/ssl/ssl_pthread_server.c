@@ -97,9 +97,9 @@ static void my_mutexed_debug( void *ctx, int level,
     mbedtls_mutex_lock( &debug_mutex );
 
     ((void) level);
-    mbedtls_fprintf( (FILE *) ctx, "%s:%04d: [ #%ld ] %s",
+    mbedtls_fprintf( (mbedtls_file_t ) ctx, "%s:%04d: [ #%ld ] %s",
                                     file, line, thread_id, str );
-    fflush(  (FILE *) ctx  );
+    fflush(  (mbedtls_file_t ) ctx  );
 
     mbedtls_mutex_unlock( &debug_mutex );
 }
