@@ -41,7 +41,7 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 
-#include <stdio.h>
+#include "mbedtls/fsio.h"
 #endif
 
 #if !defined(MBEDTLS_CTR_DRBG_C) || !defined(MBEDTLS_ENTROPY_C) || \
@@ -54,8 +54,8 @@ int main( void )
 #else
 int main( int argc, char *argv[] )
 {
-    FILE *f;
-    int i, k, ret = 1;
+    mbedtls_file_t f;
+    int i, k, ret;
     int exit_code = MBEDTLS_EXIT_FAILURE;
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_entropy_context entropy;
@@ -69,7 +69,7 @@ int main( int argc, char *argv[] )
         return( exit_code );
     }
 
-    if( ( f = fopen( argv[1], "wb+" ) ) == NULL )
+    if( ( f = mbedtls_fopen( argv[1], "wb+" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( "failed to open '%s' for writing.\n", argv[1] );
         return( exit_code );
@@ -113,7 +113,7 @@ int main( int argc, char *argv[] )
             goto cleanup;
         }
 
-        fwrite( buf, 1, sizeof( buf ), f );
+        mbedtls_fwrite( buf, sizeof( buf ), f );
 
         mbedtls_printf( "Generating %ldkb of data in file '%s'... %04.1f" \
                 "%% done\r", (long)(sizeof(buf) * k / 1024), argv[1], (100 * (float) (i + 1)) / k );
@@ -125,7 +125,7 @@ int main( int argc, char *argv[] )
 cleanup:
     mbedtls_printf("\n");
 
-    fclose( f );
+    mbedtls_fclose( f );
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
 

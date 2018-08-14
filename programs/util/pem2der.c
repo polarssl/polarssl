@@ -41,7 +41,7 @@
 #include "mbedtls/error.h"
 #include "mbedtls/base64.h"
 
-#include <stdio.h>
+#include "mbedtls/fsio.h"
 #include <stdlib.h>
 #include <string.h>
 #endif
@@ -121,38 +121,38 @@ int convert_pem_to_der( const unsigned char *input, size_t ilen,
  */
 static int load_file( const char *path, unsigned char **buf, size_t *n )
 {
-    FILE *f;
+    mbedtls_file_t f;
     long size;
 
-    if( ( f = fopen( path, "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "rb" ) ) == MBEDTLS_FILE_INVALID )
         return( -1 );
 
-    fseek( f, 0, SEEK_END );
-    if( ( size = ftell( f ) ) == -1 )
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_END );
+    if( ( size = mbedtls_ftell( f ) ) == -1 )
     {
-        fclose( f );
+        mbedtls_fclose( f );
         return( -1 );
     }
-    fseek( f, 0, SEEK_SET );
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_SET );
 
     *n = (size_t) size;
 
     if( *n + 1 == 0 ||
         ( *buf = mbedtls_calloc( 1, *n + 1 ) ) == NULL )
     {
-        fclose( f );
+        mbedtls_fclose( f );
         return( -1 );
     }
 
-    if( fread( *buf, 1, *n, f ) != *n )
+    if( mbedtls_fread( *buf, *n, f ) != *n )
     {
-        fclose( f );
+        mbedtls_fclose( f );
         free( *buf );
         *buf = NULL;
         return( -1 );
     }
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     (*buf)[*n] = '\0';
 
@@ -164,18 +164,18 @@ static int load_file( const char *path, unsigned char **buf, size_t *n )
  */
 static int write_file( const char *path, unsigned char *buf, size_t n )
 {
-    FILE *f;
+    mbedtls_file_t f;
 
-    if( ( f = fopen( path, "wb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "wb" ) ) == MBEDTLS_FILE_INVALID )
         return( -1 );
 
-    if( fwrite( buf, 1, n, f ) != n )
+    if( mbedtls_fwrite( buf, n, f ) != n )
     {
-        fclose( f );
+        mbedtls_fclose( f );
         return( -1 );
     }
 
-    fclose( f );
+    mbedtls_fclose( f );
     return( 0 );
 }
 

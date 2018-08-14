@@ -56,13 +56,14 @@ int main( void )
 
 int main( int argc, char *argv[] )
 {
-    FILE *f;
-    int ret = 1, c;
+    mbedtls_file_t f;
+    int ret, c;
     int exit_code = MBEDTLS_EXIT_FAILURE;
     size_t i;
     mbedtls_rsa_context rsa;
     unsigned char hash[32];
     unsigned char buf[MBEDTLS_MPI_MAX_SIZE];
+    unsigned char read_buf[MBEDTLS_MPI_MAX_SIZE];
     char filename[512];
 
     mbedtls_rsa_init( &rsa, MBEDTLS_RSA_PKCS_V15, 0 );
@@ -81,7 +82,7 @@ int main( int argc, char *argv[] )
     mbedtls_printf( "\n  . Reading public key from rsa_pub.txt" );
     fflush( stdout );
 
-    if( ( f = fopen( "rsa_pub.txt", "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( "rsa_pub.txt", "rb" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( " failed\n  ! Could not open rsa_pub.txt\n" \
                 "  ! Please run rsa_genkey first\n\n" );
@@ -92,31 +93,40 @@ int main( int argc, char *argv[] )
         ( ret = mbedtls_mpi_read_file( &rsa.E, 16, f ) ) != 0 )
     {
         mbedtls_printf( " failed\n  ! mbedtls_mpi_read_file returned %d\n\n", ret );
-        fclose( f );
+        mbedtls_fclose( f );
         goto exit;
     }
 
     rsa.len = ( mbedtls_mpi_bitlen( &rsa.N ) + 7 ) >> 3;
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     /*
      * Extract the RSA signature from the text file
      */
     mbedtls_snprintf( filename, sizeof(filename), "%s.sig", argv[1] );
 
-    if( ( f = fopen( filename, "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( filename, "rb" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( "\n  ! Could not open %s\n\n", filename );
         goto exit;
     }
 
     i = 0;
-    while( fscanf( f, "%02X", &c ) > 0 &&
-           i < (int) sizeof( buf ) )
-        buf[i++] = (unsigned char) c;
+    while( mbedtls_fread( read_buf, sizeof( read_buf ), f ) > 0 &&
+            i < (int) sizeof( buf ) )
+    {
+        size_t offset = 0;
+        while( offset < sizeof( read_buf ) &&
+                i < (int) sizeof( buf ) )
+        {
+            sscanf( (char *)( read_buf + offset ), "%02X", &c );
+            offset += 2;
+            buf[i++] = (unsigned char) c;
+        }
+    }
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     if( i != rsa.len )
     {
