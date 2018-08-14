@@ -10,6 +10,10 @@ Bugfix
    * Add ecc extensions only if an ecc based ciphersuite is used.
      This improves compliance to RFC 4492, and as a result, solves
      interoperability issues with BouncyCastle. Raised by milenamil in #1157.
+   * Fix bug in the alert sending function mbedtls_ssl_send_alert_message()
+     potentially leading to corrupted alert messages being sent in case
+     the function needs to be re-called after initially returning
+     MBEDTLS_SSL_WANT_WRITE.
 
 Changes
    * Copy headers preserving timestamps when doing a "make install".
