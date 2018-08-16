@@ -45,7 +45,7 @@ void x509_csr_check( char *key_file, char *cert_req_check_file,
     int ret;
     size_t olen = 0, pem_len = 0;
     int der_len = -1;
-    FILE *f;
+    mbedtls_file_t f;
     const char *subject_name = "C=NL,O=PolarSSL,CN=PolarSSL Server 1";
     rnd_pseudo_info rnd_info;
 
@@ -69,10 +69,10 @@ void x509_csr_check( char *key_file, char *cert_req_check_file,
 
     pem_len = strlen( (char *) buf );
 
-    f = fopen( cert_req_check_file, "r" );
-    TEST_ASSERT( f != NULL );
-    olen = fread( check_buf, 1, sizeof( check_buf ), f );
-    fclose( f );
+    f = mbedtls_fopen( cert_req_check_file, "r" );
+    TEST_ASSERT( f != MBEDTLS_FILE_INVALID );
+    olen = mbedtls_fread( check_buf, sizeof( check_buf ), f );
+    mbedtls_fclose( f );
 
     TEST_ASSERT( olen >= pem_len - 1 );
     TEST_ASSERT( memcmp( buf, check_buf, pem_len - 1 ) == 0 );
@@ -112,7 +112,7 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
     int ret;
     size_t olen = 0, pem_len = 0;
     int der_len = -1;
-    FILE *f;
+    mbedtls_file_t f;
     rnd_pseudo_info rnd_info;
 
     memset( &rnd_info, 0x2a, sizeof( rnd_pseudo_info ) );
@@ -179,11 +179,11 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
 
     pem_len = strlen( (char *) buf );
 
-    f = fopen( cert_check_file, "r" );
-    TEST_ASSERT( f != NULL );
-    olen = fread( check_buf, 1, sizeof( check_buf ), f );
-    fclose( f );
-    TEST_ASSERT( olen < sizeof( check_buf ) );
+    f = mbedtls_fopen( cert_check_file, "r" );
+    TEST_ASSERT( f != MBEDTLS_FILE_INVALID );
+    olen = mbedtls_fread( check_buf, sizeof( check_buf ), f );
+    mbedtls_fclose( f );
+    TEST_ASSERT( olen < sizeof(check_buf) );
 
     TEST_ASSERT( olen >= pem_len - 1 );
     TEST_ASSERT( memcmp( buf, check_buf, pem_len - 1 ) == 0 );

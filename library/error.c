@@ -177,6 +177,10 @@
 #include "mbedtls/rsa.h"
 #endif
 
+#if defined(MBEDTLS_SERIALIZE_C)
+#include "mbedtls/serialize.h"
+#endif
+
 #if defined(MBEDTLS_SHA1_C)
 #include "mbedtls/sha1.h"
 #endif
@@ -834,6 +838,23 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
     if( use_ret == -(MBEDTLS_ERR_RIPEMD160_HW_ACCEL_FAILED) )
         mbedtls_snprintf( buf, buflen, "RIPEMD160 - RIPEMD160 hardware accelerator failed" );
 #endif /* MBEDTLS_RIPEMD160_C */
+
+#if defined(MBEDTLS_SERIALIZE_C)
+    if( use_ret == -(MBEDTLS_ERR_SERIALIZE_UNSUPPORTED_INPUT) )
+        mbedtls_snprintf( buf, buflen, "SERIALIZE - Unable to serialize this input to send it (raised on target)" );
+    if( use_ret == -(MBEDTLS_ERR_SERIALIZE_BAD_INPUT) )
+        mbedtls_snprintf( buf, buflen, "SERIALIZE - Unable to deserialize received input (raised on host)" );
+    if( use_ret == -(MBEDTLS_ERR_SERIALIZE_UNSUPPORTED_OUTPUT) )
+        mbedtls_snprintf( buf, buflen, "SERIALIZE - Unable to serialize output to send result (raised on host)" );
+    if( use_ret == -(MBEDTLS_ERR_SERIALIZE_BAD_OUTPUT) )
+        mbedtls_snprintf( buf, buflen, "SERIALIZE - Unable to deserialize received result (raised on target)" );
+    if( use_ret == -(MBEDTLS_ERR_SERIALIZE_SEND) )
+        mbedtls_snprintf( buf, buflen, "SERIALIZE - Communication error while sending serialized data" );
+    if( use_ret == -(MBEDTLS_ERR_SERIALIZE_RECEIVE) )
+        mbedtls_snprintf( buf, buflen, "SERIALIZE - Communication error while receiving data to unserialize" );
+    if( use_ret == -(MBEDTLS_ERR_SERIALIZE_ALLOC_FAILED) )
+        mbedtls_snprintf( buf, buflen, "SERIALIZE - Out of memory to execute the function" );
+#endif /* MBEDTLS_SERIALIZE_C */
 
 #if defined(MBEDTLS_SHA1_C)
     if( use_ret == -(MBEDTLS_ERR_SHA1_HW_ACCEL_FAILED) )

@@ -80,38 +80,38 @@ static int buffer_nv_seed_write( unsigned char *buf, size_t buf_len )
  */
 static int write_nv_seed( unsigned char *buf, size_t buf_len )
 {
-    FILE *f;
+    mbedtls_file_t f;
 
     if( buf_len != MBEDTLS_ENTROPY_BLOCK_SIZE )
         return( -1 );
 
-    if( ( f = fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "w" ) ) == NULL )
+    if( ( f = mbedtls_fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "w" ) ) == NULL )
         return( -1 );
 
-    if( fwrite( buf, 1, MBEDTLS_ENTROPY_BLOCK_SIZE, f ) !=
+    if( mbedtls_fwrite( buf, MBEDTLS_ENTROPY_BLOCK_SIZE, f ) !=
                     MBEDTLS_ENTROPY_BLOCK_SIZE )
         return( -1 );
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     return( 0 );
 }
 
 static int read_nv_seed( unsigned char *buf, size_t buf_len )
 {
-    FILE *f;
+    mbedtls_file_t f;
 
     if( buf_len != MBEDTLS_ENTROPY_BLOCK_SIZE )
         return( -1 );
 
-    if( ( f = fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "rb" ) ) == NULL )
         return( -1 );
 
-    if( fread( buf, 1, MBEDTLS_ENTROPY_BLOCK_SIZE, f ) !=
+    if( mbedtls_fread( buf, MBEDTLS_ENTROPY_BLOCK_SIZE, f ) !=
                     MBEDTLS_ENTROPY_BLOCK_SIZE )
         return( -1 );
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     return( 0 );
 }

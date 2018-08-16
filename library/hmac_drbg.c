@@ -39,7 +39,7 @@
 #include <string.h>
 
 #if defined(MBEDTLS_FS_IO)
-#include <stdio.h>
+#include "mbedtls/fsio.h"
 #endif
 
 #if defined(MBEDTLS_SELF_TEST)
@@ -341,16 +341,16 @@ void mbedtls_hmac_drbg_free( mbedtls_hmac_drbg_context *ctx )
 int mbedtls_hmac_drbg_write_seed_file( mbedtls_hmac_drbg_context *ctx, const char *path )
 {
     int ret;
-    FILE *f;
+    mbedtls_file_t f;
     unsigned char buf[ MBEDTLS_HMAC_DRBG_MAX_INPUT ];
 
-    if( ( f = fopen( path, "wb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "wb" ) ) == MBEDTLS_FILE_INVALID )
         return( MBEDTLS_ERR_HMAC_DRBG_FILE_IO_ERROR );
 
     if( ( ret = mbedtls_hmac_drbg_random( ctx, buf, sizeof( buf ) ) ) != 0 )
         goto exit;
 
-    if( fwrite( buf, 1, sizeof( buf ), f ) != sizeof( buf ) )
+    if( mbedtls_fwrite( buf, sizeof( buf ), f ) != sizeof( buf ) )
     {
         ret = MBEDTLS_ERR_HMAC_DRBG_FILE_IO_ERROR;
         goto exit;
@@ -359,7 +359,7 @@ int mbedtls_hmac_drbg_write_seed_file( mbedtls_hmac_drbg_context *ctx, const cha
     ret = 0;
 
 exit:
-    fclose( f );
+    mbedtls_fclose( f );
     mbedtls_platform_zeroize( buf, sizeof( buf ) );
 
     return( ret );
@@ -368,29 +368,29 @@ exit:
 int mbedtls_hmac_drbg_update_seed_file( mbedtls_hmac_drbg_context *ctx, const char *path )
 {
     int ret = 0;
-    FILE *f;
+    mbedtls_file_t f;
     size_t n;
     unsigned char buf[ MBEDTLS_HMAC_DRBG_MAX_INPUT ];
 
-    if( ( f = fopen( path, "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "rb" ) ) == MBEDTLS_FILE_INVALID )
         return( MBEDTLS_ERR_HMAC_DRBG_FILE_IO_ERROR );
 
-    fseek( f, 0, SEEK_END );
-    n = (size_t) ftell( f );
-    fseek( f, 0, SEEK_SET );
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_END );
+    n = (size_t) mbedtls_ftell( f );
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_SET );
 
     if( n > MBEDTLS_HMAC_DRBG_MAX_INPUT )
     {
-        fclose( f );
+        mbedtls_fclose( f );
         return( MBEDTLS_ERR_HMAC_DRBG_INPUT_TOO_BIG );
     }
 
-    if( fread( buf, 1, n, f ) != n )
+    if( mbedtls_fread( buf, n, f ) != n )
         ret = MBEDTLS_ERR_HMAC_DRBG_FILE_IO_ERROR;
     else
         mbedtls_hmac_drbg_update( ctx, buf, n );
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     mbedtls_platform_zeroize( buf, sizeof( buf ) );
 

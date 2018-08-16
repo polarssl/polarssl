@@ -1,0 +1,7 @@
+main.c
+mbed-os
+!mbed-os.lib
+.mbed
+BUILD
+mbed_settings.py
+*.pyc

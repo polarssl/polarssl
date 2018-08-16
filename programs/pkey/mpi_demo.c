@@ -64,12 +64,12 @@ int main( void )
     MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &N, &P, &Q ) );
 
     mbedtls_printf( "\n  Public key:\n\n" );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  N = ", &N, 10, NULL ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  E = ", &E, 10, NULL ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  N = ", &N, 10, MBEDTLS_FILE_INVALID ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  E = ", &E, 10, MBEDTLS_FILE_INVALID ) );
 
     mbedtls_printf( "\n  Private key:\n\n" );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  P = ", &P, 10, NULL ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  Q = ", &Q, 10, NULL ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  P = ", &P, 10, MBEDTLS_FILE_INVALID ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  Q = ", &Q, 10, MBEDTLS_FILE_INVALID ) );
 
 #if defined(MBEDTLS_GENPRIME)
     MBEDTLS_MPI_CHK( mbedtls_mpi_sub_int( &P, &P, 1 ) );
@@ -78,7 +78,7 @@ int main( void )
     MBEDTLS_MPI_CHK( mbedtls_mpi_inv_mod( &D, &E, &H ) );
 
     mbedtls_mpi_write_file( "  D = E^-1 mod (P-1)*(Q-1) = ",
-                    &D, 10, NULL );
+                    &D, 10, MBEDTLS_FILE_INVALID );
 #else
     mbedtls_printf("\nTest skipped (MBEDTLS_GENPRIME not defined).\n\n");
 #endif
@@ -87,9 +87,9 @@ int main( void )
     MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &Z, &Y, &D, &N, NULL ) );
 
     mbedtls_printf( "\n  RSA operation:\n\n" );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  X (plaintext)  = ", &X, 10, NULL ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  Y (ciphertext) = X^E mod N = ", &Y, 10, NULL ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  Z (decrypted)  = Y^D mod N = ", &Z, 10, NULL ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  X (plaintext)  = ", &X, 10, MBEDTLS_FILE_INVALID ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  Y (ciphertext) = X^E mod N = ", &Y, 10, MBEDTLS_FILE_INVALID ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_write_file( "  Z (decrypted)  = Y^D mod N = ", &Z, 10, MBEDTLS_FILE_INVALID ) );
     mbedtls_printf( "\n" );
 
     exit_code = MBEDTLS_EXIT_SUCCESS;

@@ -63,6 +63,11 @@ int main( void )
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+#include "mbedtls/serialize.h"
+#include "target_platform.h"
+#endif
+
 #define MAX_REQUEST_SIZE      20000
 #define MAX_REQUEST_SIZE_STR "20000"
 
@@ -497,8 +502,15 @@ int idle( mbedtls_net_context *fd,
     return( 0 );
 }
 
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+int main()
+{
+    char **argv;
+    int argc;
+#else
 int main( int argc, char *argv[] )
 {
+#endif
     int ret = 0, len, tail_len, i, written, frags, retry_left;
     mbedtls_net_context server_fd;
 
@@ -528,7 +540,11 @@ int main( int argc, char *argv[] )
     mbedtls_ssl_session saved_session;
 #if defined(MBEDTLS_TIMING_C)
     mbedtls_timing_delay_context timer;
+#else
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    target_timing_delay_context_t timer = target_timing_delay_context_alloc();
 #endif
+#endif /* MBEDTLS_TIMING_C */
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
     uint32_t flags;
     mbedtls_x509_crt cacert;
@@ -553,6 +569,10 @@ int main( int argc, char *argv[] )
 #endif
 #if defined(MBEDTLS_SSL_ALPN)
     memset( (void * ) alpn_list, 0, sizeof( alpn_list ) );
+#endif
+
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    target_receive_args( &argc, &argv );
 #endif
 
     if( argc == 0 )
@@ -699,6 +719,7 @@ int main( int argc, char *argv[] )
 
             if( opt.force_ciphersuite[0] == 0 )
             {
+                mbedtls_printf( "forced ciphersuite not allowed\n" );
                 ret = 2;
                 goto usage;
             }
@@ -998,7 +1019,8 @@ int main( int argc, char *argv[] )
         {
             if( opt.arc4 == MBEDTLS_SSL_ARC4_DISABLED )
             {
-                mbedtls_printf( "forced RC4 ciphersuite with RC4 disabled\n" );
+                mbedtls_printf( "forced ciphersuite not allowed. "
+                                "forced RC4 ciphersuite with RC4 disabled\n" );
                 ret = 2;
                 goto usage;
             }
@@ -1262,7 +1284,7 @@ int main( int argc, char *argv[] )
     if( opt.server_addr == NULL)
         opt.server_addr = opt.server_name;
 
-    mbedtls_printf( "  . Connecting to %s/%s/%s...",
+    printf( "  . Connecting to %s/%s/%s...\r\n",
             opt.transport == MBEDTLS_SSL_TRANSPORT_STREAM ? "tcp" : "udp",
             opt.server_addr, opt.server_port );
     fflush( stdout );
@@ -1488,7 +1510,12 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_TIMING_C)
     mbedtls_ssl_set_timer_cb( &ssl, &timer, mbedtls_timing_set_delay,
                                             mbedtls_timing_get_delay );
+#else
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    mbedtls_ssl_set_timer_cb( &ssl, timer, target_timing_delay_set,
+                                           target_timing_delay_get );
 #endif
+#endif /* MBEDTLS_TIMING_C */
 
     mbedtls_printf( " ok\n" );
 
@@ -2027,6 +2054,10 @@ exit:
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
+#endif
+
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    target_free_received_args( argv );
 #endif
 
     // Shell can not handle large exit numbers -> 1 for errors

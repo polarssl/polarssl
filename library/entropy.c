@@ -40,7 +40,7 @@
 #include <string.h>
 
 #if defined(MBEDTLS_FS_IO)
-#include <stdio.h>
+#include "mbedtls/fsio.h"
 #endif
 
 #if defined(MBEDTLS_ENTROPY_NV_SEED)
@@ -464,16 +464,16 @@ int mbedtls_entropy_update_nv_seed( mbedtls_entropy_context *ctx )
 int mbedtls_entropy_write_seed_file( mbedtls_entropy_context *ctx, const char *path )
 {
     int ret = MBEDTLS_ERR_ENTROPY_FILE_IO_ERROR;
-    FILE *f;
+    mbedtls_file_t f;
     unsigned char buf[MBEDTLS_ENTROPY_BLOCK_SIZE];
 
-    if( ( f = fopen( path, "wb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "wb" ) ) == MBEDTLS_FILE_INVALID )
         return( MBEDTLS_ERR_ENTROPY_FILE_IO_ERROR );
 
     if( ( ret = mbedtls_entropy_func( ctx, buf, MBEDTLS_ENTROPY_BLOCK_SIZE ) ) != 0 )
         goto exit;
 
-    if( fwrite( buf, 1, MBEDTLS_ENTROPY_BLOCK_SIZE, f ) != MBEDTLS_ENTROPY_BLOCK_SIZE )
+    if( mbedtls_fwrite( buf, MBEDTLS_ENTROPY_BLOCK_SIZE, f ) != MBEDTLS_ENTROPY_BLOCK_SIZE )
     {
         ret = MBEDTLS_ERR_ENTROPY_FILE_IO_ERROR;
         goto exit;
@@ -484,33 +484,33 @@ int mbedtls_entropy_write_seed_file( mbedtls_entropy_context *ctx, const char *p
 exit:
     mbedtls_platform_zeroize( buf, sizeof( buf ) );
 
-    fclose( f );
+    mbedtls_fclose( f );
     return( ret );
 }
 
 int mbedtls_entropy_update_seed_file( mbedtls_entropy_context *ctx, const char *path )
 {
     int ret = 0;
-    FILE *f;
+    mbedtls_file_t f;
     size_t n;
     unsigned char buf[ MBEDTLS_ENTROPY_MAX_SEED_SIZE ];
 
-    if( ( f = fopen( path, "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "rb" ) ) == MBEDTLS_FILE_INVALID )
         return( MBEDTLS_ERR_ENTROPY_FILE_IO_ERROR );
 
-    fseek( f, 0, SEEK_END );
-    n = (size_t) ftell( f );
-    fseek( f, 0, SEEK_SET );
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_END );
+    n = (size_t) mbedtls_ftell( f );
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_SET );
 
     if( n > MBEDTLS_ENTROPY_MAX_SEED_SIZE )
         n = MBEDTLS_ENTROPY_MAX_SEED_SIZE;
 
-    if( fread( buf, 1, n, f ) != n )
+    if( mbedtls_fread( buf, n, f ) != n )
         ret = MBEDTLS_ERR_ENTROPY_FILE_IO_ERROR;
     else
         ret = mbedtls_entropy_update_manual( ctx, buf, n );
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     mbedtls_platform_zeroize( buf, sizeof( buf ) );
 

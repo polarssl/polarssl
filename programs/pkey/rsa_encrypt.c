@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #define mbedtls_fprintf         fprintf
 #define mbedtls_printf          printf
+#define mbedtls_snprintf        snprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -60,8 +61,8 @@ int main( void )
 #else
 int main( int argc, char *argv[] )
 {
-    FILE *f;
-    int ret = 1;
+    mbedtls_file_t f;
+    int ret;
     int exit_code = MBEDTLS_EXIT_FAILURE;
     size_t i;
     mbedtls_rsa_context rsa;
@@ -104,7 +105,7 @@ int main( int argc, char *argv[] )
     mbedtls_printf( "\n  . Reading public key from rsa_pub.txt" );
     fflush( stdout );
 
-    if( ( f = fopen( "rsa_pub.txt", "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( "rsa_pub.txt", "rb" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( " failed\n  ! Could not open rsa_pub.txt\n" \
                 "  ! Please run rsa_genkey first\n\n" );
@@ -116,10 +117,10 @@ int main( int argc, char *argv[] )
     {
         mbedtls_printf( " failed\n  ! mbedtls_mpi_read_file returned %d\n\n",
                         ret );
-        fclose( f );
+        mbedtls_fclose( f );
         goto exit;
     }
-    fclose( f );
+    mbedtls_fclose( f );
 
     if( ( ret = mbedtls_rsa_import( &rsa, &N, NULL, NULL, NULL, &E ) ) != 0 )
     {
@@ -155,17 +156,22 @@ int main( int argc, char *argv[] )
     /*
      * Write the signature into result-enc.txt
      */
-    if( ( f = fopen( "result-enc.txt", "wb+" ) ) == NULL )
+    if( ( f = mbedtls_fopen( "result-enc.txt", "wb+" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( " failed\n  ! Could not create %s\n\n", "result-enc.txt" );
         goto exit;
     }
 
     for( i = 0; i < rsa.len; i++ )
-        mbedtls_fprintf( f, "%02X%s", buf[i],
-                 ( i + 1 ) % 16 == 0 ? "\r\n" : " " );
+    {
+        int len = 0;
+        char write_buf[5];
+        len = mbedtls_snprintf( write_buf, sizeof( write_buf ),
+                "%02X%s", buf[i], ( i + 1 ) % 16 == 0 ? "\r\n" : " " );
+        mbedtls_fwrite(write_buf, len, f);
+    }
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     mbedtls_printf( "\n  . Done (created \"%s\")\n\n", "result-enc.txt" );
 

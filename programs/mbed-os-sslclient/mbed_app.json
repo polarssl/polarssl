@@ -1,0 +1,3 @@
+{
+    "macros": ["MBEDTLS_ON_TARGET_PLATFORM=1"]
+}

@@ -61,7 +61,7 @@ int main( void )
 #else
 int main( int argc, char *argv[] )
 {
-    FILE *f;
+    mbedtls_file_t f;
     int ret = 1, c;
     int exit_code = MBEDTLS_EXIT_FAILURE;
     size_t i, olen = 0;
@@ -70,6 +70,7 @@ int main( int argc, char *argv[] )
     mbedtls_ctr_drbg_context ctr_drbg;
     unsigned char result[1024];
     unsigned char buf[512];
+    unsigned char read_buf[512];
     const char *pers = "mbedtls_pk_decrypt";
     ((void) argv);
 
@@ -113,7 +114,7 @@ int main( int argc, char *argv[] )
     /*
      * Extract the RSA encrypted value from the text file
      */
-    if( ( f = fopen( "result-enc.txt", "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( "result-enc.txt", "rb" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( "\n  ! Could not open %s\n\n", "result-enc.txt" );
         goto exit;
@@ -121,11 +122,20 @@ int main( int argc, char *argv[] )
 
     i = 0;
 
-    while( fscanf( f, "%02X", &c ) > 0 &&
-           i < (int) sizeof( buf ) )
-        buf[i++] = (unsigned char) c;
+    while( mbedtls_fread( read_buf, sizeof( read_buf ), f ) > 0 &&
+            i < (int) sizeof( buf ) )
+    {
+        size_t offset = 0;
+        while( offset < sizeof( read_buf ) &&
+                i < (int) sizeof( buf ) )
+        {
+            sscanf( (char *)( read_buf + offset ), "%02X", &c );
+            offset += 2;
+            buf[i++] = (unsigned char) c;
+        }
+    }
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     /*
      * Decrypt the encrypted RSA data and print the result.
