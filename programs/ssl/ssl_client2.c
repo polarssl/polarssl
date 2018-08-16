@@ -66,10 +66,13 @@ int main( void )
 #if defined(MBEDTLS_ON_TARGET_PLATFORM)
 #include "mbedtls/serialize.h"
 #include "target_platform.h"
-#endif
 
+#define MAX_REQUEST_SIZE      1024
+#define MAX_REQUEST_SIZE_STR "1024"
+#else
 #define MAX_REQUEST_SIZE      20000
 #define MAX_REQUEST_SIZE_STR "20000"
+#endif
 
 #define DFL_SERVER_NAME         "localhost"
 #define DFL_SERVER_ADDR         NULL
@@ -502,6 +505,46 @@ int idle( mbedtls_net_context *fd,
     return( 0 );
 }
 
+/* Data used by program main is defined as static variables instead
+ * of stack variables to reduce stack usage on the target devices with
+ * limited stack size. */
+static mbedtls_net_context server_fd;
+static unsigned char buf[MAX_REQUEST_SIZE + 1];
+
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+static unsigned char psk[MBEDTLS_PSK_MAX_LEN];
+static size_t psk_len = 0;
+#endif
+#if defined(MBEDTLS_SSL_ALPN)
+static const char *alpn_list[ALPN_LIST_SIZE];
+#endif
+#if defined(MBEDTLS_ECP_C)
+static mbedtls_ecp_group_id curve_list[CURVE_LIST_SIZE];
+static const mbedtls_ecp_curve_info *curve_cur;
+#endif
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+static mbedtls_x509_crt_profile crt_profile_for_test;
+#endif
+static mbedtls_entropy_context entropy;
+static mbedtls_ctr_drbg_context ctr_drbg;
+static mbedtls_ssl_context ssl;
+static mbedtls_ssl_config conf;
+static mbedtls_ssl_session saved_session;
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+static uint32_t flags;
+static mbedtls_x509_crt cacert;
+static mbedtls_x509_crt clicert;
+static mbedtls_pk_context pkey;
+#endif
+
+#if defined(MBEDTLS_TIMING_C)
+static mbedtls_timing_delay_context timer;
+#else
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+static target_timing_delay_context_t timer;
+#endif
+#endif /* MBEDTLS_TIMING_C */
+
 #if defined(MBEDTLS_ON_TARGET_PLATFORM)
 int main()
 {
@@ -512,47 +555,17 @@ int main( int argc, char *argv[] )
 {
 #endif
     int ret = 0, len, tail_len, i, written, frags, retry_left;
-    mbedtls_net_context server_fd;
-
-    unsigned char buf[MAX_REQUEST_SIZE + 1];
-
-#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-    unsigned char psk[MBEDTLS_PSK_MAX_LEN];
-    size_t psk_len = 0;
-#endif
-#if defined(MBEDTLS_SSL_ALPN)
-    const char *alpn_list[ALPN_LIST_SIZE];
-#endif
-#if defined(MBEDTLS_ECP_C)
-    mbedtls_ecp_group_id curve_list[CURVE_LIST_SIZE];
-    const mbedtls_ecp_curve_info *curve_cur;
-#endif
-
     const char *pers = "ssl_client2";
-
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-    mbedtls_x509_crt_profile crt_profile_for_test = mbedtls_x509_crt_profile_default;
-#endif
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_ssl_context ssl;
-    mbedtls_ssl_config conf;
-    mbedtls_ssl_session saved_session;
-#if defined(MBEDTLS_TIMING_C)
-    mbedtls_timing_delay_context timer;
-#else
-#if defined(MBEDTLS_ON_TARGET_PLATFORM)
-    target_timing_delay_context_t timer = target_timing_delay_context_alloc();
-#endif
-#endif /* MBEDTLS_TIMING_C */
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-    uint32_t flags;
-    mbedtls_x509_crt cacert;
-    mbedtls_x509_crt clicert;
-    mbedtls_pk_context pkey;
-#endif
     char *p, *q;
     const int *list;
+
+
+#if !defined(MBEDTLS_TIMING_C)
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    timer = target_timing_delay_context_alloc();
+#endif
+#endif /* MBEDTLS_TIMING_C */
+    crt_profile_for_test = mbedtls_x509_crt_profile_default;
 
     /*
      * Make sure memory references are valid.
