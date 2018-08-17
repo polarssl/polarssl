@@ -63,8 +63,16 @@ int main( void )
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+#include "mbedtls/serialize.h"
+#include "target_platform.h"
+
+#define MAX_REQUEST_SIZE      1024
+#define MAX_REQUEST_SIZE_STR "1024"
+#else
 #define MAX_REQUEST_SIZE      20000
 #define MAX_REQUEST_SIZE_STR "20000"
+#endif
 
 #define DFL_SERVER_NAME         "localhost"
 #define DFL_SERVER_ADDR         NULL
@@ -497,46 +505,67 @@ int idle( mbedtls_net_context *fd,
     return( 0 );
 }
 
-int main( int argc, char *argv[] )
-{
-    int ret = 0, len, tail_len, i, written, frags, retry_left;
-    mbedtls_net_context server_fd;
-
-    unsigned char buf[MAX_REQUEST_SIZE + 1];
+/* Data used by program main is defined as static variables instead
+ * of stack variables to reduce stack usage on the target devices with
+ * limited stack size. */
+static mbedtls_net_context server_fd;
+static unsigned char buf[MAX_REQUEST_SIZE + 1];
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-    unsigned char psk[MBEDTLS_PSK_MAX_LEN];
-    size_t psk_len = 0;
+static unsigned char psk[MBEDTLS_PSK_MAX_LEN];
+static size_t psk_len = 0;
 #endif
 #if defined(MBEDTLS_SSL_ALPN)
-    const char *alpn_list[ALPN_LIST_SIZE];
+static const char *alpn_list[ALPN_LIST_SIZE];
 #endif
 #if defined(MBEDTLS_ECP_C)
-    mbedtls_ecp_group_id curve_list[CURVE_LIST_SIZE];
-    const mbedtls_ecp_curve_info *curve_cur;
+static mbedtls_ecp_group_id curve_list[CURVE_LIST_SIZE];
+static const mbedtls_ecp_curve_info *curve_cur;
 #endif
-
-    const char *pers = "ssl_client2";
-
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-    mbedtls_x509_crt_profile crt_profile_for_test = mbedtls_x509_crt_profile_default;
+static mbedtls_x509_crt_profile crt_profile_for_test;
 #endif
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_ssl_context ssl;
-    mbedtls_ssl_config conf;
-    mbedtls_ssl_session saved_session;
+static mbedtls_entropy_context entropy;
+static mbedtls_ctr_drbg_context ctr_drbg;
+static mbedtls_ssl_context ssl;
+static mbedtls_ssl_config conf;
+static mbedtls_ssl_session saved_session;
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+static uint32_t flags;
+static mbedtls_x509_crt cacert;
+static mbedtls_x509_crt clicert;
+static mbedtls_pk_context pkey;
+#endif
+
 #if defined(MBEDTLS_TIMING_C)
-    mbedtls_timing_delay_context timer;
+static mbedtls_timing_delay_context timer;
+#else
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+static target_timing_delay_context_t timer;
 #endif
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-    uint32_t flags;
-    mbedtls_x509_crt cacert;
-    mbedtls_x509_crt clicert;
-    mbedtls_pk_context pkey;
+#endif /* MBEDTLS_TIMING_C */
+
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+int main()
+{
+    char **argv;
+    int argc;
+#else
+int main( int argc, char *argv[] )
+{
 #endif
+    int ret = 0, len, tail_len, i, written, frags, retry_left;
+    const char *pers = "ssl_client2";
     char *p, *q;
     const int *list;
+
+
+#if !defined(MBEDTLS_TIMING_C)
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    timer = target_timing_delay_context_alloc();
+#endif
+#endif /* MBEDTLS_TIMING_C */
+    crt_profile_for_test = mbedtls_x509_crt_profile_default;
 
     /*
      * Make sure memory references are valid.
@@ -553,6 +582,10 @@ int main( int argc, char *argv[] )
 #endif
 #if defined(MBEDTLS_SSL_ALPN)
     memset( (void * ) alpn_list, 0, sizeof( alpn_list ) );
+#endif
+
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    target_receive_args( &argc, &argv );
 #endif
 
     if( argc == 0 )
@@ -699,6 +732,7 @@ int main( int argc, char *argv[] )
 
             if( opt.force_ciphersuite[0] == 0 )
             {
+                mbedtls_printf( "forced ciphersuite not allowed\n" );
                 ret = 2;
                 goto usage;
             }
@@ -998,7 +1032,8 @@ int main( int argc, char *argv[] )
         {
             if( opt.arc4 == MBEDTLS_SSL_ARC4_DISABLED )
             {
-                mbedtls_printf( "forced RC4 ciphersuite with RC4 disabled\n" );
+                mbedtls_printf( "forced ciphersuite not allowed. "
+                                "forced RC4 ciphersuite with RC4 disabled\n" );
                 ret = 2;
                 goto usage;
             }
@@ -1262,7 +1297,7 @@ int main( int argc, char *argv[] )
     if( opt.server_addr == NULL)
         opt.server_addr = opt.server_name;
 
-    mbedtls_printf( "  . Connecting to %s/%s/%s...",
+    printf( "  . Connecting to %s/%s/%s...\r\n",
             opt.transport == MBEDTLS_SSL_TRANSPORT_STREAM ? "tcp" : "udp",
             opt.server_addr, opt.server_port );
     fflush( stdout );
@@ -1488,7 +1523,12 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_TIMING_C)
     mbedtls_ssl_set_timer_cb( &ssl, &timer, mbedtls_timing_set_delay,
                                             mbedtls_timing_get_delay );
+#else
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    mbedtls_ssl_set_timer_cb( &ssl, timer, target_timing_delay_set,
+                                           target_timing_delay_get );
 #endif
+#endif /* MBEDTLS_TIMING_C */
 
     mbedtls_printf( " ok\n" );
 
@@ -2033,6 +2073,10 @@ exit:
     if( ret < 0 )
         ret = 1;
 
+#if defined(MBEDTLS_ON_TARGET_PLATFORM)
+    target_free_received_args( argv );
+    mbedtls_serialize_exit( ret );
+#endif
     return( ret );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_ENTROPY_C && MBEDTLS_SSL_TLS_C &&

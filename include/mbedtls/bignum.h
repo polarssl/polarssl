@@ -34,7 +34,7 @@
 #include <stdint.h>
 
 #if defined(MBEDTLS_FS_IO)
-#include <stdio.h>
+#include "mbedtls/fsio.h"
 #endif
 
 #define MBEDTLS_ERR_MPI_FILE_IO_ERROR                     -0x0002  /**< An error occurred while reading from or writing to a file. */
@@ -401,7 +401,7 @@ int mbedtls_mpi_write_string( const mbedtls_mpi *X, int radix,
  *                 '0x' prefix for radix 16.
  *
  */
-int mbedtls_mpi_read_file( mbedtls_mpi *X, int radix, FILE *fin );
+int mbedtls_mpi_read_file( mbedtls_mpi *X, int radix, mbedtls_file_t fin );
 
 /**
  * \brief          Write X into an opened file, or stdout if fout is NULL
@@ -409,13 +409,13 @@ int mbedtls_mpi_read_file( mbedtls_mpi *X, int radix, FILE *fin );
  * \param p        Prefix, can be NULL
  * \param X        Source MPI
  * \param radix    Output numeric base
- * \param fout     Output file handle (can be NULL)
+ * \param fout     Output file handle (can be MBEDTLS_FILE_INVALID)
  *
  * \return         0 if successful, or a MBEDTLS_ERR_MPI_XXX error code
  *
  * \note           Set fout == NULL to print X on the console.
  */
-int mbedtls_mpi_write_file( const char *p, const mbedtls_mpi *X, int radix, FILE *fout );
+int mbedtls_mpi_write_file( const char *p, const mbedtls_mpi *X, int radix, mbedtls_file_t fout );
 #endif /* MBEDTLS_FS_IO */
 
 /**

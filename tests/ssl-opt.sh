@@ -21,6 +21,10 @@
 
 set -u
 
+# Record the path where the script is started. Useful for resolving the
+# relative paths of the supplied command line arguments.
+EXECUTION_DIR=$(pwd)
+
 if cd $( dirname $0 ); then :; else
     echo "cd $( dirname $0 ) failed" >&2
     exit 1
@@ -55,6 +59,10 @@ SHOW_TEST_NUMBER=0
 RUN_TEST_NUMBER=''
 
 PRESERVE_LOGS=0
+ON_TARGET=0
+TARGET_SERIAL=''
+TARGET_BAUD=''
+TARGET_CONFIG_H=''
 
 # Pick a "unique" server port in the range 10000-19999, and a proxy
 # port which is this plus 10000. Each port number may be independently
@@ -74,6 +82,18 @@ print_usage() {
     printf "     --port\tTCP/UDP port (default: randomish 1xxxx)\n"
     printf "     --proxy-port\tTCP/UDP proxy port (default: randomish 2xxxx)\n"
     printf "     --seed\tInteger seed value to use for this test run\n"
+    printf "     --on-target\tIndicates that ssl client runs on target.\n"
+    printf "                \tprogram/host/frontend will be used as the client app.\n"
+    printf "                \tThat handles serialized network and file system calls\n"
+    printf "                \tover the serial connection.\n"
+    printf "     --target-serial\tTarget serial port for program/host/frontend\n"
+    printf "                \tThis option is mandatory with --on-target option\n"
+    printf "     --target-baud\tTarget serial baud rate for program/host/frontend\n"
+    printf "                \tThis option is mandatory with --on-target option\n"
+    printf "     --target-config\tMbed TLS config file path for target device\n"
+    printf "                \tTarget config in addition to the host config is also\n"
+    printf "                \tchecked for the flags required by the tests.\n"
+    printf "                \tThis option is mandatory with --on-target option\n"
 }
 
 get_options() {
@@ -106,6 +126,18 @@ get_options() {
             --seed)
                 shift; SEED="$1"
                 ;;
+            --on-target)
+                ON_TARGET=1
+                ;;
+            --target-serial)
+                shift; TARGET_SERIAL="$1"
+                ;;
+            --target-baud)
+                shift; TARGET_BAUD="$1"
+                ;;
+            --target-config)
+                shift; TARGET_CONFIG_H="$1"
+                ;;
             -h|--help)
                 print_usage
                 exit 0
@@ -124,6 +156,11 @@ get_options() {
 requires_config_enabled() {
     if grep "^#define $1" $CONFIG_H > /dev/null; then :; else
         SKIP_NEXT="YES"
+    fi
+    if [ "$ON_TARGET" = 1 ]; then
+        if grep "^#define $1" $TARGET_CONFIG_H > /dev/null; then :; else
+            SKIP_NEXT="YES"
+        fi
     fi
 }
 
@@ -652,6 +689,45 @@ cleanup() {
 
 get_options "$@"
 
+# Validate required input for on-target testing
+if [ "$ON_TARGET" = 1 ]; then
+    not_enough_input=0
+
+    if [ "X${TARGET_SERIAL:-X}" = "XX" ]; then
+        echo "Error: Target serial port not specified."
+        not_enough_input=1
+    fi
+
+    if [ "X${TARGET_BAUD:-X}" = "XX" ]; then
+        echo "Error: Target baud rate not specified."
+        not_enough_input=1
+    fi
+
+    if [ "X${TARGET_CONFIG_H:-X}" = "XX" ]; then
+        echo "Error: Target config file path not specified."
+        not_enough_input=1
+    else
+        # Check that config file exists at absolute or relative path
+        if [ -e "$TARGET_CONFIG_H" ]; then :; else
+            TARGET_CONFIG_H=$EXECUTION_DIR/$TARGET_CONFIG_H
+            if [ -e "$TARGET_CONFIG_H" ]; then :; else
+                echo "Error: Target config file path not found!"
+                exit 1
+            fi
+        fi
+    fi
+    if [ $not_enough_input = 1 ]; then
+        echo ""
+        print_usage
+        exit 1
+    fi
+fi
+
+# Change client to programs/host/frontend for on target testing
+if [ "$ON_TARGET" = 1 ]; then
+    P_CLI="../programs/host/frontend -p $TARGET_SERIAL -b $TARGET_BAUD"
+fi
+
 # sanity checks, avoid an avalanche of errors
 P_SRV_BIN="${P_SRV%%[  ]*}"
 P_CLI_BIN="${P_CLI%%[  ]*}"
@@ -695,6 +771,9 @@ MAIN_PID="$$"
 if [ "$MEMCHECK" -gt 0 ]; then
     START_DELAY=6
     DOG_DELAY=60
+elif [ "$ON_TARGET" -gt 0 ]; then
+    START_DELAY=6
+    DOG_DELAY=300
 else
     START_DELAY=2
     DOG_DELAY=20

@@ -1,0 +1,7 @@
+{
+    "macros": [
+        "MBEDTLS_ON_TARGET_PLATFORM=1",
+        "MBED_STACK_STATS_ENABLED=1",
+        "MBED_CONF_APP_MAIN_STACK_SIZE=8192"
+        ]
+}

@@ -38,7 +38,7 @@
 #include <string.h>
 
 #if defined(MBEDTLS_FS_IO)
-#include <stdio.h>
+#include "mbedtls/fsio.h"
 #endif
 
 #if defined(MBEDTLS_SELF_TEST)
@@ -474,16 +474,16 @@ int mbedtls_ctr_drbg_random( void *p_rng, unsigned char *output, size_t output_l
 int mbedtls_ctr_drbg_write_seed_file( mbedtls_ctr_drbg_context *ctx, const char *path )
 {
     int ret = MBEDTLS_ERR_CTR_DRBG_FILE_IO_ERROR;
-    FILE *f;
+    mbedtls_file_t f;
     unsigned char buf[ MBEDTLS_CTR_DRBG_MAX_INPUT ];
 
-    if( ( f = fopen( path, "wb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "wb" ) ) == MBEDTLS_FILE_INVALID )
         return( MBEDTLS_ERR_CTR_DRBG_FILE_IO_ERROR );
 
     if( ( ret = mbedtls_ctr_drbg_random( ctx, buf, MBEDTLS_CTR_DRBG_MAX_INPUT ) ) != 0 )
         goto exit;
 
-    if( fwrite( buf, 1, MBEDTLS_CTR_DRBG_MAX_INPUT, f ) != MBEDTLS_CTR_DRBG_MAX_INPUT )
+    if( mbedtls_fwrite( buf, MBEDTLS_CTR_DRBG_MAX_INPUT, f ) != MBEDTLS_CTR_DRBG_MAX_INPUT )
         ret = MBEDTLS_ERR_CTR_DRBG_FILE_IO_ERROR;
     else
         ret = 0;
@@ -491,36 +491,36 @@ int mbedtls_ctr_drbg_write_seed_file( mbedtls_ctr_drbg_context *ctx, const char 
 exit:
     mbedtls_platform_zeroize( buf, sizeof( buf ) );
 
-    fclose( f );
+    mbedtls_fclose( f );
     return( ret );
 }
 
 int mbedtls_ctr_drbg_update_seed_file( mbedtls_ctr_drbg_context *ctx, const char *path )
 {
     int ret = 0;
-    FILE *f;
+    mbedtls_file_t f;
     size_t n;
     unsigned char buf[ MBEDTLS_CTR_DRBG_MAX_INPUT ];
 
-    if( ( f = fopen( path, "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( path, "rb" ) ) == MBEDTLS_FILE_INVALID )
         return( MBEDTLS_ERR_CTR_DRBG_FILE_IO_ERROR );
 
-    fseek( f, 0, SEEK_END );
-    n = (size_t) ftell( f );
-    fseek( f, 0, SEEK_SET );
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_END );
+    n = (size_t) mbedtls_ftell( f );
+    mbedtls_fseek( f, 0, MBEDTLS_SEEK_SET );
 
     if( n > MBEDTLS_CTR_DRBG_MAX_INPUT )
     {
-        fclose( f );
+        mbedtls_fclose( f );
         return( MBEDTLS_ERR_CTR_DRBG_INPUT_TOO_BIG );
     }
 
-    if( fread( buf, 1, n, f ) != n )
+    if( mbedtls_fread( buf, n, f ) != n )
         ret = MBEDTLS_ERR_CTR_DRBG_FILE_IO_ERROR;
     else
         mbedtls_ctr_drbg_update( ctx, buf, n );
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     mbedtls_platform_zeroize( buf, sizeof( buf ) );
 
