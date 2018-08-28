@@ -28,10 +28,13 @@
 
 #include "mbedtls/platform_util.h"
 
-#include <stddef.h>
+#ifndef mbedtls_platform_zeroize
+#ifndef MBEDTLS_PLATFORM_ZEROIZE_ALT
 #include <string.h>
-
-#if !defined(MBEDTLS_PLATFORM_ZEROIZE_ALT)
+#endif
+void mbedtls_platform_zeroize( void *buf, size_t len )
+{
+#ifndef MBEDTLS_PLATFORM_ZEROIZE_ALT
 /*
  * This implementation should never be optimized out by the compiler
  *
@@ -57,11 +60,11 @@
  * option MBEDTLS_PLATFORM_ZEROIZE_ALT, which allows users to configure
  * mbedtls_platform_zeroize() to use a suitable implementation for their
  * platform and needs.
- */
-static void * (* const volatile memset_func)( void *, int, size_t ) = memset;
-
-void mbedtls_platform_zeroize( void *buf, size_t len )
-{
+*/
+    static void * (* const volatile memset_func)( void *, int, size_t ) = memset;
     memset_func( buf, 0, len );
-}
+#else
+#error "MBEDTLS_PLATFORM_ZEROIZE_ALT was defined, but neither function nor macro were provided for 'mbedtls_platform_zeroize'."
 #endif /* MBEDTLS_PLATFORM_ZEROIZE_ALT */
+}
+#endif /* mbedtls_platform_zeroize */

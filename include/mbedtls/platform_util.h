@@ -25,6 +25,33 @@
 #ifndef MBEDTLS_PLATFORM_UTIL_H
 #define MBEDTLS_PLATFORM_UTIL_H
 
+#ifdef mbedtls_platform_zeroize
+#error "'mbedtls_platform_zeroize' as macro should be defined in platform_util.h file"
+#endif
+
+#ifndef MBEDTLS_PLATFORM_ZEROIZE_ALT
+// Standard macros
+#ifdef _WIN32
+#include <windows.h>
+#define mbedtls_platform_zeroize RtlSecureZeroMemory
+#endif
+// Other possible implementations
+/* C11/C++11
+ *#include <strings.h>
+ *#define mbedtls_platform_zeroize( buf, len ) memset_s( (buf), (len), 0, (len) )
+ */
+/* FreeBSD
+ * #include <strings.h>
+ * #define mbedtls_platform_zeroize explicit_bzero
+ */
+#else
+/*
+ * User-defined alternative macro definition for mbedtls_platform_zeroize
+ */
+#undef mbedtls_platform_zeroize //No macro, ensure error message in platform_util.c
+#endif /* MBEDTLS_PLATFORM_ZEROIZE_ALT */
+
+#if !defined(mbedtls_platform_zeroize)
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -58,5 +85,6 @@ void mbedtls_platform_zeroize( void *buf, size_t len );
 #ifdef __cplusplus
 }
 #endif
+#endif /* !defined(mbedtls_platform_zeroize) */
 
 #endif /* MBEDTLS_PLATFORM_UTIL_H */
