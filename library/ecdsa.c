@@ -46,6 +46,9 @@
  * Derive a suitable integer for group grp from a buffer of length len
  * SEC1 4.1.3 step 5 aka SEC1 4.1.4 step 3
  */
+#if !defined(MBEDTLS_ECDSA_SIGN_ALT)        ||     \
+     defined(MBEDTLS_ECDSA_DETERMINISTIC)   ||     \
+    !defined(MBEDTLS_ECDSDA_VERIFY_ALT)
 static int derive_mpi( const mbedtls_ecp_group *grp, mbedtls_mpi *x,
                        const unsigned char *buf, size_t blen )
 {
@@ -64,6 +67,9 @@ static int derive_mpi( const mbedtls_ecp_group *grp, mbedtls_mpi *x,
 cleanup:
     return( ret );
 }
+#endif /* !MBEDTLS_ECDSA_SIGN_ALT        ||
+           MBEDTLS_ECDSA_DETERMINISTIC   ||
+          !MBEDTLS_ECDSDA_VERIFY_ALT     */
 
 #if !defined(MBEDTLS_ECDSA_SIGN_ALT)
 /*
