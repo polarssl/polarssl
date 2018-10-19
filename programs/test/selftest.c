@@ -351,15 +351,17 @@ int main( int argc, char *argv[] )
         }                                                               \
     } while( 0 )
 
-    CHECK_PADDING_SIGNED( short,      SHRT );
-    CHECK_PADDING_SIGNED( int,         INT );
-    CHECK_PADDING_SIGNED( long,       LONG );
-    CHECK_PADDING_SIGNED( long long, LLONG );
+    CHECK_PADDING_SIGNED( short,        SHRT );
+    CHECK_PADDING_SIGNED( int,           INT );
+    CHECK_PADDING_SIGNED( long,         LONG );
+    CHECK_PADDING_SIGNED( long long,   LLONG );
+    CHECK_PADDING_SIGNED( ptrdiff_t, PTRDIFF );
 
     CHECK_PADDING_UNSIGNED( unsigned short,      USHRT );
     CHECK_PADDING_UNSIGNED( unsigned,             UINT );
     CHECK_PADDING_UNSIGNED( unsigned long,       ULONG );
     CHECK_PADDING_UNSIGNED( unsigned long long, ULLONG );
+    CHECK_PADDING_UNSIGNED( size_t,               SIZE );
 
 #undef CHECK_PADDING_SIGNED
 #undef CHECK_PADDING_UNSIGNED
