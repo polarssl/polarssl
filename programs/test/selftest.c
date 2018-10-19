@@ -319,6 +319,9 @@ int main( int argc, char *argv[] )
      * of that unpadded type. For example, for a 4-byte int,
      * MAX_INT should be 0x7fffffff in int32_t. This assumes that
      * CHAR_BIT == 8, which is checked in check_config.h.
+     *
+     * We assume that [u]intxx_t exist and that they don't
+     * have padding bits, as the standard requires.
      */
 
 #define CHECK_PADDING_SIGNED(TYPE, NAME)                                \
