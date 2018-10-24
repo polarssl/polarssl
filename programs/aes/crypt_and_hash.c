@@ -47,7 +47,7 @@
 #include "mbedtls/cipher.h"
 #include "mbedtls/md.h"
 
-#include <stdio.h>
+#include "mbedtls/fsio.h"
 #include <stdlib.h>
 #include <string.h>
 #endif
@@ -85,7 +85,7 @@ int main( int argc, char *argv[] )
     int exit_code = MBEDTLS_EXIT_FAILURE;
     int mode;
     size_t keylen, ilen, olen;
-    FILE *fkey, *fin = NULL, *fout = NULL;
+    mbedtls_file_t fkey, fin = MBEDTLS_FILE_INVALID, fout = MBEDTLS_FILE_INVALID;
 
     char *p;
     unsigned char IV[16];
@@ -160,15 +160,15 @@ int main( int argc, char *argv[] )
         goto exit;
     }
 
-    if( ( fin = fopen( argv[2], "rb" ) ) == NULL )
+    if( ( fin = mbedtls_fopen( argv[2], "rb" ) ) == MBEDTLS_FILE_INVALID )
     {
-        mbedtls_fprintf( stderr, "fopen(%s,rb) failed\n", argv[2] );
+        mbedtls_fprintf( stderr, "mbedtls_fopen(%s,rb) failed\n", argv[2] );
         goto exit;
     }
 
-    if( ( fout = fopen( argv[3], "wb+" ) ) == NULL )
+    if( ( fout = mbedtls_fopen( argv[3], "wb+" ) ) == MBEDTLS_FILE_INVALID )
     {
-        mbedtls_fprintf( stderr, "fopen(%s,wb+) failed\n", argv[3] );
+        mbedtls_fprintf( stderr, "mbedtls_fopen(%s,wb+) failed\n", argv[3] );
         goto exit;
     }
 
@@ -203,10 +203,10 @@ int main( int argc, char *argv[] )
     /*
      * Read the secret key from file or command line
      */
-    if( ( fkey = fopen( argv[6], "rb" ) ) != NULL )
+    if( ( fkey = mbedtls_fopen( argv[6], "rb" ) ) != MBEDTLS_FILE_INVALID )
     {
-        keylen = fread( key, 1, sizeof( key ), fkey );
-        fclose( fkey );
+        keylen = mbedtls_fread( key, sizeof( key ), fkey );
+        mbedtls_fclose( fkey );
     }
     else
     {
@@ -234,7 +234,7 @@ int main( int argc, char *argv[] )
     }
 
 #if defined(_WIN32_WCE)
-    filesize = fseek( fin, 0L, SEEK_END );
+    filesize = mbedtls_fseek( fin, 0L, MBEDTLS_SEEK_END );
 #else
 #if defined(_WIN32)
     /*
@@ -253,17 +253,17 @@ int main( int argc, char *argv[] )
 
     filesize = li_size.QuadPart;
 #else
-    if( ( filesize = lseek( fileno( fin ), 0, SEEK_END ) ) < 0 )
+    if( ( filesize = mbedtls_fseek( fin , 0, MBEDTLS_SEEK_END ) ) < 0 )
     {
-        perror( "lseek" );
+        perror( "mbedtls_fseek" );
         goto exit;
     }
 #endif
 #endif
 
-    if( fseek( fin, 0, SEEK_SET ) < 0 )
+    if( mbedtls_fseek( fin, 0, MBEDTLS_SEEK_SET ) < 0 )
     {
-        mbedtls_fprintf( stderr, "fseek(0,SEEK_SET) failed\n" );
+        mbedtls_fprintf( stderr, "mbedtls_fseek(0,MBEDTLS_SEEK_SET) failed\n" );
         goto exit;
     }
 
@@ -288,9 +288,9 @@ int main( int argc, char *argv[] )
         /*
          * Append the IV at the beginning of the output.
          */
-        if( fwrite( IV, 1, 16, fout ) != 16 )
+        if( mbedtls_fwrite( IV, 16, fout ) != 16 )
         {
-            mbedtls_fprintf( stderr, "fwrite(%d bytes) failed\n", 16 );
+            mbedtls_fprintf( stderr, "mbedtls_fwrite(%d bytes) failed\n", 16 );
             goto exit;
         }
 
@@ -337,9 +337,9 @@ int main( int argc, char *argv[] )
             ilen = ( (unsigned int) filesize - offset > mbedtls_cipher_get_block_size( &cipher_ctx ) ) ?
                 mbedtls_cipher_get_block_size( &cipher_ctx ) : (unsigned int) ( filesize - offset );
 
-            if( fread( buffer, 1, ilen, fin ) != ilen )
+            if( mbedtls_fread( buffer, ilen, fin ) != ilen )
             {
-                mbedtls_fprintf( stderr, "fread(%ld bytes) failed\n", (long) ilen );
+                mbedtls_fprintf( stderr, "mbedtls_fread(%ld bytes) failed\n", (long) ilen );
                 goto exit;
             }
 
@@ -351,9 +351,9 @@ int main( int argc, char *argv[] )
 
             mbedtls_md_hmac_update( &md_ctx, output, olen );
 
-            if( fwrite( output, 1, olen, fout ) != olen )
+            if( mbedtls_fwrite( output, olen, fout ) != olen )
             {
-                mbedtls_fprintf( stderr, "fwrite(%ld bytes) failed\n", (long) olen );
+                mbedtls_fprintf( stderr, "mbedtls_fwrite(%ld bytes) failed\n", (long) olen );
                 goto exit;
             }
         }
@@ -365,9 +365,9 @@ int main( int argc, char *argv[] )
         }
         mbedtls_md_hmac_update( &md_ctx, output, olen );
 
-        if( fwrite( output, 1, olen, fout ) != olen )
+        if( mbedtls_fwrite( output, olen, fout ) != olen )
         {
-            mbedtls_fprintf( stderr, "fwrite(%ld bytes) failed\n", (long) olen );
+            mbedtls_fprintf( stderr, "mbedtls_fwrite(%ld bytes) failed\n", (long) olen );
             goto exit;
         }
 
@@ -376,9 +376,9 @@ int main( int argc, char *argv[] )
          */
         mbedtls_md_hmac_finish( &md_ctx, digest );
 
-        if( fwrite( digest, 1, mbedtls_md_get_size( md_info ), fout ) != mbedtls_md_get_size( md_info ) )
+        if( mbedtls_fwrite( digest, mbedtls_md_get_size( md_info ), fout ) != mbedtls_md_get_size( md_info ) )
         {
-            mbedtls_fprintf( stderr, "fwrite(%d bytes) failed\n", mbedtls_md_get_size( md_info ) );
+            mbedtls_fprintf( stderr, "mbedtls_fwrite(%d bytes) failed\n", mbedtls_md_get_size( md_info ) );
             goto exit;
         }
     }
@@ -426,9 +426,9 @@ int main( int argc, char *argv[] )
         /*
          * Read the IV and original filesize modulo 16.
          */
-        if( fread( buffer, 1, 16, fin ) != 16 )
+        if( mbedtls_fread( buffer, 16, fin ) != 16 )
         {
-            mbedtls_fprintf( stderr, "fread(%d bytes) failed\n", 16 );
+            mbedtls_fprintf( stderr, "mbedtls_fread(%d bytes) failed\n", 16 );
             goto exit;
         }
 
@@ -478,9 +478,9 @@ int main( int argc, char *argv[] )
             ilen = ( (unsigned int) filesize - offset > mbedtls_cipher_get_block_size( &cipher_ctx ) ) ?
                 mbedtls_cipher_get_block_size( &cipher_ctx ) : (unsigned int) ( filesize - offset );
 
-            if( fread( buffer, 1, ilen, fin ) != ilen )
+            if( mbedtls_fread( buffer, ilen, fin ) != ilen )
             {
-                mbedtls_fprintf( stderr, "fread(%d bytes) failed\n",
+                mbedtls_fprintf( stderr, "mbedtls_fread(%d bytes) failed\n",
                     mbedtls_cipher_get_block_size( &cipher_ctx ) );
                 goto exit;
             }
@@ -493,9 +493,9 @@ int main( int argc, char *argv[] )
                 goto exit;
             }
 
-            if( fwrite( output, 1, olen, fout ) != olen )
+            if( mbedtls_fwrite( output, olen, fout ) != olen )
             {
-                mbedtls_fprintf( stderr, "fwrite(%ld bytes) failed\n", (long) olen );
+                mbedtls_fprintf( stderr, "mbedtls_fwrite(%ld bytes) failed\n", (long) olen );
                 goto exit;
             }
         }
@@ -505,9 +505,9 @@ int main( int argc, char *argv[] )
          */
         mbedtls_md_hmac_finish( &md_ctx, digest );
 
-        if( fread( buffer, 1, mbedtls_md_get_size( md_info ), fin ) != mbedtls_md_get_size( md_info ) )
+        if( mbedtls_fread( buffer, mbedtls_md_get_size( md_info ), fin ) != mbedtls_md_get_size( md_info ) )
         {
-            mbedtls_fprintf( stderr, "fread(%d bytes) failed\n", mbedtls_md_get_size( md_info ) );
+            mbedtls_fprintf( stderr, "mbedtls_fread(%d bytes) failed\n", mbedtls_md_get_size( md_info ) );
             goto exit;
         }
 
@@ -528,9 +528,9 @@ int main( int argc, char *argv[] )
          */
         mbedtls_cipher_finish( &cipher_ctx, output, &olen );
 
-        if( fwrite( output, 1, olen, fout ) != olen )
+        if( mbedtls_fwrite( output, olen, fout ) != olen )
         {
-            mbedtls_fprintf( stderr, "fwrite(%ld bytes) failed\n", (long) olen );
+            mbedtls_fprintf( stderr, "mbedtls_fwrite(%ld bytes) failed\n", (long) olen );
             goto exit;
         }
     }
@@ -539,9 +539,9 @@ int main( int argc, char *argv[] )
 
 exit:
     if( fin )
-        fclose( fin );
+        mbedtls_fclose( fin );
     if( fout )
-        fclose( fout );
+        mbedtls_fclose( fout );
 
     /* Zeroize all command line arguments to also cover
        the case when the user has missed or reordered some,

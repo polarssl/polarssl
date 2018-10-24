@@ -387,6 +387,9 @@ static const char *features[] = {
 #if defined(MBEDTLS_FS_IO)
     "MBEDTLS_FS_IO",
 #endif /* MBEDTLS_FS_IO */
+#if defined(MBEDTLS_FS_IO_ALT)
+    "MBEDTLS_FS_IO_ALT",
+#endif /* MBEDTLS_FS_IO_ALT */
 #if defined(MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES)
     "MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES",
 #endif /* MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES */
@@ -744,6 +747,12 @@ static const char *features[] = {
 #if defined(MBEDTLS_XTEA_C)
     "MBEDTLS_XTEA_C",
 #endif /* MBEDTLS_XTEA_C */
+#if defined(MBEDTLS_SERIALIZE_C)
+    "MBEDTLS_SERIALIZE_C",
+#endif /* MBEDTLS_SERIALIZE_C */
+#if defined(MBEDTLS_SERIALIZE_FORK_FRONTEND_C)
+    "MBEDTLS_SERIALIZE_FORK_FRONTEND_C",
+#endif /* MBEDTLS_SERIALIZE_FORK_FRONTEND_C */
 #endif /* MBEDTLS_VERSION_FEATURES */
     NULL
 };

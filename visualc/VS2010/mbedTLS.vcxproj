@@ -179,6 +179,7 @@
     <ClInclude Include="..\..\include\mbedtls\entropy.h" />
     <ClInclude Include="..\..\include\mbedtls\entropy_poll.h" />
     <ClInclude Include="..\..\include\mbedtls\error.h" />
+    <ClInclude Include="..\..\include\mbedtls\fsio.h" />
     <ClInclude Include="..\..\include\mbedtls\gcm.h" />
     <ClInclude Include="..\..\include\mbedtls\havege.h" />
     <ClInclude Include="..\..\include\mbedtls\hkdf.h" />
@@ -207,6 +208,7 @@
     <ClInclude Include="..\..\include\mbedtls\ripemd160.h" />
     <ClInclude Include="..\..\include\mbedtls\rsa.h" />
     <ClInclude Include="..\..\include\mbedtls\rsa_internal.h" />
+    <ClInclude Include="..\..\include\mbedtls\serialize.h" />
     <ClInclude Include="..\..\include\mbedtls\sha1.h" />
     <ClInclude Include="..\..\include\mbedtls\sha256.h" />
     <ClInclude Include="..\..\include\mbedtls\sha512.h" />
@@ -255,6 +257,7 @@
     <ClCompile Include="..\..\library\entropy.c" />
     <ClCompile Include="..\..\library\entropy_poll.c" />
     <ClCompile Include="..\..\library\error.c" />
+    <ClCompile Include="..\..\library\fsio.c" />
     <ClCompile Include="..\..\library\gcm.c" />
     <ClCompile Include="..\..\library\havege.c" />
     <ClCompile Include="..\..\library\hkdf.c" />
@@ -283,6 +286,7 @@
     <ClCompile Include="..\..\library\ripemd160.c" />
     <ClCompile Include="..\..\library\rsa.c" />
     <ClCompile Include="..\..\library\rsa_internal.c" />
+    <ClCompile Include="..\..\library\serialize.c" />
     <ClCompile Include="..\..\library\sha1.c" />
     <ClCompile Include="..\..\library\sha256.c" />
     <ClCompile Include="..\..\library\sha512.c" />

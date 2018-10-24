@@ -159,7 +159,7 @@ int mbedtls_platform_set_printf( int (*printf_func)( const char *, ... ) )
 /*
  * Make dummy function to prevent NULL pointer dereferences
  */
-static int platform_fprintf_uninit( FILE *stream, const char *format, ... )
+static int platform_fprintf_uninit( FILE * stream, const char *format, ... )
 {
     ((void) stream);
     ((void) format);
@@ -169,10 +169,10 @@ static int platform_fprintf_uninit( FILE *stream, const char *format, ... )
 #define MBEDTLS_PLATFORM_STD_FPRINTF   platform_fprintf_uninit
 #endif /* !MBEDTLS_PLATFORM_STD_FPRINTF */
 
-int (*mbedtls_fprintf)( FILE *, const char *, ... ) =
+int (*mbedtls_fprintf)( FILE * , const char *, ... ) =
                                         MBEDTLS_PLATFORM_STD_FPRINTF;
 
-int mbedtls_platform_set_fprintf( int (*fprintf_func)( FILE *, const char *, ... ) )
+int mbedtls_platform_set_fprintf( int (*fprintf_func)( FILE * , const char *, ... ) )
 {
     mbedtls_fprintf = fprintf_func;
     return( 0 );
@@ -235,38 +235,38 @@ int mbedtls_platform_set_time( mbedtls_time_t (*time_func)( mbedtls_time_t* time
  */
 int mbedtls_platform_std_nv_seed_read( unsigned char *buf, size_t buf_len )
 {
-    FILE *file;
+    mbedtls_file_t file;
     size_t n;
 
-    if( ( file = fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "rb" ) ) == NULL )
+    if( ( file = mbedtls_fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "rb" ) ) == MBEDTLS_FILE_INVALID )
         return( -1 );
 
-    if( ( n = fread( buf, 1, buf_len, file ) ) != buf_len )
+    if( ( n = mbedtls_fread( buf, buf_len, file ) ) != buf_len )
     {
-        fclose( file );
+        mbedtls_fclose( file );
         mbedtls_platform_zeroize( buf, buf_len );
         return( -1 );
     }
 
-    fclose( file );
+    mbedtls_fclose( file );
     return( (int)n );
 }
 
 int mbedtls_platform_std_nv_seed_write( unsigned char *buf, size_t buf_len )
 {
-    FILE *file;
+    mbedtls_file_t file;
     size_t n;
 
-    if( ( file = fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "w" ) ) == NULL )
-        return -1;
+    if( ( file = mbedtls_fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "w" ) ) == MBEDTLS_FILE_INVALID )
+        return( -1 );
 
-    if( ( n = fwrite( buf, 1, buf_len, file ) ) != buf_len )
+    if( ( n = mbedtls_fwrite( buf, buf_len, file ) ) != buf_len )
     {
-        fclose( file );
-        return -1;
+        mbedtls_fclose( file );
+        return( -1 );
     }
 
-    fclose( file );
+    mbedtls_fclose( file );
     return( (int)n );
 }
 #endif /* MBEDTLS_PLATFORM_NO_STD_FUNCTIONS */

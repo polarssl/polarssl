@@ -2,7 +2,7 @@
 # To compile on SunOS: add "-lsocket -lnsl" to LDFLAGS
 # To compile with PKCS11: add "-lpkcs11-helper" to LDFLAGS
 
-CFLAGS	?= -O2
+CFLAGS	?=
 WARNING_CFLAGS ?= -Wall -W -Wdeclaration-after-statement -Wno-unused-function -Wno-unused-value
 LDFLAGS ?=
 
@@ -25,6 +25,8 @@ endif
 
 ifdef DEBUG
 LOCAL_CFLAGS += -g3
+else
+CFLAGS += -O2
 endif
 
 # if we're running on Windows, build for Windows

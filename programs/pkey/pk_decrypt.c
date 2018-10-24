@@ -61,15 +61,16 @@ int main( void )
 #else
 int main( int argc, char *argv[] )
 {
-    FILE *f;
+    mbedtls_file_t f;
     int ret = 1, c;
     int exit_code = MBEDTLS_EXIT_FAILURE;
-    size_t i, olen = 0;
+    size_t i, olen = 0, n, offset;
     mbedtls_pk_context pk;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     unsigned char result[1024];
     unsigned char buf[512];
+    unsigned char read_buf[512];
     const char *pers = "mbedtls_pk_decrypt";
     ((void) argv);
 
@@ -114,7 +115,7 @@ int main( int argc, char *argv[] )
     /*
      * Extract the RSA encrypted value from the text file
      */
-    if( ( f = fopen( "result-enc.txt", "rb" ) ) == NULL )
+    if( ( f = mbedtls_fopen( "result-enc.txt", "rb" ) ) == MBEDTLS_FILE_INVALID )
     {
         mbedtls_printf( "\n  ! Could not open %s\n\n", "result-enc.txt" );
         ret = 1;
@@ -122,13 +123,34 @@ int main( int argc, char *argv[] )
     }
 
     i = 0;
-    while( fscanf( f, "%02X", &c ) > 0 &&
-           i < (int) sizeof( buf ) )
+    offset = 0;
+    while( ( n = mbedtls_fread( read_buf + offset,
+                    sizeof( read_buf ), f ) ) > 0 &&
+            i < (int) sizeof( buf ) )
     {
-        buf[i++] = (unsigned char) c;
+        /* Process bytes from previous and current read. offset indicates
+         * bytes present in the read_buf from previous read. */
+        n += offset;
+        offset = 0;
+        while( offset < n && ( n - offset ) > 1 && i < (int) sizeof( buf ) )
+        {
+            sscanf( (char *)( read_buf + offset ), "%02X", &c );
+            offset += 2;
+            buf[i++] = (unsigned char) c;
+        }
+        /* If we read only one character in the last of the sub string
+         * representing a hex digit, then store it for processing after
+         * the next read. */
+        if( n - offset == 1 )
+        {
+            read_buf[0] = read_buf[offset];
+            offset = 1;
+        }
+        else
+            offset = 0;
     }
 
-    fclose( f );
+    mbedtls_fclose( f );
 
     /*
      * Decrypt the encrypted RSA data and print the result.
