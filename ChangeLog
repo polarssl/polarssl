@@ -19,6 +19,10 @@ Bugfix
      invalidated keys of a lifetime of less than a 1s. Fixes #1968.
    * Fix failure in hmac_drbg in the benchmark sample application, when
      MBEDTLS_THREADING_C is defined. Found by TrinityTonic, #1095
+   * Fix incorrect documentation of mbedtls_x509_crt_profile. The previous
+     documentation stated that the `allowed_pks` field applies to signatures
+     only, but in fact it does apply to the public key type of the end entity
+     certificate, too. Fixes #1992.
 
 Changes
    * Add tests for session resumption in DTLS.
