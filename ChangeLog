@@ -25,6 +25,8 @@ Changes
    * Close a test gap in (D)TLS between the client side and the server side:
      test the handling of large packets and small packets on the client side
      in the same way as on the server side.
+   * Add a CMake option that enables static linking of the runtime library
+     in Microsoft Visual C++ compiler. Provided by Microplankton in #674.
 
 = mbed TLS 2.13.1 branch released 2018-09-06
 
