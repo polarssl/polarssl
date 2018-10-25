@@ -40,10 +40,9 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void ecdsa_prim_test_vectors( int id, char * d_str, char * xQ_str,
-                              char * yQ_str, data_t * rnd_buf,
-                              data_t * hash, char * r_str, char * s_str,
-                              int result )
+void ecdsa_prim_test_vectors( int id, char *d_str, char *xQ_str, char *yQ_str,
+                              data_t *rnd_buf, data_t *hash, char *r_str,
+                              char *s_str, int result )
 {
     mbedtls_ecp_group grp;
     mbedtls_ecp_point Q;
@@ -83,7 +82,8 @@ void ecdsa_prim_test_vectors( int id, char * d_str, char * xQ_str,
         TEST_ASSERT( mbedtls_mpi_cmp_mpi( &r, &r_check ) == 0 );
         TEST_ASSERT( mbedtls_mpi_cmp_mpi( &s, &s_check ) == 0 );
 
-        TEST_ASSERT( mbedtls_ecdsa_verify( &grp, hash->x, hash->len, &Q, &r_check, &s_check ) == 0 );
+        TEST_ASSERT( mbedtls_ecdsa_verify( &grp, hash->x, hash->len, &Q,
+                                           &r_check, &s_check ) == 0 );
     }
 
 exit:
@@ -95,8 +95,8 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_ECDSA_DETERMINISTIC */
-void ecdsa_det_test_vectors( int id, char * d_str, int md_alg, char * msg,
-                             char * r_str, char * s_str )
+void ecdsa_det_test_vectors( int id, char *d_str, int md_alg, char *msg,
+                             char *r_str, char *s_str )
 {
     mbedtls_ecp_group grp;
     mbedtls_mpi d, r, s, r_check, s_check;
@@ -119,7 +119,8 @@ void ecdsa_det_test_vectors( int id, char * d_str, int md_alg, char * msg,
     hlen = mbedtls_md_get_size( md_info );
     mbedtls_md( md_info, (const unsigned char *) msg, strlen( msg ), hash );
 
-    TEST_ASSERT( mbedtls_ecdsa_sign_det( &grp, &r, &s, &d, hash, hlen, md_alg ) == 0 );
+    TEST_ASSERT( mbedtls_ecdsa_sign_det( &grp, &r, &s, &d, hash, hlen, md_alg )
+                 == 0 );
 
     TEST_ASSERT( mbedtls_mpi_cmp_mpi( &r, &r_check ) == 0 );
     TEST_ASSERT( mbedtls_mpi_cmp_mpi( &s, &s_check ) == 0 );
@@ -149,7 +150,8 @@ void ecdsa_write_read_random( int id )
     TEST_ASSERT( rnd_pseudo_rand( &rnd_info, hash, sizeof( hash ) ) == 0 );
 
     /* generate signing key */
-    TEST_ASSERT( mbedtls_ecdsa_genkey( &ctx, id, &rnd_pseudo_rand, &rnd_info ) == 0 );
+    TEST_ASSERT( mbedtls_ecdsa_genkey( &ctx, id, &rnd_pseudo_rand, &rnd_info )
+                 == 0 );
 
     /* generate and write signature, then read and verify it */
     TEST_ASSERT( mbedtls_ecdsa_write_signature( &ctx, MBEDTLS_MD_SHA256,

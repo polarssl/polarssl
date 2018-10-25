@@ -8,7 +8,7 @@
  */
 
 /* BEGIN_CASE */
-void error_strerror( int code, char * result_str )
+void error_strerror( int code, char *result_str )
 {
     char buf[500];
 

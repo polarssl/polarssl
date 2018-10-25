@@ -58,11 +58,13 @@ void ccm_lengths( int msg_len, int iv_len, int add_len, int tag_len, int res )
     TEST_ASSERT( mbedtls_ccm_setkey( &ctx, MBEDTLS_CIPHER_ID_AES,
                                  key, 8 * sizeof( key ) ) == 0 );
 
-    TEST_ASSERT( mbedtls_ccm_encrypt_and_tag( &ctx, msg_len, iv, iv_len, add, add_len,
-                                      msg, out, tag, tag_len ) == res );
+    TEST_ASSERT( mbedtls_ccm_encrypt_and_tag( &ctx, msg_len, iv, iv_len, add,
+                                              add_len, msg, out, tag,
+                                              tag_len ) == res );
 
-    decrypt_ret = mbedtls_ccm_auth_decrypt( &ctx, msg_len, iv, iv_len, add, add_len,
-                                    msg, out, tag, tag_len );
+    decrypt_ret = mbedtls_ccm_auth_decrypt( &ctx, msg_len, iv, iv_len,
+                                            add, add_len, msg, out,
+                                            tag, tag_len );
 
     if( res == 0 )
         TEST_ASSERT( decrypt_ret == MBEDTLS_ERR_CCM_AUTH_FAILED );
@@ -116,13 +118,13 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_ccm_encrypt_and_tag( int cipher_id, data_t * key,
-                                  data_t * msg, data_t * iv,
-                                  data_t * add, data_t * result )
+void mbedtls_ccm_encrypt_and_tag( int cipher_id, data_t *key,
+                                  data_t *msg, data_t *iv,
+                                  data_t *add, data_t *result )
 {
     mbedtls_ccm_context ctx;
     size_t tag_len;
-    uint8_t * msg_n_tag = (uint8_t *)malloc( result->len + 2 );
+    uint8_t *msg_n_tag = (uint8_t *) malloc( result->len + 2 );
 
     mbedtls_ccm_init( &ctx );
 
@@ -131,11 +133,14 @@ void mbedtls_ccm_encrypt_and_tag( int cipher_id, data_t * key,
 
     tag_len = result->len - msg->len;
 
-    TEST_ASSERT( mbedtls_ccm_setkey( &ctx, cipher_id, key->x, key->len * 8 ) == 0 );
+    TEST_ASSERT( mbedtls_ccm_setkey( &ctx, cipher_id, key->x, key->len * 8 )
+                 == 0 );
 
     /* Test with input == output */
-    TEST_ASSERT( mbedtls_ccm_encrypt_and_tag( &ctx, msg->len, iv->x, iv->len, add->x, add->len,
-                 msg_n_tag, msg_n_tag, msg_n_tag + msg->len, tag_len ) == 0 );
+    TEST_ASSERT( mbedtls_ccm_encrypt_and_tag( &ctx, msg->len, iv->x, iv->len,
+                                              add->x, add->len, msg_n_tag,
+                                              msg_n_tag, msg_n_tag + msg->len,
+                                              tag_len ) == 0 );
 
     TEST_ASSERT( memcmp( msg_n_tag, result->x, result->len ) == 0 );
 
@@ -149,10 +154,10 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_ccm_auth_decrypt( int cipher_id, data_t * key,
-                               data_t * msg, data_t * iv,
-                               data_t * add, int tag_len, int result,
-                               data_t * hex_msg )
+void mbedtls_ccm_auth_decrypt( int cipher_id, data_t *key,
+                               data_t *msg, data_t *iv,
+                               data_t *add, int tag_len, int result,
+                               data_t *hex_msg )
 {
     unsigned char tag[16];
     mbedtls_ccm_context ctx;
@@ -164,11 +169,14 @@ void mbedtls_ccm_auth_decrypt( int cipher_id, data_t * key,
     msg->len -= tag_len;
     memcpy( tag, msg->x + msg->len, tag_len );
 
-    TEST_ASSERT( mbedtls_ccm_setkey( &ctx, cipher_id, key->x, key->len * 8 ) == 0 );
+    TEST_ASSERT( mbedtls_ccm_setkey( &ctx, cipher_id, key->x, key->len * 8 )
+                 == 0 );
 
     /* Test with input == output */
-    TEST_ASSERT( mbedtls_ccm_auth_decrypt( &ctx, msg->len, iv->x, iv->len, add->x, add->len,
-                 msg->x, msg->x, msg->x + msg->len, tag_len ) == result );
+    TEST_ASSERT( mbedtls_ccm_auth_decrypt( &ctx, msg->len, iv->x, iv->len,
+                                           add->x, add->len, msg->x, msg->x,
+                                           msg->x + msg->len, tag_len )
+                                           == result );
 
     if( result == 0 )
     {

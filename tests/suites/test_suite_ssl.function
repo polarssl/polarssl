@@ -9,7 +9,7 @@
  */
 
 /* BEGIN_CASE depends_on:MBEDTLS_SSL_DTLS_ANTI_REPLAY */
-void ssl_dtls_replay( data_t * prevs, data_t * new, int ret )
+void ssl_dtls_replay( data_t *prevs, data_t *new, int ret )
 {
     uint32_t len = 0;
     mbedtls_ssl_context ssl;

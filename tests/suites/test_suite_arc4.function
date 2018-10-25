@@ -8,8 +8,8 @@
  */
 
 /* BEGIN_CASE */
-void mbedtls_arc4_crypt( data_t * src_str, data_t * key_str,
-                         data_t * hex_dst_string )
+void mbedtls_arc4_crypt( data_t *src_str, data_t *key_str,
+                         data_t *hex_dst_string )
 {
     unsigned char dst_str[1000];
     mbedtls_arc4_context ctx;
@@ -18,10 +18,13 @@ void mbedtls_arc4_crypt( data_t * src_str, data_t * key_str,
     mbedtls_arc4_init( &ctx );
 
 
-    mbedtls_arc4_setup(&ctx, key_str->x, key_str->len);
-    TEST_ASSERT( mbedtls_arc4_crypt(&ctx, src_str->len, src_str->x, dst_str ) == 0 );
+    mbedtls_arc4_setup( &ctx, key_str->x, key_str->len );
+    TEST_ASSERT( mbedtls_arc4_crypt( &ctx, src_str->len, src_str->x,
+                                     dst_str ) == 0 );
 
-    TEST_ASSERT( hexcmp( dst_str, hex_dst_string->x, src_str->len, hex_dst_string->len ) == 0 );
+    TEST_ASSERT( hex_dst_string->len == src_str->len );
+    TEST_ASSERT( memcmp( dst_str, hex_dst_string->x,
+                         hex_dst_string->len ) == 0 );
 
 exit:
     mbedtls_arc4_free( &ctx );

@@ -11,7 +11,7 @@
  */
 
 /* BEGIN_CASE */
-void mbedtls_asn1_write_octet_string( data_t * str, data_t * asn1,
+void mbedtls_asn1_write_octet_string( data_t *str, data_t *asn1,
                                       int buf_len, int result )
 {
     int ret;
@@ -24,7 +24,8 @@ void mbedtls_asn1_write_octet_string( data_t * str, data_t * asn1,
 
     p = buf + GUARD_LEN + buf_len;
 
-    ret = mbedtls_asn1_write_octet_string( &p, buf + GUARD_LEN, str->x, str->len );
+    ret = mbedtls_asn1_write_octet_string( &p, buf + GUARD_LEN, str->x,
+                                           str->len );
 
     /* Check for buffer overwrite on both sides */
     for( i = 0; i < GUARD_LEN; i++ )
@@ -44,7 +45,7 @@ void mbedtls_asn1_write_octet_string( data_t * str, data_t * asn1,
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_asn1_write_ia5_string( char * str, data_t * asn1,
+void mbedtls_asn1_write_ia5_string( char *str, data_t *asn1,
                                     int buf_len, int result )
 {
     int ret;
@@ -79,7 +80,7 @@ void mbedtls_asn1_write_ia5_string( char * str, data_t * asn1,
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_asn1_write_len( int len, data_t * asn1, int buf_len,
+void mbedtls_asn1_write_len( int len, data_t *asn1, int buf_len,
                              int result )
 {
     int ret;

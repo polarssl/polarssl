@@ -1073,7 +1073,7 @@ done
 msg "Lint: Python scripts"
 tests/scripts/check-python-files.sh
 
-msg "uint test: generate_test_code.py"
+msg "unit test: generate_test_code.py"
 ./tests/scripts/test_generate_test_code.py
 
 ################################################################

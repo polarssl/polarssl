@@ -23,9 +23,13 @@ void gcm_bad_parameters( int cipher_id, int direction,
     memset( output, 0x00, sizeof( output ) );
     memset( tag_output, 0x00, sizeof( tag_output ) );
 
-    TEST_ASSERT( mbedtls_gcm_setkey( &ctx, cipher_id, key_str->x, key_str->len * 8 ) == 0 );
-    TEST_ASSERT( mbedtls_gcm_crypt_and_tag( &ctx, direction, src_str->len, iv_str->x, iv_str->len,
-                 add_str->x, add_str->len, src_str->x, output, tag_len, tag_output ) == gcm_result );
+    TEST_ASSERT( mbedtls_gcm_setkey( &ctx, cipher_id, key_str->x,
+                                     key_str->len * 8 ) == 0 );
+    TEST_ASSERT( mbedtls_gcm_crypt_and_tag( &ctx, direction, src_str->len,
+                                            iv_str->x, iv_str->len, add_str->x,
+                                            add_str->len, src_str->x,
+                                            output, tag_len,
+                                            tag_output ) == gcm_result );
 
 exit:
     mbedtls_gcm_free( &ctx );
@@ -33,10 +37,10 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void gcm_encrypt_and_tag( int cipher_id, data_t * key_str,
-                          data_t * src_str, data_t * iv_str,
-                          data_t * add_str, data_t * hex_dst_string,
-                          int tag_len_bits, data_t * hex_tag_string,
+void gcm_encrypt_and_tag( int cipher_id, data_t *key_str,
+                          data_t *src_str, data_t *iv_str,
+                          data_t *add_str, data_t *hex_dst_string,
+                          int tag_len_bits, data_t *hex_tag_string,
                           int init_result )
 {
     unsigned char output[128];
@@ -50,13 +54,23 @@ void gcm_encrypt_and_tag( int cipher_id, data_t * key_str,
     memset(tag_output, 0x00, 16);
 
 
-    TEST_ASSERT( mbedtls_gcm_setkey( &ctx, cipher_id, key_str->x, key_str->len * 8 ) == init_result );
+    TEST_ASSERT( mbedtls_gcm_setkey( &ctx, cipher_id, key_str->x,
+                                     key_str->len * 8 ) == init_result );
     if( init_result == 0 )
     {
-        TEST_ASSERT( mbedtls_gcm_crypt_and_tag( &ctx, MBEDTLS_GCM_ENCRYPT, src_str->len, iv_str->x, iv_str->len, add_str->x, add_str->len, src_str->x, output, tag_len, tag_output ) == 0 );
+        TEST_ASSERT( mbedtls_gcm_crypt_and_tag( &ctx, MBEDTLS_GCM_ENCRYPT,
+                                                src_str->len, iv_str->x,
+                                                iv_str->len, add_str->x,
+                                                add_str->len, src_str->x,
+                                                output, tag_len,
+                                                tag_output ) == 0 );
 
-        TEST_ASSERT( hexcmp( output, hex_dst_string->x, src_str->len, hex_dst_string->len ) == 0 );
-        TEST_ASSERT( hexcmp( tag_output, hex_tag_string->x, tag_len, hex_tag_string->len ) == 0 );
+        TEST_ASSERT( hex_dst_string->len == src_str->len );
+        TEST_ASSERT( memcmp( output, hex_dst_string->x,
+                             hex_dst_string->len ) == 0 );
+        TEST_ASSERT( hex_tag_string->len == tag_len );
+        TEST_ASSERT( memcmp( tag_output, hex_tag_string->x,
+                             hex_tag_string->len ) == 0 );
     }
 
 exit:
@@ -65,11 +79,11 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void gcm_decrypt_and_verify( int cipher_id, data_t * key_str,
-                             data_t * src_str, data_t * iv_str,
-                             data_t * add_str, int tag_len_bits,
-                             data_t * tag_str, char * result,
-                             data_t * pt_result, int init_result )
+void gcm_decrypt_and_verify( int cipher_id, data_t *key_str,
+                             data_t *src_str, data_t *iv_str,
+                             data_t *add_str, int tag_len_bits,
+                             data_t *tag_str, char *result,
+                             data_t *pt_result, int init_result )
 {
     unsigned char output[128];
     mbedtls_gcm_context ctx;
@@ -81,10 +95,14 @@ void gcm_decrypt_and_verify( int cipher_id, data_t * key_str,
     memset(output, 0x00, 128);
 
 
-    TEST_ASSERT( mbedtls_gcm_setkey( &ctx, cipher_id, key_str->x, key_str->len * 8 ) == init_result );
+    TEST_ASSERT( mbedtls_gcm_setkey( &ctx, cipher_id, key_str->x,
+                                     key_str->len * 8 ) == init_result );
     if( init_result == 0 )
     {
-        ret = mbedtls_gcm_auth_decrypt( &ctx, src_str->len, iv_str->x, iv_str->len, add_str->x, add_str->len, tag_str->x, tag_len, src_str->x, output );
+        ret = mbedtls_gcm_auth_decrypt( &ctx, src_str->len, iv_str->x,
+                                         iv_str->len, add_str->x, add_str->len,
+                                         tag_str->x, tag_len, src_str->x,
+                                         output );
 
         if( strcmp( "FAIL", result ) == 0 )
         {
@@ -94,7 +112,8 @@ void gcm_decrypt_and_verify( int cipher_id, data_t * key_str,
         {
             TEST_ASSERT( ret == 0 );
 
-            TEST_ASSERT( hexcmp( output, pt_result->x, src_str->len, pt_result->len ) == 0 );
+            TEST_ASSERT( pt_result->len == src_str->len );
+            TEST_ASSERT( memcmp( output, pt_result->x, pt_result->len ) == 0 );
         }
     }
 
@@ -104,7 +123,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_SELF_TEST */
-void gcm_selftest(  )
+void gcm_selftest( )
 {
     TEST_ASSERT( mbedtls_gcm_self_test( 1 ) == 0 );
 }

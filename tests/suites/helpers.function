@@ -454,23 +454,3 @@ static void test_fail( const char *test, int line_no, const char* filename )
     test_info.line_no = line_no;
     test_info.filename = filename;
 }
-
-int hexcmp( uint8_t * a, uint8_t * b, uint32_t a_len, uint32_t b_len )
-{
-    int ret = 0;
-    uint32_t i = 0;
-
-    if ( a_len != b_len )
-        return( -1 );
-
-    for( i = 0; i < a_len; i++ )
-    {
-        if ( a[i] != b[i] )
-        {
-            ret = -1;
-            break;
-        }
-    }
-    return ret;
-}
-

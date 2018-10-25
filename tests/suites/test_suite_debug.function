@@ -48,8 +48,8 @@ void string_debug(void *data, int level, const char *file, int line, const char 
  */
 
 /* BEGIN_CASE */
-void debug_print_msg_threshold( int threshold, int level, char * file,
-                                int line, char * result_str )
+void debug_print_msg_threshold( int threshold, int level, char *file,
+                                int line, char *result_str )
 {
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;
@@ -77,8 +77,8 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_debug_print_ret( char * file, int line, char * text, int value,
-                              char * result_str )
+void mbedtls_debug_print_ret( char *file, int line, char *text, int value,
+                              char *result_str )
 {
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;
@@ -104,8 +104,8 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_debug_print_buf( char * file, int line, char * text,
-                              data_t * data, char * result_str )
+void mbedtls_debug_print_buf( char *file, int line, char *text,
+                              data_t *data, char *result_str )
 {
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;
@@ -132,8 +132,8 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_FS_IO:MBEDTLS_X509_CRT_PARSE_C */
-void mbedtls_debug_print_crt( char * crt_file, char * file, int line,
-                              char * prefix, char * result_str )
+void mbedtls_debug_print_crt( char *crt_file, char *file, int line,
+                              char *prefix, char *result_str )
 {
     mbedtls_x509_crt   crt;
     mbedtls_ssl_context ssl;
@@ -163,8 +163,8 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_BIGNUM_C */
-void mbedtls_debug_print_mpi( int radix, char * value, char * file, int line,
-                              char * prefix, char * result_str )
+void mbedtls_debug_print_mpi( int radix, char *value, char *file, int line,
+                              char *prefix, char *result_str )
 {
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;

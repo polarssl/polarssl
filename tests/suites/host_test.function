@@ -238,7 +238,7 @@ static int parse_arguments( char *buf, size_t len, char **params,
  *
  * \return      0 for success else 1
  */
-static int convert_params( size_t cnt , char ** params , int * int_params_store )
+static int convert_params( size_t cnt , char **params , int *int_params_store )
 {
     char ** cur = params;
     char ** out = params;
@@ -246,8 +246,8 @@ static int convert_params( size_t cnt , char ** params , int * int_params_store 
 
     while ( cur < params + cnt )
     {
-        char * type = *cur++;
-        char * val = *cur++;
+        char *type = *cur++;
+        char *val = *cur++;
 
         if ( strcmp( type, "char*" ) == 0 )
         {
@@ -498,7 +498,8 @@ int execute_tests( int argc , const char ** argv )
 
             if( ( ret = get_line( file, buf, sizeof(buf) ) ) != 0 )
                 break;
-            mbedtls_fprintf( stdout, "%s%.66s", test_info.failed ? "\n" : "", buf );
+            mbedtls_fprintf( stdout, "%s%.66s", test_info.failed ? "\n" : "",
+                             buf );
             mbedtls_fprintf( stdout, " " );
             for( i = strlen( buf ) + 1; i < 67; i++ )
                 mbedtls_fprintf( stdout, "." );
@@ -568,7 +569,8 @@ int execute_tests( int argc , const char ** argv )
                     ret = convert_params( cnt - 1, params + 1, int_params );
                     if ( DISPATCH_TEST_SUCCESS == ret )
                     {
-                        ret = dispatch_test( function_id, (void **)( params + 1 ) );
+                        ret = dispatch_test( function_id,
+                                             (void **)( params + 1 ) );
                     }
                 }
 
@@ -631,7 +633,7 @@ int execute_tests( int argc , const char ** argv )
             }
             else if( ret == DISPATCH_TEST_FN_NOT_FOUND )
             {
-                mbedtls_fprintf( stderr, "FAILED: FATAL TEST FUNCTION NOT FUND\n" );
+                mbedtls_fprintf( stderr, "FAILED: FATAL TEST FUNCTION NOT FOUND\n" );
                 fclose( file );
                 mbedtls_exit( 2 );
             }

@@ -9,10 +9,10 @@
  */
 
 /* BEGIN_CASE */
-void pkcs1_rsaes_oaep_encrypt( int mod, int radix_N, char * input_N,
-                               int radix_E, char * input_E, int hash,
-                               data_t * message_str, data_t * rnd_buf,
-                               data_t * result_hex_str, int result )
+void pkcs1_rsaes_oaep_encrypt( int mod, int radix_N, char *input_N,
+                               int radix_E, char *input_E, int hash,
+                               data_t *message_str, data_t *rnd_buf,
+                               data_t *result_hex_str, int result )
 {
     unsigned char output[1000];
     mbedtls_rsa_context ctx;
@@ -33,11 +33,14 @@ void pkcs1_rsaes_oaep_encrypt( int mod, int radix_N, char * input_N,
     TEST_ASSERT( mbedtls_rsa_check_pubkey( &ctx ) == 0 );
 
 
-    TEST_ASSERT( mbedtls_rsa_pkcs1_encrypt( &ctx, &rnd_buffer_rand, &info, MBEDTLS_RSA_PUBLIC, message_str->len, message_str->x, output ) == result );
+    TEST_ASSERT( mbedtls_rsa_pkcs1_encrypt( &ctx, &rnd_buffer_rand, &info,
+                    MBEDTLS_RSA_PUBLIC, message_str->len, message_str->x,
+                    output ) == result );
     if( result == 0 )
     {
-
-        TEST_ASSERT( hexcmp( output, result_hex_str->x, ctx.len, result_hex_str->len ) == 0 );
+        TEST_ASSERT( result_hex_str->len == ctx.len );
+        TEST_ASSERT( memcmp( output, result_hex_str->x,
+                             result_hex_str->len ) == 0 );
     }
 
 exit:
@@ -47,11 +50,11 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void pkcs1_rsaes_oaep_decrypt( int mod, int radix_P, char * input_P,
-                               int radix_Q, char * input_Q, int radix_N,
-                               char * input_N, int radix_E, char * input_E,
-                               int hash, data_t * result_hex_str,
-                               char * seed, data_t * message_str,
+void pkcs1_rsaes_oaep_decrypt( int mod, int radix_P, char *input_P,
+                               int radix_Q, char *input_Q, int radix_N,
+                               char *input_N, int radix_E, char *input_E,
+                               int hash, data_t *result_hex_str,
+                               char *seed, data_t *message_str,
                                int result )
 {
     unsigned char output[1000];
@@ -80,11 +83,14 @@ void pkcs1_rsaes_oaep_decrypt( int mod, int radix_P, char * input_P,
     TEST_ASSERT( mbedtls_rsa_check_privkey( &ctx ) == 0 );
 
 
-    TEST_ASSERT( mbedtls_rsa_pkcs1_decrypt( &ctx, &rnd_pseudo_rand, &rnd_info, MBEDTLS_RSA_PRIVATE, &output_len, message_str->x, output, 1000 ) == result );
+    TEST_ASSERT( mbedtls_rsa_pkcs1_decrypt( &ctx, &rnd_pseudo_rand,
+                    &rnd_info, MBEDTLS_RSA_PRIVATE, &output_len, message_str->x,
+                    output, 1000 ) == result );
     if( result == 0 )
     {
-
-        TEST_ASSERT( hexcmp( output, result_hex_str->x, output_len, result_hex_str->len ) == 0 );
+        TEST_ASSERT( result_hex_str->len == output_len );
+        TEST_ASSERT( memcmp( output, result_hex_str->x,
+                             result_hex_str->len ) == 0 );
     }
 
 exit:
@@ -95,11 +101,11 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void pkcs1_rsassa_pss_sign( int mod, int radix_P, char * input_P, int radix_Q,
-                            char * input_Q, int radix_N, char * input_N,
-                            int radix_E, char * input_E, int digest, int hash,
-                            data_t * message_str, data_t * rnd_buf,
-                            data_t * result_hex_str, int result )
+void pkcs1_rsassa_pss_sign( int mod, int radix_P, char *input_P, int radix_Q,
+                            char *input_Q, int radix_N, char *input_N,
+                            int radix_E, char *input_E, int digest, int hash,
+                            data_t *message_str, data_t *rnd_buf,
+                            data_t *result_hex_str, int result )
 {
     unsigned char hash_result[1000];
     unsigned char output[1000];
@@ -129,14 +135,18 @@ void pkcs1_rsassa_pss_sign( int mod, int radix_P, char * input_P, int radix_Q,
 
 
     if( mbedtls_md_info_from_type( digest ) != NULL )
-        TEST_ASSERT( mbedtls_md( mbedtls_md_info_from_type( digest ), message_str->x, message_str->len, hash_result ) == 0 );
+        TEST_ASSERT( mbedtls_md( mbedtls_md_info_from_type( digest ),
+                                 message_str->x, message_str->len,
+                                 hash_result ) == 0 );
 
-    TEST_ASSERT( mbedtls_rsa_pkcs1_sign( &ctx, &rnd_buffer_rand, &info, MBEDTLS_RSA_PRIVATE,
-                                         digest, 0, hash_result, output ) == result );
+    TEST_ASSERT( mbedtls_rsa_pkcs1_sign( &ctx, &rnd_buffer_rand, &info,
+                                         MBEDTLS_RSA_PRIVATE, digest, 0,
+                                         hash_result, output ) == result );
     if( result == 0 )
     {
-
-        TEST_ASSERT( hexcmp( output, result_hex_str->x, ctx.len, result_hex_str->len ) == 0 );
+        TEST_ASSERT( result_hex_str->len == ctx.len );
+        TEST_ASSERT( memcmp( output, result_hex_str->x,
+                             result_hex_str->len ) == 0 );
     }
 
 exit:
@@ -147,10 +157,10 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void pkcs1_rsassa_pss_verify( int mod, int radix_N, char * input_N,
-                              int radix_E, char * input_E, int digest,
-                              int hash, data_t * message_str, char * salt,
-                              data_t * result_str, int result )
+void pkcs1_rsassa_pss_verify( int mod, int radix_N, char *input_N,
+                              int radix_E, char *input_E, int digest,
+                              int hash, data_t *message_str, char *salt,
+                              data_t *result_str, int result )
 {
     unsigned char hash_result[1000];
     mbedtls_rsa_context ctx;
@@ -170,9 +180,13 @@ void pkcs1_rsassa_pss_verify( int mod, int radix_N, char * input_N,
 
 
     if( mbedtls_md_info_from_type( digest ) != NULL )
-        TEST_ASSERT( mbedtls_md( mbedtls_md_info_from_type( digest ), message_str->x, message_str->len, hash_result ) == 0 );
+        TEST_ASSERT( mbedtls_md( mbedtls_md_info_from_type( digest ),
+                                 message_str->x, message_str->len,
+                                 hash_result ) == 0 );
 
-    TEST_ASSERT( mbedtls_rsa_pkcs1_verify( &ctx, NULL, NULL, MBEDTLS_RSA_PUBLIC, digest, 0, hash_result, result_str->x ) == result );
+    TEST_ASSERT( mbedtls_rsa_pkcs1_verify( &ctx, NULL, NULL, MBEDTLS_RSA_PUBLIC,
+                                           digest, 0, hash_result,
+                                           result_str->x ) == result );
 
 exit:
     mbedtls_mpi_free( &N ); mbedtls_mpi_free( &E );
@@ -181,12 +195,12 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void pkcs1_rsassa_pss_verify_ext( int mod, int radix_N, char * input_N,
-                                  int radix_E, char * input_E,
+void pkcs1_rsassa_pss_verify_ext( int mod, int radix_N, char *input_N,
+                                  int radix_E, char *input_E,
                                   int msg_digest_id, int ctx_hash,
                                   int mgf_hash, int salt_len,
-                                  data_t * message_str,
-                                  data_t * result_str, int result_simple,
+                                  data_t *message_str,
+                                  data_t *result_str, int result_simple,
                                   int result_full )
 {
     unsigned char hash_result[1000];
@@ -219,13 +233,15 @@ void pkcs1_rsassa_pss_verify_ext( int mod, int radix_N, char * input_N,
     }
 
     TEST_ASSERT( mbedtls_rsa_pkcs1_verify( &ctx, NULL, NULL, MBEDTLS_RSA_PUBLIC,
-                                   msg_digest_id, hash_len, hash_result,
-                                   result_str->x ) == result_simple );
+                                           msg_digest_id, hash_len, hash_result,
+                                           result_str->x ) == result_simple );
 
-    TEST_ASSERT( mbedtls_rsa_rsassa_pss_verify_ext( &ctx, NULL, NULL, MBEDTLS_RSA_PUBLIC,
-                                        msg_digest_id, hash_len, hash_result,
-                                        mgf_hash, salt_len,
-                                        result_str->x ) == result_full );
+    TEST_ASSERT( mbedtls_rsa_rsassa_pss_verify_ext( &ctx, NULL, NULL,
+                                                    MBEDTLS_RSA_PUBLIC,
+                                                    msg_digest_id, hash_len,
+                                                    hash_result, mgf_hash,
+                                                    salt_len, result_str->x )
+                                                    == result_full );
 
 exit:
     mbedtls_mpi_free( &N ); mbedtls_mpi_free( &E );

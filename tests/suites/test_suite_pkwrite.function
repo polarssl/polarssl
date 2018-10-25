@@ -10,7 +10,7 @@
  */
 
 /* BEGIN_CASE depends_on:MBEDTLS_PEM_WRITE_C */
-void pk_write_pubkey_check( char * key_file )
+void pk_write_pubkey_check( char *key_file )
 {
     mbedtls_pk_context key;
     unsigned char buf[5000];
@@ -42,7 +42,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_PEM_WRITE_C */
-void pk_write_key_check( char * key_file )
+void pk_write_key_check( char *key_file )
 {
     mbedtls_pk_context key;
     unsigned char buf[5000];

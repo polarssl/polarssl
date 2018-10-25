@@ -43,9 +43,9 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void ecdh_primitive_testvec( int id, data_t * rnd_buf_A, char * xA_str,
-                             char * yA_str, data_t * rnd_buf_B,
-                             char * xB_str, char * yB_str, char * z_str )
+void ecdh_primitive_testvec( int id, data_t *rnd_buf_A, char *xA_str,
+                             char *yA_str, data_t *rnd_buf_B,
+                             char *xB_str, char *yB_str, char *z_str )
 {
     mbedtls_ecp_group grp;
     mbedtls_ecp_point qA, qB;
@@ -108,9 +108,11 @@ void ecdh_primitive_testvec( int id, data_t * rnd_buf_A, char * xA_str,
     TEST_ASSERT( mbedtls_mpi_cmp_mpi( &qB.Y, &check ) == 0 );
 
     TEST_ASSERT( mbedtls_mpi_read_string( &check, 16, z_str ) == 0 );
-    TEST_ASSERT( mbedtls_ecdh_compute_shared( &grp, &zA, &qB, &dA, NULL, NULL ) == 0 );
+    TEST_ASSERT( mbedtls_ecdh_compute_shared( &grp, &zA, &qB, &dA, NULL, NULL )
+                 == 0 );
     TEST_ASSERT( mbedtls_mpi_cmp_mpi( &zA, &check ) == 0 );
-    TEST_ASSERT( mbedtls_ecdh_compute_shared( &grp, &zB, &qA, &dB, NULL, NULL ) == 0 );
+    TEST_ASSERT( mbedtls_ecdh_compute_shared( &grp, &zB, &qA, &dB, NULL, NULL )
+                 == 0 );
     TEST_ASSERT( mbedtls_mpi_cmp_mpi( &zB, &check ) == 0 );
 
 exit:
@@ -148,7 +150,8 @@ void ecdh_exchange( int id )
 
     TEST_ASSERT( mbedtls_ecdh_calc_secret( &srv, &len, buf, 1000,
                                    &rnd_pseudo_rand, &rnd_info ) == 0 );
-    TEST_ASSERT( mbedtls_ecdh_calc_secret( &cli, &len, buf, 1000, NULL, NULL ) == 0 );
+    TEST_ASSERT( mbedtls_ecdh_calc_secret( &cli, &len, buf, 1000, NULL, NULL )
+                 == 0 );
     TEST_ASSERT( mbedtls_mpi_cmp_mpi( &srv.z, &cli.z ) == 0 );
 
 exit:

@@ -8,7 +8,7 @@
  */
 
 /* BEGIN_CASE */
-void check_compiletime_version( char * version_str )
+void check_compiletime_version( char *version_str )
 {
     char build_str[100];
     char build_str_full[100];
@@ -20,8 +20,9 @@ void check_compiletime_version( char * version_str )
     mbedtls_snprintf( build_str, 100, "%d.%d.%d", MBEDTLS_VERSION_MAJOR,
         MBEDTLS_VERSION_MINOR, MBEDTLS_VERSION_PATCH );
 
-    mbedtls_snprintf( build_str_full, 100, "mbed TLS %d.%d.%d", MBEDTLS_VERSION_MAJOR,
-        MBEDTLS_VERSION_MINOR, MBEDTLS_VERSION_PATCH );
+    mbedtls_snprintf( build_str_full, 100, "mbed TLS %d.%d.%d",
+                      MBEDTLS_VERSION_MAJOR, MBEDTLS_VERSION_MINOR,
+                      MBEDTLS_VERSION_PATCH );
 
     build_int = MBEDTLS_VERSION_MAJOR << 24 |
             MBEDTLS_VERSION_MINOR << 16 |
@@ -35,7 +36,7 @@ void check_compiletime_version( char * version_str )
 /* END_CASE */
 
 /* BEGIN_CASE */
-void check_runtime_version( char * version_str )
+void check_runtime_version( char *version_str )
 {
     char build_str[100];
     char get_str[100];

@@ -36,7 +36,7 @@ size_t mbedtls_rsa_key_len_func( void *ctx )
  */
 
 /* BEGIN_CASE depends_on:MBEDTLS_PEM_WRITE_C:MBEDTLS_X509_CSR_WRITE_C */
-void x509_csr_check( char * key_file, char * cert_req_check_file, int md_type,
+void x509_csr_check( char *key_file, char *cert_req_check_file, int md_type,
                      int key_usage, int cert_type )
 {
     mbedtls_pk_context key;
@@ -210,8 +210,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_X509_CREATE_C:MBEDTLS_X509_USE_C */
-void mbedtls_x509_string_to_names( char * name, char * parsed_name, int result
-                                   )
+void mbedtls_x509_string_to_names( char *name, char *parsed_name, int result )
 {
     int ret;
     size_t len = 0;

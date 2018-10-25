@@ -48,7 +48,7 @@ while( 0 )
  *
  * \return          DEPENDENCY_SUPPORTED if success else DEPENDENCY_NOT_SUPPORTED.
  */
-int verify_dependencies( uint8_t count, uint8_t * dep_p )
+int verify_dependencies( uint8_t count, uint8_t *dep_p )
 {
     uint8_t i;
     for ( i = 0; i < count; i++ )
@@ -86,7 +86,7 @@ uint32_t receive_uint32()
  *
  * \return      unsigned int
  */
-uint32_t parse_uint32( uint8_t * p )
+uint32_t parse_uint32( uint8_t *p )
 {
     uint32_t value;
     value =  *p++ << 24;
@@ -105,11 +105,11 @@ uint32_t parse_uint32( uint8_t * p )
  *
  * \return      Byte array.
  */
-uint8_t * receive_data( uint32_t * data_len )
+uint8_t *receive_data( uint32_t *data_len )
 {
     uint32_t i = 0, errors = 0;
     char c;
-    uint8_t * data = NULL;
+    uint8_t *data = NULL;
 
     /* Read opening braces */
     i = 0;
@@ -165,11 +165,11 @@ uint8_t * receive_data( uint32_t * data_len )
  *
  * \return      count of hex params
  */
-uint32_t find_hex_count( uint8_t count, uint8_t * data, uint32_t data_len )
+uint32_t find_hex_count( uint8_t count, uint8_t *data, uint32_t data_len )
 {
     uint32_t i = 0, sz = 0;
     char c;
-    uint8_t * p = NULL;
+    uint8_t *p = NULL;
     uint32_t hex_count = 0;
 
     p = data;
@@ -209,14 +209,14 @@ uint32_t find_hex_count( uint8_t count, uint8_t * data, uint32_t data_len )
  *              Note: Caller has the responsibility to delete
  *                    the memory after use.
  */
-void ** parse_parameters( uint8_t count, uint8_t * data, uint32_t data_len,
-                          int * error )
+void **parse_parameters( uint8_t count, uint8_t *data, uint32_t data_len,
+                         int *error )
 {
     uint32_t i = 0, hex_count = 0;
     char c;
     void ** params = NULL;
     void ** cur = NULL;
-    uint8_t * p = NULL;
+    uint8_t *p = NULL;
 
     hex_count = find_hex_count(count, data, data_len);
 
@@ -257,7 +257,7 @@ void ** parse_parameters( uint8_t count, uint8_t * data, uint32_t data_len,
             case 'H': /* Intentional fall through */
             case 'S':
                 {
-                    uint32_t * sz = (uint32_t *)p;
+                    uint32_t *sz = (uint32_t *)p;
                     INCR_ASSERT( p, data, data_len, sizeof( int32_t ) );
                     *cur++ = (void *)p;
                     if ( c == 'H' )
@@ -292,7 +292,7 @@ exit:
  *
  * \return      void
  */
-void send_key_integer( char * key, int value )
+void send_key_integer( char *key, int value )
 {
     char str[50];
     snprintf( str, sizeof( str ), "%d", value );
@@ -340,7 +340,7 @@ int execute_tests( int args, const char ** argv )
     uint32_t data_len = 0;
     uint8_t count = 0, function_id;
     void ** params = NULL;
-    uint8_t * data = NULL, * p = NULL;
+    uint8_t *data = NULL, *p = NULL;
 
     GREENTEA_SETUP( 180, "mbedtls_test" );
     greentea_send_kv( "GO", " " );
@@ -382,7 +382,8 @@ int execute_tests( int args, const char ** argv )
             /* Parse parameters if present */
             if ( count )
             {
-                params = parse_parameters( count, p, data_len - ( p - data ), &ret );
+                params = parse_parameters( count, p, data_len - ( p - data ),
+                                           &ret );
                 if ( ret )
                     break;
             }

@@ -8,7 +8,7 @@
  */
 
 /* BEGIN_CASE */
-void mbedtls_base64_encode( char * src_string, char * dst_string,
+void mbedtls_base64_encode( char *src_string, char *dst_string,
                             int dst_buf_size, int result )
 {
     unsigned char src_str[1000];
@@ -19,7 +19,8 @@ void mbedtls_base64_encode( char * src_string, char * dst_string,
     memset(dst_str, 0x00, 1000);
 
     strncpy( (char *) src_str, src_string, sizeof(src_str) - 1 );
-    TEST_ASSERT( mbedtls_base64_encode( dst_str, dst_buf_size, &len, src_str, strlen( (char *) src_str ) ) == result );
+    TEST_ASSERT( mbedtls_base64_encode( dst_str, dst_buf_size, &len, src_str,
+                                        strlen( (char *) src_str ) ) == result );
     if( result == 0 )
     {
         TEST_ASSERT( strcmp( (char *) dst_str, dst_string ) == 0 );
@@ -28,7 +29,7 @@ void mbedtls_base64_encode( char * src_string, char * dst_string,
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_base64_decode( char * src_string, char * dst_string, int result )
+void mbedtls_base64_decode( char *src_string, char *dst_string, int result )
 {
     unsigned char src_str[1000];
     unsigned char dst_str[1000];
@@ -39,7 +40,8 @@ void mbedtls_base64_decode( char * src_string, char * dst_string, int result )
     memset(dst_str, 0x00, 1000);
 
     strncpy( (char *) src_str, src_string, sizeof(src_str) - 1 );
-    res = mbedtls_base64_decode( dst_str, sizeof( dst_str ), &len, src_str, strlen( (char *) src_str ) );
+    res = mbedtls_base64_decode( dst_str, sizeof( dst_str ), &len,
+                                 src_str, strlen( (char *) src_str ) );
     TEST_ASSERT( res == result );
     if( result == 0 )
     {
@@ -49,7 +51,7 @@ void mbedtls_base64_decode( char * src_string, char * dst_string, int result )
 /* END_CASE */
 
 /* BEGIN_CASE */
-void base64_encode_hex( data_t * src, char * dst, int dst_buf_size,
+void base64_encode_hex( data_t *src, char *dst, int dst_buf_size,
                         int result )
 {
     unsigned char *res = NULL;
@@ -57,7 +59,8 @@ void base64_encode_hex( data_t * src, char * dst, int dst_buf_size,
 
     res = zero_alloc( dst_buf_size );
 
-    TEST_ASSERT( mbedtls_base64_encode( res, dst_buf_size, &len, src->x, src->len ) == result );
+    TEST_ASSERT( mbedtls_base64_encode( res, dst_buf_size, &len,
+                                        src->x, src->len ) == result );
     if( result == 0 )
     {
         TEST_ASSERT( len == strlen( dst ) );
@@ -70,7 +73,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void base64_decode_hex( char * src, data_t * dst, int dst_buf_size,
+void base64_decode_hex( char *src, data_t *dst, int dst_buf_size,
                         int result )
 {
     unsigned char *res = NULL;
@@ -78,8 +81,9 @@ void base64_decode_hex( char * src, data_t * dst, int dst_buf_size,
 
     res = zero_alloc( dst_buf_size );
 
-    TEST_ASSERT( mbedtls_base64_decode( res, dst_buf_size, &len, (unsigned char *) src,
-                                strlen( src ) ) == result );
+    TEST_ASSERT( mbedtls_base64_decode( res, dst_buf_size, &len,
+                                        (unsigned char *) src,
+                                        strlen( src ) ) == result );
     if( result == 0 )
     {
         TEST_ASSERT( len == dst->len );
@@ -92,12 +96,13 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
-void base64_decode_hex_src( data_t * src, char * dst_ref, int result )
+void base64_decode_hex_src( data_t *src, char *dst_ref, int result )
 {
     unsigned char dst[1000] = { 0 };
     size_t len;
 
-    TEST_ASSERT( mbedtls_base64_decode( dst, sizeof( dst ), &len, src->x, src->len ) == result );
+    TEST_ASSERT( mbedtls_base64_decode( dst, sizeof( dst ), &len,
+                                        src->x, src->len ) == result );
     if( result == 0 )
     {
         TEST_ASSERT( len == strlen( dst_ref ) );
@@ -105,7 +110,7 @@ void base64_decode_hex_src( data_t * src, char * dst_ref, int result )
     }
 
 exit:
-    ;;
+    ;
 }
 /* END_CASE */
 

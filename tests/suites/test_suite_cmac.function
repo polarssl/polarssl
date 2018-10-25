@@ -9,14 +9,14 @@
  */
 
 /* BEGIN_CASE depends_on:MBEDTLS_SELF_TEST */
-void mbedtls_cmac_self_test(  )
+void mbedtls_cmac_self_test( )
 {
     TEST_ASSERT( mbedtls_cmac_self_test( 1 ) == 0 );
 }
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_cmac_null_args(  )
+void mbedtls_cmac_null_args( )
 {
     mbedtls_cipher_context_t ctx;
     const mbedtls_cipher_info_t *cipher_info;
@@ -119,13 +119,13 @@ void mbedtls_cmac_setkey( int cipher_type, int key_size, int result )
 /* END_CASE */
 
 /* BEGIN_CASE */
-void mbedtls_cmac_multiple_blocks( int cipher_type, data_t * key,
+void mbedtls_cmac_multiple_blocks( int cipher_type, data_t *key,
                                    int keybits, int block_size,
-                                   data_t * block1, int block1_len,
-                                   data_t * block2, int block2_len,
-                                   data_t * block3, int block3_len,
-                                   data_t * block4, int block4_len,
-                                   data_t * expected_result )
+                                   data_t *block1, int block1_len,
+                                   data_t *block2, int block2_len,
+                                   data_t *block3, int block3_len,
+                                   data_t *block4, int block4_len,
+                                   data_t *expected_result )
 {
     const mbedtls_cipher_info_t *cipher_info;
     mbedtls_cipher_context_t ctx;
@@ -184,23 +184,22 @@ exit:
 
 /* BEGIN_CASE */
 void mbedtls_cmac_multiple_operations_same_key( int cipher_type,
-                                                data_t * key, int keybits,
+                                                data_t *key, int keybits,
                                                 int block_size,
-                                                data_t * block_a1,
+                                                data_t *block_a1,
                                                 int block_a1_len,
-                                                data_t * block_a2,
+                                                data_t *block_a2,
                                                 int block_a2_len,
-                                                data_t * block_a3,
+                                                data_t *block_a3,
                                                 int block_a3_len,
-                                                data_t * expected_result_a,
-                                                data_t * block_b1,
+                                                data_t *expected_result_a,
+                                                data_t *block_b1,
                                                 int block_b1_len,
-                                                data_t * block_b2,
+                                                data_t *block_b2,
                                                 int block_b2_len,
-                                                data_t * block_b3,
+                                                data_t *block_b3,
                                                 int block_b3_len,
-                                                data_t * expected_result_b
-                                                )
+                                                data_t *expected_result_b )
 {
     const mbedtls_cipher_info_t *cipher_info;
     mbedtls_cipher_context_t ctx;

@@ -23,7 +23,7 @@ static int check_pointer( void *p )
 /* END_SUITE_HELPERS */
 
 /* BEGIN_CASE depends_on:MBEDTLS_SELF_TEST */
-void mbedtls_memory_buffer_alloc_self_test(  )
+void mbedtls_memory_buffer_alloc_self_test( )
 {
     TEST_ASSERT( mbedtls_memory_buffer_alloc_self_test( 1 ) == 0 );
 }
@@ -189,7 +189,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_MEMORY_DEBUG */
-void memory_buffer_alloc_oom_test(  )
+void memory_buffer_alloc_oom_test( )
 {
     unsigned char buf[1024];
     unsigned char *ptr_a = NULL, *ptr_b = NULL, *ptr_c = NULL;

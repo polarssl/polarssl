@@ -61,7 +61,7 @@ $functions_code
  *
  * \return       0 if exp_id is found. 1 otherwise.
  */
-int get_expression( int32_t exp_id, int32_t * out_value )
+int get_expression( int32_t exp_id, int32_t *out_value )
 {
     int ret = KEY_VALUE_MAPPING_FOUND;
 

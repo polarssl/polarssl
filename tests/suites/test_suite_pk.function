@@ -19,7 +19,8 @@ static int pk_genkey( mbedtls_pk_context *pk )
 
 #if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_GENPRIME)
     if( mbedtls_pk_get_type( pk ) == MBEDTLS_PK_RSA )
-        return mbedtls_rsa_gen_key( mbedtls_pk_rsa( *pk ), rnd_std_rand, NULL, RSA_KEY_SIZE, 3 );
+        return mbedtls_rsa_gen_key( mbedtls_pk_rsa( *pk ), rnd_std_rand, NULL,
+                                    RSA_KEY_SIZE, 3 );
 #endif
 #if defined(MBEDTLS_ECP_C)
     if( mbedtls_pk_get_type( pk ) == MBEDTLS_PK_ECKEY ||
@@ -31,8 +32,10 @@ static int pk_genkey( mbedtls_pk_context *pk )
                                       MBEDTLS_ECP_DP_SECP192R1 ) ) != 0 )
             return( ret );
 
-        return mbedtls_ecp_gen_keypair( &mbedtls_pk_ec( *pk )->grp, &mbedtls_pk_ec( *pk )->d,
-                                &mbedtls_pk_ec( *pk )->Q, rnd_std_rand, NULL );
+        return mbedtls_ecp_gen_keypair( &mbedtls_pk_ec( *pk )->grp,
+                                        &mbedtls_pk_ec( *pk )->d,
+                                        &mbedtls_pk_ec( *pk )->Q, rnd_std_rand,
+                                        NULL );
     }
 #endif
     return( -1 );
@@ -54,8 +57,8 @@ int mbedtls_rsa_sign_func( void *ctx,
 {
     ((void) f_rng);
     ((void) p_rng);
-    return( mbedtls_rsa_pkcs1_sign( (mbedtls_rsa_context *) ctx, rnd_std_rand, NULL, mode,
-                            md_alg, hashlen, hash, sig ) );
+    return( mbedtls_rsa_pkcs1_sign( (mbedtls_rsa_context *) ctx, rnd_std_rand,
+                                    NULL, mode, md_alg, hashlen, hash, sig ) );
 }
 size_t mbedtls_rsa_key_len_func( void *ctx )
 {
@@ -70,13 +73,14 @@ size_t mbedtls_rsa_key_len_func( void *ctx )
  */
 
 /* BEGIN_CASE */
-void pk_utils( int type, int size, int len, char * name )
+void pk_utils( int type, int size, int len, char *name )
 {
     mbedtls_pk_context pk;
 
     mbedtls_pk_init( &pk );
 
-    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( type ) ) == 0 );
+    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( type ) )
+                                   == 0 );
     TEST_ASSERT( pk_genkey( &pk ) == 0 );
 
     TEST_ASSERT( (int) mbedtls_pk_get_type( &pk ) == type );
@@ -91,7 +95,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_PK_PARSE_C:MBEDTLS_FS_IO */
-void mbedtls_pk_check_pair( char * pub_file, char * prv_file, int ret )
+void mbedtls_pk_check_pair( char *pub_file, char *prv_file, int ret )
 {
     mbedtls_pk_context pub, prv, alt;
 
@@ -121,9 +125,9 @@ void mbedtls_pk_check_pair( char * pub_file, char * prv_file, int ret )
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_RSA_C */
-void pk_rsa_verify_test_vec( data_t * message_str, int digest, int mod,
-                             int radix_N, char * input_N, int radix_E,
-                             char * input_E, data_t * result_str,
+void pk_rsa_verify_test_vec( data_t *message_str, int digest, int mod,
+                             int radix_N, char *input_N, int radix_E,
+                             char *input_E, data_t *result_str,
                              int result )
 {
     unsigned char hash_result[1000];
@@ -134,7 +138,9 @@ void pk_rsa_verify_test_vec( data_t * message_str, int digest, int mod,
 
     memset( hash_result, 0x00, 1000 );
 
-    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) ) == 0 );
+    TEST_ASSERT( mbedtls_pk_setup( &pk,
+                                   mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) )
+                                   == 0 );
     rsa = mbedtls_pk_rsa( pk );
 
     rsa->len = mod / 8;
@@ -143,10 +149,12 @@ void pk_rsa_verify_test_vec( data_t * message_str, int digest, int mod,
 
 
     if( mbedtls_md_info_from_type( digest ) != NULL )
-        TEST_ASSERT( mbedtls_md( mbedtls_md_info_from_type( digest ), message_str->x, message_str->len, hash_result ) == 0 );
+        TEST_ASSERT( mbedtls_md( mbedtls_md_info_from_type( digest ),
+                                 message_str->x, message_str->len,
+                                 hash_result ) == 0 );
 
     TEST_ASSERT( mbedtls_pk_verify( &pk, digest, hash_result, 0,
-                            result_str->x, mbedtls_pk_get_len( &pk ) ) == result );
+                    result_str->x, mbedtls_pk_get_len( &pk ) ) == result );
 
 exit:
     mbedtls_pk_free( &pk );
@@ -154,10 +162,10 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_RSA_C */
-void pk_rsa_verify_ext_test_vec( data_t * message_str, int digest,
-                                 int mod, int radix_N, char * input_N,
-                                 int radix_E, char * input_E,
-                                 data_t * result_str, int pk_type,
+void pk_rsa_verify_ext_test_vec( data_t *message_str, int digest,
+                                 int mod, int radix_N, char *input_N,
+                                 int radix_E, char *input_E,
+                                 data_t *result_str, int pk_type,
                                  int mgf1_hash_id, int salt_len, int result )
 {
     unsigned char hash_result[1000];
@@ -171,7 +179,9 @@ void pk_rsa_verify_ext_test_vec( data_t * message_str, int digest,
 
     memset( hash_result, 0x00, 1000 );
 
-    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) ) == 0 );
+    TEST_ASSERT( mbedtls_pk_setup( &pk,
+                                   mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) )
+                                   == 0 );
     rsa = mbedtls_pk_rsa( pk );
 
     rsa->len = mod / 8;
@@ -182,7 +192,8 @@ void pk_rsa_verify_ext_test_vec( data_t * message_str, int digest,
     if( digest != MBEDTLS_MD_NONE )
     {
         TEST_ASSERT( mbedtls_md( mbedtls_md_info_from_type( digest ),
-                     message_str->x, message_str->len, hash_result ) == 0 );
+                                 message_str->x, message_str->len,
+                                 hash_result ) == 0 );
         hash_len = 0;
     }
     else
@@ -205,7 +216,8 @@ void pk_rsa_verify_ext_test_vec( data_t * message_str, int digest,
 
     TEST_ASSERT( mbedtls_pk_verify_ext( pk_type, options, &pk,
                                 digest, hash_result, hash_len,
-                                result_str->x, mbedtls_pk_get_len( &pk ) ) == result );
+                                result_str->x, mbedtls_pk_get_len( &pk ) )
+                                == result );
 
 exit:
     mbedtls_pk_free( &pk );
@@ -213,8 +225,8 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_ECDSA_C */
-void pk_ec_test_vec( int type, int id, data_t * key, data_t * hash,
-                     data_t * sig, int ret )
+void pk_ec_test_vec( int type, int id, data_t *key, data_t *hash,
+                     data_t *sig, int ret )
 {
     mbedtls_pk_context pk;
     mbedtls_ecp_keypair *eckey;
@@ -222,7 +234,8 @@ void pk_ec_test_vec( int type, int id, data_t * key, data_t * hash,
     mbedtls_pk_init( &pk );
 
 
-    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( type ) ) == 0 );
+    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( type ) )
+                 == 0 );
 
     TEST_ASSERT( mbedtls_pk_can_do( &pk, MBEDTLS_PK_ECDSA ) );
     eckey = mbedtls_pk_ec( pk );
@@ -251,7 +264,8 @@ void pk_sign_verify( int type, int sign_ret, int verify_ret )
     memset( hash, 0x2a, sizeof hash );
     memset( sig, 0, sizeof sig );
 
-    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( type ) ) == 0 );
+    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( type ) )
+                 == 0 );
     TEST_ASSERT( pk_genkey( &pk ) == 0 );
 
     TEST_ASSERT( mbedtls_pk_sign( &pk, MBEDTLS_MD_SHA256, hash, sizeof hash,
@@ -266,9 +280,9 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_RSA_C */
-void pk_rsa_encrypt_test_vec( data_t * message, int mod, int radix_N,
-                              char * input_N, int radix_E, char * input_E,
-                              data_t * result, int ret )
+void pk_rsa_encrypt_test_vec( data_t *message, int mod, int radix_N,
+                              char *input_N, int radix_E, char *input_E,
+                              data_t *result, int ret )
 {
     unsigned char output[1000];
     rnd_pseudo_info rnd_info;
@@ -281,7 +295,9 @@ void pk_rsa_encrypt_test_vec( data_t * message, int mod, int radix_N,
 
 
     mbedtls_pk_init( &pk );
-    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) ) == 0 );
+    TEST_ASSERT( mbedtls_pk_setup( &pk,
+                                   mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) )
+                                   == 0 );
     rsa = mbedtls_pk_rsa( pk );
 
     rsa->len = mod / 8;
@@ -289,8 +305,8 @@ void pk_rsa_encrypt_test_vec( data_t * message, int mod, int radix_N,
     TEST_ASSERT( mbedtls_mpi_read_string( &rsa->E, radix_E, input_E ) == 0 );
 
     TEST_ASSERT( mbedtls_pk_encrypt( &pk, message->x, message->len,
-                             output, &olen, sizeof( output ),
-                             rnd_pseudo_rand, &rnd_info ) == ret );
+                                     output, &olen, sizeof( output ),
+                                     rnd_pseudo_rand, &rnd_info ) == ret );
     TEST_ASSERT( olen == result->len );
     TEST_ASSERT( memcmp( output, result->x, olen ) == 0 );
 
@@ -300,10 +316,10 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_RSA_C */
-void pk_rsa_decrypt_test_vec( data_t * cipher, int mod, int radix_P,
-                              char * input_P, int radix_Q, char * input_Q,
-                              int radix_N, char * input_N, int radix_E,
-                              char * input_E, data_t * clear, int ret )
+void pk_rsa_decrypt_test_vec( data_t *cipher, int mod, int radix_P,
+                              char *input_P, int radix_Q, char *input_Q,
+                              int radix_N, char *input_N, int radix_E,
+                              char *input_E, data_t *clear, int ret )
 {
     unsigned char output[1000];
     rnd_pseudo_info rnd_info;
@@ -320,7 +336,9 @@ void pk_rsa_decrypt_test_vec( data_t * cipher, int mod, int radix_P,
 
 
     /* init pk-rsa context */
-    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) ) == 0 );
+    TEST_ASSERT( mbedtls_pk_setup( &pk,
+                                   mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) )
+                                   == 0 );
     rsa = mbedtls_pk_rsa( pk );
 
     /* load public key */
@@ -338,8 +356,8 @@ void pk_rsa_decrypt_test_vec( data_t * cipher, int mod, int radix_P,
     memset( output, 0, sizeof( output ) );
     olen = 0;
     TEST_ASSERT( mbedtls_pk_decrypt( &pk, cipher->x, cipher->len,
-                             output, &olen, sizeof( output ),
-                             rnd_pseudo_rand, &rnd_info ) == ret );
+                                     output, &olen, sizeof( output ),
+                                     rnd_pseudo_rand, &rnd_info ) == ret );
     if( ret == 0 )
     {
         TEST_ASSERT( olen == clear->len );
@@ -369,15 +387,16 @@ void pk_ec_nocrypt( int type )
     memset( output,     0, sizeof( output ) );
     memset( input,      0, sizeof( input ) );
 
-    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( type ) ) == 0 );
+    TEST_ASSERT( mbedtls_pk_setup( &pk, mbedtls_pk_info_from_type( type ) )
+                 == 0 );
 
     TEST_ASSERT( mbedtls_pk_encrypt( &pk, input, sizeof( input ),
-                             output, &olen, sizeof( output ),
-                             rnd_pseudo_rand, &rnd_info ) == ret );
+                                     output, &olen, sizeof( output ),
+                                     rnd_pseudo_rand, &rnd_info ) == ret );
 
     TEST_ASSERT( mbedtls_pk_decrypt( &pk, input, sizeof( input ),
-                             output, &olen, sizeof( output ),
-                             rnd_pseudo_rand, &rnd_info ) == ret );
+                                     output, &olen, sizeof( output ),
+                                     rnd_pseudo_rand, &rnd_info ) == ret );
 
 exit:
     mbedtls_pk_free( &pk );
@@ -411,8 +430,9 @@ void pk_rsa_overflow( )
     TEST_ASSERT( mbedtls_pk_verify( &pk, MBEDTLS_MD_NONE, hash, hash_len,
                     sig, sig_len ) == MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
-    TEST_ASSERT( mbedtls_pk_sign( &pk, MBEDTLS_MD_NONE, hash, hash_len, sig, &sig_len,
-                    rnd_std_rand, NULL ) == MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+    TEST_ASSERT( mbedtls_pk_sign( &pk, MBEDTLS_MD_NONE, hash,
+                                  hash_len, sig, &sig_len, rnd_std_rand,
+                                  NULL ) == MBEDTLS_ERR_PK_BAD_INPUT_DATA );
 
 exit:
     mbedtls_pk_free( &pk );
@@ -420,7 +440,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_RSA_C:MBEDTLS_PK_RSA_ALT_SUPPORT */
-void pk_rsa_alt(  )
+void pk_rsa_alt( )
 {
     /*
      * An rsa_alt context can only do private operations (decrypt, sign).
@@ -446,7 +466,7 @@ void pk_rsa_alt(  )
 
     /* Initiliaze PK RSA context with random key */
     TEST_ASSERT( mbedtls_pk_setup( &rsa,
-                              mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) ) == 0 );
+                    mbedtls_pk_info_from_type( MBEDTLS_PK_RSA ) ) == 0 );
     TEST_ASSERT( pk_genkey( &rsa ) == 0 );
 
     /* Extract key to the raw rsa context */
@@ -454,7 +474,8 @@ void pk_rsa_alt(  )
 
     /* Initialize PK RSA_ALT context */
     TEST_ASSERT( mbedtls_pk_setup_rsa_alt( &alt, (void *) &raw,
-                 mbedtls_rsa_decrypt_func, mbedtls_rsa_sign_func, mbedtls_rsa_key_len_func ) == 0 );
+                    mbedtls_rsa_decrypt_func, mbedtls_rsa_sign_func,
+                    mbedtls_rsa_key_len_func ) == 0 );
 
     /* Test administrative functions */
     TEST_ASSERT( mbedtls_pk_can_do( &alt, MBEDTLS_PK_RSA ) );
@@ -477,18 +498,18 @@ void pk_rsa_alt(  )
 
     /* Test decrypt */
     TEST_ASSERT( mbedtls_pk_encrypt( &rsa, msg, sizeof msg,
-                             ciph, &ciph_len, sizeof ciph,
-                             rnd_std_rand, NULL ) == 0 );
+                                     ciph, &ciph_len, sizeof ciph,
+                                     rnd_std_rand, NULL ) == 0 );
     TEST_ASSERT( mbedtls_pk_decrypt( &alt, ciph, ciph_len,
-                             test, &test_len, sizeof test,
-                             rnd_std_rand, NULL ) == 0 );
+                                     test, &test_len, sizeof test,
+                                     rnd_std_rand, NULL ) == 0 );
     TEST_ASSERT( test_len == sizeof msg );
     TEST_ASSERT( memcmp( test, msg, test_len ) == 0 );
 
     /* Test forbidden operations */
     TEST_ASSERT( mbedtls_pk_encrypt( &alt, msg, sizeof msg,
-                             ciph, &ciph_len, sizeof ciph,
-                             rnd_std_rand, NULL ) == ret );
+                                     ciph, &ciph_len, sizeof ciph,
+                                     rnd_std_rand, NULL ) == ret );
     TEST_ASSERT( mbedtls_pk_verify( &alt, MBEDTLS_MD_NONE,
                             hash, sizeof hash, sig, sig_len ) == ret );
     TEST_ASSERT( mbedtls_pk_debug( &alt, dbg_items ) == ret );

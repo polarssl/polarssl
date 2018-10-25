@@ -10,7 +10,7 @@
  */
 
 /* BEGIN_CASE depends_on:MBEDTLS_RSA_C:MBEDTLS_FS_IO */
-void pk_parse_keyfile_rsa( char * key_file, char * password, int result )
+void pk_parse_keyfile_rsa( char *key_file, char *password, int result )
 {
     mbedtls_pk_context ctx;
     int res;
@@ -39,7 +39,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_RSA_C:MBEDTLS_FS_IO */
-void pk_parse_public_keyfile_rsa( char * key_file, int result )
+void pk_parse_public_keyfile_rsa( char *key_file, int result )
 {
     mbedtls_pk_context ctx;
     int res;
@@ -64,7 +64,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_FS_IO:MBEDTLS_ECP_C */
-void pk_parse_public_keyfile_ec( char * key_file, int result )
+void pk_parse_public_keyfile_ec( char *key_file, int result )
 {
     mbedtls_pk_context ctx;
     int res;
@@ -89,7 +89,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_FS_IO:MBEDTLS_ECP_C */
-void pk_parse_keyfile_ec( char * key_file, char * password, int result )
+void pk_parse_keyfile_ec( char *key_file, char *password, int result )
 {
     mbedtls_pk_context ctx;
     int res;
@@ -114,7 +114,7 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_RSA_C */
-void pk_parse_key( data_t * buf, char * result_str, int result )
+void pk_parse_key( data_t *buf, char *result_str, int result )
 {
     mbedtls_pk_context pk;
     unsigned char output[2000];
@@ -125,7 +125,8 @@ void pk_parse_key( data_t * buf, char * result_str, int result )
     memset( output, 0, 2000 );
 
 
-    TEST_ASSERT( mbedtls_pk_parse_key( &pk, buf->x, buf->len, NULL, 0 ) == ( result ) );
+    TEST_ASSERT( mbedtls_pk_parse_key( &pk, buf->x, buf->len, NULL, 0 )
+                 == ( result ) );
     if( ( result ) == 0 )
     {
         TEST_ASSERT( 1 );

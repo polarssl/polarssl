@@ -75,7 +75,7 @@ C_FILES := $(addsuffix .c,$(APPS))
 # Wildcard target for test code generation:
 # A .c file is generated for each .data file in the suites/ directory. Each .c
 # file depends on a .data and .function file from suites/ directory. Following
-# nameing convention is followed:
+# naming convention is followed:
 #
 #     C file        |        Depends on
 #-----------------------------------------------------------------------------
