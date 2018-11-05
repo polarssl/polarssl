@@ -53,6 +53,8 @@ void mbedtls_x509write_csr_free( mbedtls_x509write_csr *ctx )
 {
     mbedtls_asn1_free_named_data_list( &ctx->subject );
     mbedtls_asn1_free_named_data_list( &ctx->extensions );
+    mbedtls_asn1_free_asn1_buf( ctx->challenge_password );
+    ctx->challenge_password = NULL;
 
     mbedtls_platform_zeroize( ctx, sizeof( mbedtls_x509write_csr ) );
 }
@@ -65,6 +67,18 @@ void mbedtls_x509write_csr_set_md_alg( mbedtls_x509write_csr *ctx, mbedtls_md_ty
 void mbedtls_x509write_csr_set_key( mbedtls_x509write_csr *ctx, mbedtls_pk_context *key )
 {
     ctx->key = key;
+}
+
+int mbedtls_x509write_csr_set_password( mbedtls_x509write_csr *ctx,
+    const unsigned char *password, size_t len )
+{
+    ctx->challenge_password = mbedtls_asn1_allocate_asn1_buf( MBEDTLS_ASN1_UTF8_STRING,
+            password, len );
+
+    if ( ctx->challenge_password == NULL )
+        return MBEDTLS_ERR_ASN1_ALLOC_FAILED;
+
+    return 0;
 }
 
 int mbedtls_x509write_csr_set_subject_name( mbedtls_x509write_csr *ctx,
@@ -134,7 +148,7 @@ int mbedtls_x509write_csr_der( mbedtls_x509write_csr *ctx, unsigned char *buf, s
     unsigned char sig[MBEDTLS_MPI_MAX_SIZE];
     unsigned char tmp_buf[2048];
     size_t pub_len = 0, sig_and_oid_len = 0, sig_len;
-    size_t len = 0;
+    size_t len = 0, pwd_len = 0;
     mbedtls_pk_type_t pk_alg;
 
     /*
@@ -162,6 +176,23 @@ int mbedtls_x509write_csr_der( mbedtls_x509write_csr *ctx, unsigned char *buf, s
                                                         MBEDTLS_ASN1_SEQUENCE ) );
     }
 
+    MBEDTLS_ASN1_CHK_ADD( pwd_len, mbedtls_x509_write_asn1_buf( &c, tmp_buf, ctx->challenge_password) );
+    if (pwd_len)
+    {
+        MBEDTLS_ASN1_CHK_ADD( pwd_len, mbedtls_asn1_write_len( &c, tmp_buf, pwd_len ) );
+        MBEDTLS_ASN1_CHK_ADD( pwd_len, mbedtls_asn1_write_tag( &c, tmp_buf, MBEDTLS_ASN1_CONSTRUCTED |
+                                                        MBEDTLS_ASN1_SET ) );
+
+        MBEDTLS_ASN1_CHK_ADD( pwd_len, mbedtls_asn1_write_oid( &c, tmp_buf,
+                                      MBEDTLS_OID_PKCS9_CSR_CHALLENGE_PASSWORD,
+                                          MBEDTLS_OID_SIZE( MBEDTLS_OID_PKCS9_CSR_CHALLENGE_PASSWORD ) ) );
+
+        MBEDTLS_ASN1_CHK_ADD( pwd_len, mbedtls_asn1_write_len( &c, tmp_buf, pwd_len ) );
+        MBEDTLS_ASN1_CHK_ADD( pwd_len, mbedtls_asn1_write_tag( &c, tmp_buf, MBEDTLS_ASN1_CONSTRUCTED |
+                                                        MBEDTLS_ASN1_SEQUENCE ) );
+    }
+
+    len += pwd_len;
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( &c, tmp_buf, len ) );
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_tag( &c, tmp_buf, MBEDTLS_ASN1_CONSTRUCTED |
                                                     MBEDTLS_ASN1_CONTEXT_SPECIFIC ) );

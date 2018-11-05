@@ -386,4 +386,13 @@ mbedtls_asn1_named_data *mbedtls_asn1_find_named_data( mbedtls_asn1_named_data *
     return( list );
 }
 
+void mbedtls_asn1_free_asn1_buf( mbedtls_asn1_buf *asn1_buf )
+{
+    if ( asn1_buf == NULL )
+        return;
+    if ( asn1_buf->p != NULL )
+        mbedtls_free( asn1_buf->p );
+
+    mbedtls_free( asn1_buf );
+}
 #endif /* MBEDTLS_ASN1_PARSE_C */

@@ -351,6 +351,12 @@ void mbedtls_asn1_free_named_data( mbedtls_asn1_named_data *entry );
  */
 void mbedtls_asn1_free_named_data_list( mbedtls_asn1_named_data **head );
 
+/**
+ * \brief       Free a mbedtls_asn1_buf structure
+ *
+ * \param entry mbedtls_asn1_buf structure to free
+ */
+void mbedtls_asn1_free_asn1_buf( mbedtls_asn1_buf *entry );
 #ifdef __cplusplus
 }
 #endif

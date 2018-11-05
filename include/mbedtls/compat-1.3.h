@@ -2513,6 +2513,7 @@
 #define x509write_csr_set_md_alg mbedtls_x509write_csr_set_md_alg
 #define x509write_csr_set_ns_cert_type mbedtls_x509write_csr_set_ns_cert_type
 #define x509write_csr_set_subject_name mbedtls_x509write_csr_set_subject_name
+#define x509write_csr_set_password mbedtls_x509write_csr_set_password
 #define xtea_context mbedtls_xtea_context
 #define xtea_crypt_cbc mbedtls_xtea_crypt_cbc
 #define xtea_crypt_ecb mbedtls_xtea_crypt_ecb

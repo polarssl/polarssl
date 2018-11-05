@@ -90,6 +90,8 @@ int main( void )
     "                          ssl_ca\n"                \
     "                          email_ca\n"              \
     "                          object_signing_ca\n"     \
+    "    password=%%s          challengePassword attribute\n"   \
+    "                          default(empty)\n"        \
     "\n"
 
 /*
@@ -103,6 +105,7 @@ struct options
     const char *subject_name;   /* subject name for certificate request */
     unsigned char key_usage;    /* key usage flags                      */
     unsigned char ns_cert_type; /* NS cert type                         */
+    const char *password;       /* challenge password for certificate request */
 } opt;
 
 int write_certificate_request( mbedtls_x509write_csr *req, const char *output_file,
@@ -246,6 +249,10 @@ int main( int argc, char *argv[] )
                 q = r;
             }
         }
+        else if( strcmp( p, "password" ) == 0 )
+        {
+            opt.password = q;
+        }
         else
             goto usage;
     }
@@ -255,6 +262,10 @@ int main( int argc, char *argv[] )
 
     if( opt.ns_cert_type )
         mbedtls_x509write_csr_set_ns_cert_type( &req, opt.ns_cert_type );
+
+    if( opt.password )
+        mbedtls_x509write_csr_set_password( &req,
+            (unsigned char *)opt.password, strlen( opt.password ) );
 
     /*
      * 0. Seed the PRNG

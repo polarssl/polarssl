@@ -277,8 +277,8 @@
 /*
  * PKCS#8 OIDs
  */
-#define MBEDTLS_OID_PKCS9_CSR_EXT_REQ           MBEDTLS_OID_PKCS9 "\x0e" /**< extensionRequest OBJECT IDENTIFIER ::= {pkcs-9 14} */
-
+#define MBEDTLS_OID_PKCS9_CSR_EXT_REQ               MBEDTLS_OID_PKCS9 "\x0e" /**< extensionRequest OBJECT IDENTIFIER ::= {pkcs-9 14} */
+#define MBEDTLS_OID_PKCS9_CSR_CHALLENGE_PASSWORD    MBEDTLS_OID_PKCS9 "\x07" /**< extensionRequest OBJECT IDENTIFIER ::= {pkcs-9 7} */
 /*
  * PKCS#12 PBE OIDs
  */
