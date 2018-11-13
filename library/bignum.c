@@ -2192,11 +2192,11 @@ int mbedtls_mpi_is_prime( const mbedtls_mpi *X,
 /*
  * Prime number generation
  *
- * If dh_flag is 0 and nbits is at least 1024, then the procedure
+ * If flags is 0 and nbits is at least 1024, then the procedure
  * follows the RSA probably-prime generation method of FIPS 186-4.
  * NB. FIPS 186-4 only allows the specific bit lengths of 1024 and 1536.
  */
-int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
+int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int flags,
                    int (*f_rng)(void *, unsigned char *, size_t),
                    void *p_rng )
 {
@@ -2211,6 +2211,7 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
     size_t k, n;
     mbedtls_mpi_uint r;
     mbedtls_mpi Y;
+    unsigned int rng_validity_counter = 0;
 
     if( nbits < 3 || nbits > MBEDTLS_MPI_MAX_BITS )
         return( MBEDTLS_ERR_MPI_BAD_INPUT_DATA );
@@ -2222,6 +2223,7 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
     while( 1 )
     {
         MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( X, n * ciL, f_rng, p_rng ) );
+
         /* make sure generated number is at least (nbits-1)+0.5 bits (FIPS 186-4 §B.3.3 steps 4.4, 5.5) */
         if( X->p[n-1] < CEIL_MAXUINT_DIV_SQRT2 ) continue;
 
@@ -2229,7 +2231,7 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
         if( k > nbits ) MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( X, k - nbits ) );
         X->p[0] |= 1;
 
-        if( dh_flag == 0 )
+        if( ( flags & MBEDTLS_MPI_GEN_PRIME_FLAG_DH ) == 0 )
         {
             ret = mbedtls_mpi_is_prime( X, f_rng, p_rng );
 
@@ -2243,7 +2245,6 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
              * is X = 2 mod 3 (which is equivalent to Y = 2 mod 3).
              * Make sure it is satisfied, while keeping X = 3 mod 4
              */
-
             X->p[0] |= 2;
 
             MBEDTLS_MPI_CHK( mbedtls_mpi_mod_int( &r, X, 3 ) );
@@ -2255,7 +2256,6 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
             /* Set Y = (X-1) / 2, which is X / 2 because X is odd */
             MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &Y, X ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &Y, 1 ) );
-
             while( 1 )
             {
                 /*
@@ -2278,6 +2278,21 @@ int mbedtls_mpi_gen_prime( mbedtls_mpi *X, size_t nbits, int dh_flag,
                  */
                 MBEDTLS_MPI_CHK( mbedtls_mpi_add_int(  X,  X, 12 ) );
                 MBEDTLS_MPI_CHK( mbedtls_mpi_add_int( &Y, &Y, 6  ) );
+            }
+        }
+        /* check for RNG validity if flag is set (Note: this has a false
+        positive probability of 0.00005%). If more than 5 * nlen/2
+        (nlen/2 is the size of the random buffer in bits) generations fail
+        return an error indicating a possible issue with RNG.
+        */
+        if( ( flags & MBEDTLS_MPI_GEN_PRIME_CHECK_RNG ) ==
+            MBEDTLS_MPI_GEN_PRIME_CHECK_RNG )
+        {
+            rng_validity_counter++;
+            if ( rng_validity_counter > 5 * nbits )
+            {
+                ret = MBEDTLS_ERR_MPI_RNG_POSSIBLY_FAULTY;
+                goto cleanup;
             }
         }
     }

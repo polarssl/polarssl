@@ -523,10 +523,12 @@ int mbedtls_rsa_gen_key( mbedtls_rsa_context *ctx,
 
     do
     {
-        MBEDTLS_MPI_CHK( mbedtls_mpi_gen_prime( &ctx->P, nbits >> 1, 0,
+        MBEDTLS_MPI_CHK( mbedtls_mpi_gen_prime( &ctx->P, nbits >> 1,
+                                                MBEDTLS_MPI_GEN_PRIME_CHECK_RNG,
                                                 f_rng, p_rng ) );
 
-        MBEDTLS_MPI_CHK( mbedtls_mpi_gen_prime( &ctx->Q, nbits >> 1, 0,
+        MBEDTLS_MPI_CHK( mbedtls_mpi_gen_prime( &ctx->Q, nbits >> 1,
+                                                MBEDTLS_MPI_GEN_PRIME_CHECK_RNG,
                                                 f_rng, p_rng ) );
 
         /* make sure the difference between p and q is not too small (FIPS 186-4 §B.3.3 step 5.4) */

@@ -706,7 +706,7 @@ mbedtls_mpi_gen_prime:128:0:0
 
 Test mbedtls_mpi_gen_prime (Safe)
 depends_on:MBEDTLS_GENPRIME
-mbedtls_mpi_gen_prime:128:1:0
+mbedtls_mpi_gen_prime:128:MBEDTLS_MPI_GEN_PRIME_FLAG_DH:0
 
 Test bit getting (Value bit 25)
 mbedtls_mpi_get_bit:10:"49979687":25:1
@@ -743,6 +743,14 @@ mbedtls_mpi_set_bit:16:"00":32:1:16:"0100000000":0
 
 Test bit set (Invalid bit value)
 mbedtls_mpi_set_bit:16:"00":5:2:16:"00":MBEDTLS_ERR_MPI_BAD_INPUT_DATA
+
+Test good rng check #1
+depends_on:MBEDTLS_GENPRIME
+mbedtls_mpi_rng_check_test:
+
+Test bad rng check #1
+depends_on:MBEDTLS_GENPRIME
+mbedtls_mpi_bad_rng_check_test:"F55102B67930FBE8858DF6C0642D77D419A7B7968E622CC7500F3E3F2C5168368C50E00831873187"
 
 MPI Selftest
 depends_on:MBEDTLS_SELF_TEST

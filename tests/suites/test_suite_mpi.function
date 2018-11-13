@@ -1,5 +1,33 @@
 /* BEGIN_HEADER */
 #include "mbedtls/bignum.h"
+
+typedef struct mbedtls_test_mpi_random_const
+{
+    data_t *data;
+} mbedtls_test_mpi_random_const;
+
+/*
+ * This function is called by the mbedtls_mpi_bad_trng_check_test in order to
+ * simluate a faulty TRNG.
+*/
+int mbedtls_test_random_determinizer_fixed( void *state, unsigned char *buf,
+                                            size_t len )
+{
+    mbedtls_test_mpi_random_const *random = (mbedtls_test_mpi_random_const *) state;
+
+    if( random == NULL || random->data->x == NULL || buf == NULL )
+        return ( -1 );
+
+    if( random->data->len < len )
+    {
+        return ( -1 );
+    }
+
+    memcpy( buf , random->data->x, len );
+
+    return 0;
+}
+
 /* END_HEADER */
 
 /* BEGIN_DEPENDENCIES
@@ -878,5 +906,51 @@ exit:
 void mpi_selftest(  )
 {
     TEST_ASSERT( mbedtls_mpi_self_test( 1 ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_GENPRIME */
+void mbedtls_mpi_bad_rng_check_test( data_t *input_X )
+{
+    mbedtls_mpi X;
+    int res;
+    int bits = 256;
+    mbedtls_test_mpi_random_const rand;
+
+    int flags_check = MBEDTLS_MPI_GEN_PRIME_CHECK_RNG;
+
+    mbedtls_mpi_init( &X );
+
+    rand.data = input_X;
+
+    //check with faulty random generator
+    bits = input_X->len * 8;
+    res = mbedtls_mpi_gen_prime( &X, bits, flags_check,
+                                 mbedtls_test_random_determinizer_fixed,
+                                 &rand );
+    TEST_ASSERT( res == MBEDTLS_ERR_MPI_RNG_POSSIBLY_FAULTY );
+
+exit:
+    mbedtls_mpi_free( &X );
+
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_GENPRIME */
+void mbedtls_mpi_rng_check_test( )
+{
+    mbedtls_mpi X;
+    int res;
+    int bits = 256;
+    int flags_check = MBEDTLS_MPI_GEN_PRIME_CHECK_RNG;
+
+    mbedtls_mpi_init( &X );
+
+    res = mbedtls_mpi_gen_prime( &X, bits, flags_check, rnd_std_rand, NULL );
+    TEST_ASSERT( res == 0 );
+
+exit:
+    mbedtls_mpi_free( &X );
+
 }
 /* END_CASE */

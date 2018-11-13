@@ -669,6 +669,8 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
         mbedtls_snprintf( buf, buflen, "BIGNUM - The input arguments are not acceptable" );
     if( use_ret == -(MBEDTLS_ERR_MPI_ALLOC_FAILED) )
         mbedtls_snprintf( buf, buflen, "BIGNUM - Memory allocation failed" );
+    if( use_ret == -(MBEDTLS_ERR_MPI_RNG_POSSIBLY_FAULTY) )
+        mbedtls_snprintf( buf, buflen, "BIGNUM - A possible issue with the RNG has been detected. if RNG is valid , please retry" );
 #endif /* MBEDTLS_BIGNUM_C */
 
 #if defined(MBEDTLS_BLOWFISH_C)
