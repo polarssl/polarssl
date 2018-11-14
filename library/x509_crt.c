@@ -800,6 +800,21 @@ static int x509_get_crt_ext( unsigned char **p,
                 return( ret );
             break;
 
+        case MBEDTLS_X509_EXT_SUBJECT_KEY_IDENTIFIER:
+            if( ( ret = mbedtls_asn1_get_tag( p, end_ext_data, &len,
+                MBEDTLS_ASN1_OCTET_STRING ) ) != 0 )
+            {
+                return( ret );
+            }
+            else
+            {
+                crt->subject_key_id.len = len;
+                crt->subject_key_id.tag = MBEDTLS_ASN1_OCTET_STRING;
+                crt->subject_key_id.p = *p;
+                *p += len;
+            }
+            break;
+
         case MBEDTLS_X509_EXT_SUBJECT_ALT_NAME:
             /* Parse subject alt name */
             if( ( ret = x509_get_subject_alt_name( p, end_ext_octet,

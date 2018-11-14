@@ -279,6 +279,10 @@ static const oid_x509_ext_t oid_x509_ext[] =
         MBEDTLS_X509_EXT_NS_CERT_TYPE,
     },
     {
+        { ADD_LEN( MBEDTLS_OID_SUBJECT_KEY_IDENTIFIER ), "id-ce-subjectKeyIdentifier",           "Subject Key Identifier" }, 
+        MBEDTLS_X509_EXT_SUBJECT_KEY_IDENTIFIER,
+    },
+    {
         { NULL, 0, NULL, NULL },
         0,
     },

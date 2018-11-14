@@ -32,6 +32,7 @@ Features
      may be up to two bytes shorter. This allows the library to support all
      hash and signature sizes that comply with FIPS 186-4, including SHA-512
      with a 1024-bit key.
+   * Added parsing of x509 v3 extension subject key identifier.
 
 API Changes
    * Add a common error code of `MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED` for

@@ -73,6 +73,8 @@ typedef struct mbedtls_x509_crt
     mbedtls_x509_buf issuer_id;         /**< Optional X.509 v2/v3 issuer unique identifier. */
     mbedtls_x509_buf subject_id;        /**< Optional X.509 v2/v3 subject unique identifier. */
     mbedtls_x509_buf v3_ext;            /**< Optional X.509 v3 extensions.  */
+    mbedtls_x509_buf subject_key_id;    /**< Optional X.509 v3 extension subject key identifier. */
+
     mbedtls_x509_sequence subject_alt_names;    /**< Optional list of Subject Alternative Names (Only dNSName supported). */
 
     int ext_types;              /**< Bit string containing detected and parsed extensions */
