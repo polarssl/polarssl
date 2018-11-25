@@ -30,6 +30,7 @@ void mbedtls_md_process(  )
         info = mbedtls_md_info_from_type( *md_type_ptr );
         TEST_ASSERT( info != NULL );
         TEST_ASSERT( mbedtls_md_setup( &ctx, info, 0 ) == 0 );
+        TEST_ASSERT( mbedtls_md_starts( &ctx ) == 0 );
         TEST_ASSERT( mbedtls_md_process( &ctx, buf ) == 0 );
         mbedtls_md_free( &ctx );
     }
