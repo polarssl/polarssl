@@ -1,5 +1,11 @@
 mbed TLS ChangeLog (Sorted per branch, date)
 
+= mbed TLS x.x.x branch released xxxx-xx-xx
+
+Bugfix
+   * Fix compilation error on MINGW32/MINGW64 with deactivated option
+     MBEDTLS_HAVE_ASM in config file. Contributed by merlokk.
+	 
 = mbed TLS 2.14.0 branch released 2018-11-19
 
 Security
