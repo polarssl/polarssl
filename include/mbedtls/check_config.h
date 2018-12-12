@@ -412,6 +412,10 @@
 #error "MBEDTLS_PLATFORM_PRINTF_MACRO and MBEDTLS_PLATFORM_STD_PRINTF/MBEDTLS_PLATFORM_PRINTF_ALT cannot be defined simultaneously"
 #endif
 
+#if defined(MBEDTLS_PLATFORM_ZEROIZE_MACRO) && defined(MBEDTLS_PLATFORM_ZEROIZE_ALT)
+#error "MBEDTLS_PLATFORM_ZEROIZE_MACRO and MBEDTLS_PLATFORM_ZEROIZE_ALT cannot be defined simultaneously"
+#endif
+
 #if defined(MBEDTLS_PLATFORM_SNPRINTF_ALT) && !defined(MBEDTLS_PLATFORM_C)
 #error "MBEDTLS_PLATFORM_SNPRINTF_ALT defined, but not all prerequisites"
 #endif

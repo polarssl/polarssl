@@ -31,6 +31,7 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#include <string.h>
 #include <stddef.h>
 #if defined(MBEDTLS_HAVE_TIME_DATE)
 #include "mbedtls/platform_time.h"
@@ -41,6 +42,11 @@
 extern "C" {
 #endif
 
+#if defined(MBEDTLS_PLATFORM_ZEROIZE_MACRO)
+#define mbedtls_platform_zeroize( buf, len )  \
+    MBEDTLS_PLATFORM_ZEROIZE_MACRO( buf, len )
+#else
+#if defined(MBEDTLS_PLATFORM_ZEROIZE_ALT) || !defined(_WIN32)
 /**
  * \brief       Securely zeroize a buffer
  *
@@ -64,6 +70,12 @@ extern "C" {
  *
  */
 void mbedtls_platform_zeroize( void *buf, size_t len );
+#else
+/* Windows implementation */
+#include <windows.h>
+#define MBEDTLS_PLATFORM_ZEROIZE_MACRO  RtlSecureZeroMemory
+#endif /* MBEDTLS_PLATFORM_ZEROIZE_ALT || !_WIN32 */
+#endif /* MBEDTLS_PLATFORM_ZEROIZE_MACRO */
 
 #if defined(MBEDTLS_HAVE_TIME_DATE)
 /**

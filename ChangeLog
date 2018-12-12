@@ -399,6 +399,15 @@ API Changes
      output binary as part of redundant code elimination optimizations.
      Therefore, mbedtls_platform_zeroize() is moved to the platform module to
      facilitate testing and maintenance.
+   * Add an option MBEDTLS_PLATFORM_ZEROIZE_MACRO that allows configuring a
+     platform specific mbedtls_platform_zeroize function using the C
+     preprocessor. The configured function should be implemented such that it
+     securely zeroizes memory and will not be optimized away by the compiler.
+
+Features
+   * Add functionality to automatically configure mbedtls_platform_zeroize
+     to use RtlSecureZeroMemory when compiling for Windows. Contributed by
+     irwir in pull request #1522.
 
 Bugfix
    * Fix an issue with MicroBlaze support in bn_mul.h which was causing the

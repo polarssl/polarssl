@@ -37,12 +37,16 @@
 #include "mbedtls/platform_util.h"
 #include "mbedtls/threading.h"
 
-#include <stddef.h>
-#include <string.h>
-
-#if !defined(MBEDTLS_PLATFORM_ZEROIZE_ALT)
+#if !defined(MBEDTLS_PLATFORM_ZEROIZE_ALT) && \
+    !defined(MBEDTLS_PLATFORM_ZEROIZE_MACRO)
 /*
- * This implementation should never be optimized out by the compiler
+ * This default implementation should never be optimized out by the compiler.
+ * It is in use when none of the conditions below is satisfied:
+ *  - MBEDTLS_PLATFORM_ZEROIZE_MACRO is supplied
+ *  - A platform specific implementation is not provided using
+ *    MBEDTLS_PLATFORM_ZEROIZE_ALT
+ *  - The underlying system cannot be determined automatically using the
+ *    preprocessor
  *
  * This implementation for mbedtls_platform_zeroize() was inspired from Colin
  * Percival's blog article at:
@@ -73,7 +77,7 @@ void mbedtls_platform_zeroize( void *buf, size_t len )
 {
     memset_func( buf, 0, len );
 }
-#endif /* MBEDTLS_PLATFORM_ZEROIZE_ALT */
+#endif /* !MBEDTLS_PLATFORM_ZEROIZE_ALT && !MBEDTLS_PLATFORM_ZEROIZE_MACRO */
 
 #if defined(MBEDTLS_HAVE_TIME_DATE) && !defined(MBEDTLS_PLATFORM_GMTIME_R_ALT)
 #include <time.h>

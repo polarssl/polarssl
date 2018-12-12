@@ -3155,6 +3155,17 @@
  */
 //#define MBEDTLS_PLATFORM_GMTIME_R_ALT
 
+/**
+ * Define the macro MBEDTLS_PLATFORM_ZEROIZE_MACRO to replace all occurrences
+ * of mbedtls_platform_zeroize() with a platform specific implementation of
+ * that function.
+ *
+ * Note Mbed TLS automatically defines MBEDTLS_PLATFORM_ZEROIZE_MACRO to
+ * RtlSecureZeroMemory when compiling for Windows. Refer to platform_utils.h
+ * for more information.
+ */
+//#define MBEDTLS_PLATFORM_ZEROIZE_MACRO( buf, len )    memset_s( buf, len, 0, len )
+
 /* \} name SECTION: Customisation configuration options */
 
 /* Target and application specific configurations
