@@ -37,6 +37,10 @@
 
 #include <stddef.h>
 
+#if defined(MBEDTLS_CIPHER_HASH)
+#include "md.h"
+#endif
+
 #if defined(MBEDTLS_GCM_C) || defined(MBEDTLS_CCM_C) || defined(MBEDTLS_CHACHAPOLY_C)
 #define MBEDTLS_CIPHER_MODE_AEAD
 #endif
@@ -293,6 +297,11 @@ typedef struct mbedtls_cipher_context_t
      */
     mbedtls_operation_t operation;
 
+#if defined(MBEDTLS_CIPHER_HASH)
+    const mbedtls_md_info_t *md_info;
+    int hash_of_plaintext;
+#endif
+
 #if defined(MBEDTLS_CIPHER_MODE_WITH_PADDING)
     /** Padding functions to use, if relevant for
      * the specific cipher mode.
@@ -406,6 +415,118 @@ void mbedtls_cipher_free( mbedtls_cipher_context_t *ctx );
  * mbedtls_cipher_init() on the structure first.
  */
 int mbedtls_cipher_setup( mbedtls_cipher_context_t *ctx, const mbedtls_cipher_info_t *cipher_info );
+
+#if defined(MBEDTLS_CIPHER_HASH)
+/**
+ * \brief               This function initializes and fills the cipher-context
+ *                      structure with the appropriate values for the sepcific
+ *                      case of crypt-and-hash. It also clears the structure.
+ *                      supported by crypt-and-hash:
+ *                      ciphers: AES-CBC, AES-CTR, AES-OFB, AES-CFB
+ *                      hashes: SHA-1, SHA-224, SHA-256
+ *
+ * \param ctx                 The context to initialize. May not be NULL.
+ * \param cipher_info         The cipher to use.
+ * \param md_info             The hash to use.
+ * \param hash_of_plaintext   determines whether to hash plaintext or ciphertext.
+ *                            if 0 ciphertext will be hashed otherwise plaintext will be.
+ *
+ * \return              \c 0 on success.
+ * \return              #MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA on
+ *                      parameter-verification failure.
+ * \return              #MBEDTLS_ERR_CIPHER_ALLOC_FAILED if allocation of the
+ *                      cipher-specific context fails.
+ *
+ * \internal Currently, the function also clears the structure.
+ * In future versions, the caller will be required to call
+ * mbedtls_cipher_init() on the structure first.
+ */
+int mbedtls_cipher_setup_with_hash( mbedtls_cipher_context_t *ctx,
+                                    const mbedtls_cipher_info_t *cipher_info,
+                                    const mbedtls_md_info_t *md_info,
+                                    int hash_of_plaintext );
+
+/**
+ * \brief               This function returns the hash value created during a crypt-and-hash.
+ *                      This value is only created if mbedtls_cipher_setup_with_hash is called
+ *                      and a supported algorithms are chosen.Should only be called after
+ *                      completing the crypt operation (e.g. after mbedtls_cipher_finish).
+ *
+ * \param ctx           The context of the cipher. Must be initialized.
+ * \param output        The output buffer to hold the hash value.
+ *
+ * \return              \c 0 on success.
+ * \return              #MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA on
+ *                      parameter-verification failure.
+ * \return              #MBEDTLS_ERR_CIPHER_ALLOC_FAILED if allocation of the
+ *                      cipher-specific context fails.
+ * \return              #MBEDTLS_ERR_CIPHER_FEATURE_UNAVAILABLE if algorithm is not
+ *                      supported for crypt-and-hash.
+ *
+ * \internal Currently, the function also clears the structure.
+ * In future versions, the caller will be required to call
+ * mbedtls_cipher_init() on the structure first.
+ */
+int mbedtls_cipher_get_hash( mbedtls_cipher_context_t *ctx, unsigned char *output );
+
+/**
+ * \brief               The generic all-in-one encryption/decryption function for
+ *                      the crypt-and-hash. will encrpyt/decrpyt the given buffer
+ *                      and also compute a hash on the plaintext or ciphertext.
+ *
+ *                      supported by encrypt-and-hash:
+ *                      ciphers: AES-CBC, AES-CTR, AES-OFB, AES-CFB
+ *                      hashes: SHA-1, SHA-224, SHA-256
+ *
+ * \param cipher_id             The ID of the cipher to use.
+ * \param md_info               The hash to use.
+ * \param input                 The buffer holding the input data.
+ * \param key                   The key to use.
+ * \param key_bitlen            The key length to use, in bits.
+ * \param operation             The operation that the key will be used for:
+ *                              #MBEDTLS_ENCRYPT or #MBEDTLS_DECRYPT.
+ * \param iv                    The IV to use, or NONCE_COUNTER for CTR-mode ciphers.
+ * \param iv_len                The IV length for ciphers with variable-size IV.
+ *                              This parameter is discarded by ciphers with fixed-size
+ *                              IV.
+ * \param cipher_text           The buffer for the output data. Must be able to hold at
+ *                              least \p ilen + block_size. Must not be the same buffer
+ *                              as input.
+ * \param cipher_text_length    The length of the output data, to be updated with the
+ *                              actual number of Bytes written.
+ * \param hash                  The buffer for the output of the hash value.
+ * \param hash_of_plaintext     determines whether to hash plaintext or ciphertext.
+ *                              if 0 ciphertext will be hashed otherwise plaintext will be.
+ *
+ * \note                Some ciphers do not use IVs nor nonce. For these
+ *                      ciphers, use \p iv = NULL and \p iv_len = 0.
+ *
+ * \return              \c 0 on success.
+ * \return              #MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA on
+ *                      parameter-verification failure.
+ * \return              #MBEDTLS_ERR_CIPHER_FULL_BLOCK_EXPECTED on decryption
+ *                      expecting a full block but not receiving one.
+ * \return              #MBEDTLS_ERR_CIPHER_INVALID_PADDING on invalid padding
+ *                      while decrypting.
+ * \return              #MBEDTLS_ERR_CIPHER_FEATURE_UNAVAILABLE if algorithm is not
+ *                      supported for crypt-and-hash.
+ * \return              A cipher-specific error code on failure.
+ */
+int mbedtls_cipher_and_hash( const mbedtls_cipher_id_t cipher_id,
+                             const mbedtls_md_info_t* md_info,
+                             const unsigned char *input,
+                             size_t ilen,
+                             const unsigned char *key,
+                             int key_bitlen,
+                             const mbedtls_operation_t operation,
+                             mbedtls_cipher_padding_t mode,
+                             const unsigned char *iv,
+                             size_t iv_len,
+                             unsigned char *cipher_text,
+                             size_t *cipher_text_length,
+                             unsigned char *hash,
+                             int hash_of_plaintext );
+#endif
 
 /**
  * \brief        This function returns the block size of the given cipher.

@@ -100,6 +100,20 @@ struct mbedtls_cipher_base_t
     int (*setkey_dec_func)( void *ctx, const unsigned char *key,
                             unsigned int key_bitlen);
 
+#if defined(MBEDTLS_CIPHER_HASH)
+    int (*aes_setkey_enc_and_hash_wrap)( void *ctx, const unsigned char *key,
+                                         unsigned int key_bitlen,
+                                         const mbedtls_md_info_t *md_info,
+                                         int hash_of_plaintext,
+                                         int is_enc_mode );
+
+    int (*aes_setkey_dec_and_hash_wrap)( void *ctx, const unsigned char *key,
+                                        unsigned int key_bitlen,
+                                        const mbedtls_md_info_t *md_info,
+                                        int hash_of_plaintext );
+
+    int (*aes_get_hash_wrap)( void *ctx, unsigned char *output );
+#endif
     /** Allocate a new context */
     void * (*ctx_alloc_func)( void );
 

@@ -527,6 +527,13 @@ void mbedtls_aes_free( mbedtls_aes_context *ctx )
     if( ctx == NULL )
         return;
 
+#if defined(MBEDTLS_CIPHER_HASH)
+    if( ctx->md_ctx != NULL )
+    {
+        mbedtls_md_free( ctx->md_ctx );
+    }
+#endif //MBEDTLS_CIPHER_HASH
+
     mbedtls_platform_zeroize( ctx, sizeof( mbedtls_aes_context ) );
 }
 
@@ -548,6 +555,42 @@ void mbedtls_aes_xts_free( mbedtls_aes_xts_context *ctx )
     mbedtls_aes_free( &ctx->tweak );
 }
 #endif /* MBEDTLS_CIPHER_MODE_XTS */
+
+#if defined(MBEDTLS_CIPHER_HASH)
+static int mbedtls_aes_hash_update( mbedtls_aes_context *ctx,
+                                       const unsigned char *input,
+                                       size_t ilen,
+                                       unsigned char *output,
+                                       size_t olen,
+                                       int is_enc_mode )
+{
+    int ret = 0;
+    if( ctx->md_ctx != NULL )
+    {
+        if( ( ctx->hash_of_plaintext ) ^ ( ! is_enc_mode ) )
+        {
+            if (ilen > 0)
+            {
+                if( 0 != ( ret = mbedtls_md_update( ctx->md_ctx, input, ilen ) ) )
+                {
+                    return( ret );
+                }
+            }
+        }
+        else
+        {
+            if (olen > 0)
+            {
+                if (0 != (ret = mbedtls_md_update(ctx->md_ctx, output, olen)))
+                {
+                    return(ret);
+                }
+            }
+        }
+    }
+    return( 0 );
+}
+#endif /* MBEDTLS_CIPHER_HASH */
 
 /*
  * AES key schedule (encryption)
@@ -664,8 +707,49 @@ int mbedtls_aes_setkey_enc( mbedtls_aes_context *ctx, const unsigned char *key,
 
     return( 0 );
 }
-#endif /* !MBEDTLS_AES_SETKEY_ENC_ALT */
 
+
+#if defined(MBEDTLS_CIPHER_HASH)
+
+int mbedtls_aes_get_hash( mbedtls_aes_context *ctx, unsigned char *output )
+{
+    int ret = 0;
+    ret = mbedtls_md_finish( ctx->md_ctx, output);
+    return( ret );
+}
+
+int mbedtls_aes_setkey_enc_and_hash( mbedtls_aes_context *ctx,
+                                     const unsigned char *key,
+                                     unsigned int keybits,
+                                     const mbedtls_md_info_t *md_info,
+                                     int hash_of_plaintext,
+                                     int is_enc_mode)
+{
+    int ret = 0;
+
+    ctx->md_ctx = mbedtls_calloc( 1, sizeof( mbedtls_md_context_t ) );
+    if( ctx->md_ctx == NULL )
+        return( MBEDTLS_ERR_MD_ALLOC_FAILED );
+
+    mbedtls_md_init( ctx->md_ctx );
+
+    ret = mbedtls_aes_setkey_enc( ctx, key, keybits );
+    if ( ret != 0 )
+        return( ret );
+
+    ret = mbedtls_md_setup( ctx->md_ctx, md_info, 0 );
+    if ( ret != 0 )
+        return( ret );
+
+    ctx->hash_of_plaintext = hash_of_plaintext;
+    ctx->is_enc_mode = is_enc_mode;
+    ret = mbedtls_md_starts( ctx->md_ctx );
+    if ( ret != 0 )
+        return( ret );
+    return( 0 );
+}
+#endif /* MBEDTLS_CIPHER_HASH */
+#endif /* !MBEDTLS_AES_SETKEY_ENC_ALT */
 /*
  * AES key schedule (decryption)
  */
@@ -736,6 +820,38 @@ exit:
 
     return( ret );
 }
+
+#if defined(MBEDTLS_CIPHER_HASH)
+int mbedtls_aes_setkey_dec_and_hash( mbedtls_aes_context *ctx,
+                                     const unsigned char *key,
+                                     unsigned int keybits,
+                                     const mbedtls_md_info_t *md_info,
+                                     int hash_of_plaintext )
+{
+    int ret = 0;
+
+    ctx->md_ctx = mbedtls_calloc( 1, sizeof( mbedtls_md_context_t ) );
+    if( ctx->md_ctx == NULL )
+        return( MBEDTLS_ERR_MD_ALLOC_FAILED );
+
+    mbedtls_md_init( ctx->md_ctx );
+
+    ret = mbedtls_aes_setkey_dec( ctx, key, keybits );
+    if ( ret != 0 )
+        return( ret );
+
+    ret = mbedtls_md_setup( ctx->md_ctx, md_info, 0 );
+    if ( ret != 0 )
+        return( ret );
+
+    ctx->hash_of_plaintext = hash_of_plaintext;
+
+    ret = mbedtls_md_starts( ctx->md_ctx );
+    if ( ret != 0 )
+        return( ret );
+    return( 0 );
+}
+#endif /* MBEDTLS_CIPHER_HASH */
 
 #if defined(MBEDTLS_CIPHER_MODE_XTS)
 static int mbedtls_aes_xts_decode_keys( const unsigned char *key,
@@ -1035,6 +1151,7 @@ int mbedtls_aes_crypt_cbc( mbedtls_aes_context *ctx,
                     unsigned char *output )
 {
     int i;
+    size_t len = length;
     unsigned char temp[16];
 
     if( length % 16 )
@@ -1085,6 +1202,17 @@ int mbedtls_aes_crypt_cbc( mbedtls_aes_context *ctx,
         }
     }
 
+#if defined(MBEDTLS_CIPHER_HASH)
+{
+    int ret = 0;
+    if( 0 != ( ret = mbedtls_aes_hash_update( ctx, input - len, length, output - len,
+                                              length,
+                                              (mode == MBEDTLS_AES_ENCRYPT) ) ) )
+    {
+        return( ret );
+    }
+}
+#endif //MBEDTLS_CIPHER_HASH
     return( 0 );
 }
 #endif /* MBEDTLS_CIPHER_MODE_CBC */
@@ -1261,6 +1389,7 @@ int mbedtls_aes_crypt_cfb128( mbedtls_aes_context *ctx,
                        unsigned char *output )
 {
     int c;
+    size_t len = length;
     size_t n = *iv_off;
 
     if( mode == MBEDTLS_AES_DECRYPT )
@@ -1292,6 +1421,18 @@ int mbedtls_aes_crypt_cfb128( mbedtls_aes_context *ctx,
 
     *iv_off = n;
 
+#if defined(MBEDTLS_CIPHER_HASH)
+{
+    int ret = 0;
+    if( 0 != ( ret = mbedtls_aes_hash_update( ctx, input - len, length, output - len,
+                                                length,
+                                                (mode == MBEDTLS_AES_ENCRYPT) ) ) )
+    {
+        return( ret );
+    }
+}
+#endif //MBEDTLS_CIPHER_HASH
+
     return( 0 );
 }
 
@@ -1305,6 +1446,7 @@ int mbedtls_aes_crypt_cfb8( mbedtls_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output )
 {
+    size_t len = length;
     unsigned char c;
     unsigned char ov[17];
 
@@ -1323,7 +1465,17 @@ int mbedtls_aes_crypt_cfb8( mbedtls_aes_context *ctx,
 
         memcpy( iv, ov + 1, 16 );
     }
-
+#if defined(MBEDTLS_CIPHER_HASH)
+{
+    int ret = 0;
+    if( 0 != ( ret = mbedtls_aes_hash_update( ctx, input - len, length, output - len,
+                                              length,
+                                              (mode == MBEDTLS_AES_ENCRYPT) ) ) )
+    {
+        return( ret );
+    }
+}
+#endif //MBEDTLS_CIPHER_HASH
     return( 0 );
 }
 #endif /* MBEDTLS_CIPHER_MODE_CFB */
@@ -1340,6 +1492,7 @@ int mbedtls_aes_crypt_ofb( mbedtls_aes_context *ctx,
                            unsigned char *output )
 {
     int ret = 0;
+    size_t len = length;
     size_t n = *iv_off;
 
     while( length-- )
@@ -1356,6 +1509,10 @@ int mbedtls_aes_crypt_ofb( mbedtls_aes_context *ctx,
     }
 
     *iv_off = n;
+#if defined(MBEDTLS_CIPHER_HASH)
+    ret = mbedtls_aes_hash_update( ctx, input - len, length, output - len, length,
+                                   ctx->is_enc_mode );
+#endif //MBEDTLS_CIPHER_HASH
 
 exit:
     return( ret );
@@ -1376,6 +1533,7 @@ int mbedtls_aes_crypt_ctr( mbedtls_aes_context *ctx,
 {
     int c, i;
     size_t n = *nc_off;
+    size_t len = length;
 
     if ( n > 0x0F )
         return( MBEDTLS_ERR_AES_BAD_INPUT_DATA );
@@ -1396,7 +1554,16 @@ int mbedtls_aes_crypt_ctr( mbedtls_aes_context *ctx,
     }
 
     *nc_off = n;
-
+#if defined(MBEDTLS_CIPHER_HASH)
+{
+    int ret = 0;
+    if( 0 != ( ret = mbedtls_aes_hash_update( ctx, input - len, len, output - len, len,
+                                   ctx->is_enc_mode ) ) )
+    {
+        return( ret );
+    }
+}
+#endif //MBEDTLS_CIPHER_HASH
     return( 0 );
 }
 #endif /* MBEDTLS_CIPHER_MODE_CTR */

@@ -207,7 +207,34 @@ static int aes_setkey_enc_wrap( void *ctx, const unsigned char *key,
 {
     return mbedtls_aes_setkey_enc( (mbedtls_aes_context *) ctx, key, key_bitlen );
 }
+#if defined(MBEDTLS_CIPHER_HASH)
+static int aes_setkey_dec_and_hash_wrap( void *ctx, const unsigned char *key,
+                                         unsigned int key_bitlen,
+                                         const mbedtls_md_info_t *md_info,
+                                         int hash_of_plaintext )
+{
+    return mbedtls_aes_setkey_dec_and_hash( (mbedtls_aes_context *) ctx, key,
+                                            key_bitlen,
+                                            md_info,
+                                            hash_of_plaintext );
+}
 
+static int aes_setkey_enc_and_hash_wrap( void *ctx, const unsigned char *key,
+                                         unsigned int key_bitlen,
+                                         const mbedtls_md_info_t *md_info,
+                                         int hash_of_plaintext,
+                                         int is_enc_mode )
+{
+    return mbedtls_aes_setkey_enc_and_hash( (mbedtls_aes_context *) ctx, key,
+                                            key_bitlen, md_info, hash_of_plaintext,
+                                            is_enc_mode );
+}
+
+static int aes_get_hash_wrap( void *ctx, unsigned char *output )
+{
+    return mbedtls_aes_get_hash( (mbedtls_aes_context *)ctx, output );
+}
+#endif //MBEDTLS_CIPHER_HASH
 static void * aes_ctx_alloc( void )
 {
     mbedtls_aes_context *aes = mbedtls_calloc( 1, sizeof( mbedtls_aes_context ) );
@@ -249,6 +276,11 @@ static const mbedtls_cipher_base_t aes_info = {
 #endif
     aes_setkey_enc_wrap,
     aes_setkey_dec_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    aes_setkey_enc_and_hash_wrap,
+    aes_setkey_dec_and_hash_wrap,
+    aes_get_hash_wrap,
+#endif
     aes_ctx_alloc,
     aes_ctx_free
 };
@@ -485,6 +517,11 @@ static const mbedtls_cipher_base_t xts_aes_info = {
 #endif
     xts_aes_setkey_enc_wrap,
     xts_aes_setkey_dec_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     xts_aes_ctx_alloc,
     xts_aes_ctx_free
 };
@@ -543,6 +580,11 @@ static const mbedtls_cipher_base_t gcm_aes_info = {
 #endif
     gcm_aes_setkey_wrap,
     gcm_aes_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     gcm_ctx_alloc,
     gcm_ctx_free,
 };
@@ -612,6 +654,11 @@ static const mbedtls_cipher_base_t ccm_aes_info = {
 #endif
     ccm_aes_setkey_wrap,
     ccm_aes_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     ccm_ctx_alloc,
     ccm_ctx_free,
 };
@@ -745,6 +792,11 @@ static const mbedtls_cipher_base_t camellia_info = {
 #endif
     camellia_setkey_enc_wrap,
     camellia_setkey_dec_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     camellia_ctx_alloc,
     camellia_ctx_free
 };
@@ -918,6 +970,11 @@ static const mbedtls_cipher_base_t gcm_camellia_info = {
 #endif
     gcm_camellia_setkey_wrap,
     gcm_camellia_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     gcm_ctx_alloc,
     gcm_ctx_free,
 };
@@ -987,6 +1044,11 @@ static const mbedtls_cipher_base_t ccm_camellia_info = {
 #endif
     ccm_camellia_setkey_wrap,
     ccm_camellia_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     ccm_ctx_alloc,
     ccm_ctx_free,
 };
@@ -1121,6 +1183,11 @@ static const mbedtls_cipher_base_t aria_info = {
 #endif
     aria_setkey_enc_wrap,
     aria_setkey_dec_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     aria_ctx_alloc,
     aria_ctx_free
 };
@@ -1294,6 +1361,11 @@ static const mbedtls_cipher_base_t gcm_aria_info = {
 #endif
     gcm_aria_setkey_wrap,
     gcm_aria_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     gcm_ctx_alloc,
     gcm_ctx_free,
 };
@@ -1363,6 +1435,11 @@ static const mbedtls_cipher_base_t ccm_aria_info = {
 #endif
     ccm_aria_setkey_wrap,
     ccm_aria_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     ccm_ctx_alloc,
     ccm_ctx_free,
 };
@@ -1545,6 +1622,11 @@ static const mbedtls_cipher_base_t des_info = {
 #endif
     des_setkey_enc_wrap,
     des_setkey_dec_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     des_ctx_alloc,
     des_ctx_free
 };
@@ -1596,6 +1678,11 @@ static const mbedtls_cipher_base_t des_ede_info = {
 #endif
     des3_set2key_enc_wrap,
     des3_set2key_dec_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     des3_ctx_alloc,
     des3_ctx_free
 };
@@ -1647,6 +1734,11 @@ static const mbedtls_cipher_base_t des_ede3_info = {
 #endif
     des3_set3key_enc_wrap,
     des3_set3key_dec_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     des3_ctx_alloc,
     des3_ctx_free
 };
@@ -1762,6 +1854,11 @@ static const mbedtls_cipher_base_t blowfish_info = {
 #endif
     blowfish_setkey_wrap,
     blowfish_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     blowfish_ctx_alloc,
     blowfish_ctx_free
 };
@@ -1878,6 +1975,11 @@ static const mbedtls_cipher_base_t arc4_base_info = {
 #endif
     arc4_setkey_wrap,
     arc4_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     arc4_ctx_alloc,
     arc4_ctx_free
 };
@@ -1963,6 +2065,11 @@ static const mbedtls_cipher_base_t chacha20_base_info = {
 #endif
     chacha20_setkey_wrap,
     chacha20_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     chacha20_ctx_alloc,
     chacha20_ctx_free
 };
@@ -2035,6 +2142,11 @@ static const mbedtls_cipher_base_t chachapoly_base_info = {
 #endif
     chachapoly_setkey_wrap,
     chachapoly_setkey_wrap,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     chachapoly_ctx_alloc,
     chachapoly_ctx_free
 };
@@ -2103,6 +2215,11 @@ static const mbedtls_cipher_base_t null_base_info = {
 #endif
     null_setkey,
     null_setkey,
+#if defined(MBEDTLS_CIPHER_HASH)
+    NULL,
+    NULL,
+    NULL,
+#endif
     null_ctx_alloc,
     null_ctx_free
 };

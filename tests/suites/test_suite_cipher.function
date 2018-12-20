@@ -735,3 +735,79 @@ void check_padding( int pad_mode, data_t * input, int ret, int dlen_check
         TEST_ASSERT( dlen == (size_t) dlen_check );
 }
 /* END_CASE */
+
+/* BEGIN_CASE */
+void crypt_and_hash_test_vec( int cipher_id, data_t * key,
+                              data_t * iv, data_t * cipher,
+                              int md_type, int finish_result )
+{
+    unsigned char output[265];
+    unsigned char input[265];
+    unsigned char hash_enc[265];
+    unsigned char hash_dec[265];
+    mbedtls_cipher_context_t ctx, ctx2;
+    size_t outlen, inlen, total_len;
+    const mbedtls_md_info_t *md_info = NULL;
+    int hash_of_plaintext = 1;
+    mbedtls_cipher_init( &ctx );
+    mbedtls_cipher_init( &ctx2 );
+    memset( output, 0x00, sizeof( output ) );
+    memset( input, 0x00, sizeof( input ) );
+    md_info = mbedtls_md_info_from_type( md_type );
+
+    // Encryption
+
+    /* Prepare encrypt context */
+    TEST_ASSERT( 0 == mbedtls_cipher_setup_with_hash( &ctx,
+                        mbedtls_cipher_info_from_type( cipher_id ),
+                        md_info, hash_of_plaintext ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_setkey( &ctx, key->x, 8 * key->len, MBEDTLS_ENCRYPT ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_set_iv( &ctx, iv->x, iv->len ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_reset( &ctx ) );
+
+    /* encode buffer */
+    total_len = 0;
+    TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx, cipher->x, cipher->len, output, &outlen ) );
+    total_len += outlen;
+
+    TEST_ASSERT( finish_result == mbedtls_cipher_finish( &ctx, output + outlen,
+                                                         &outlen ) );
+    total_len += outlen;
+
+    TEST_ASSERT( 0 == mbedtls_cipher_get_hash( &ctx, hash_enc ) );
+
+    //Decryption
+
+    /* Prepare decrypt context */
+    TEST_ASSERT( 0 == mbedtls_cipher_setup_with_hash( &ctx2,
+                        mbedtls_cipher_info_from_type( cipher_id ),
+                        md_info, hash_of_plaintext ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_setkey( &ctx2, key->x, 8 * key->len, MBEDTLS_DECRYPT ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_set_iv( &ctx2, iv->x, iv->len ) );
+    TEST_ASSERT( 0 == mbedtls_cipher_reset( &ctx2 ) );
+
+    outlen = total_len;
+    total_len = 0;
+
+    TEST_ASSERT( 0 == mbedtls_cipher_update( &ctx2, output, outlen, input, &inlen ) );
+
+    total_len += inlen;
+
+    TEST_ASSERT( finish_result == mbedtls_cipher_finish( &ctx2, output + inlen,
+                                                         &inlen ) );
+    total_len += inlen;
+
+    TEST_ASSERT( 0 == mbedtls_cipher_get_hash( &ctx2, hash_dec ) );
+
+    /* check plaintext only if everything went fine */
+    TEST_ASSERT( total_len == cipher->len );
+    TEST_ASSERT( 0 == memcmp( input, cipher->x, cipher->len ) );
+
+    /* check hashtext only if everything went fine */
+    TEST_ASSERT( memcmp( hash_dec, hash_enc, 265 ) );
+
+exit:
+    mbedtls_cipher_free( &ctx );
+    mbedtls_cipher_free( &ctx2 );
+}
+/* END_CASE */
