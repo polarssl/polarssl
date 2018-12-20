@@ -73,6 +73,13 @@ extern "C" {
 typedef struct mbedtls_ccm_context
 {
     mbedtls_cipher_context_t cipher_ctx;    /*!< The cipher context used. */
+    unsigned char b[16];
+    unsigned char y[16];
+    unsigned char ctr[16];
+    unsigned char q;
+    size_t iv_len;
+    size_t add_len;
+    int mode;                   /*!< Encrypt or Decrypt */
 }
 mbedtls_ccm_context;
 
@@ -88,6 +95,22 @@ mbedtls_ccm_context;
  * \param ctx       The CCM context to initialize.
  */
 void mbedtls_ccm_init( mbedtls_ccm_context *ctx );
+
+int mbedtls_ccm_clone( mbedtls_ccm_context *dst, const mbedtls_ccm_context *src );
+
+int mbedtls_ccm_starts( mbedtls_ccm_context *ctx, int mode, size_t length,
+                        const unsigned char *iv, size_t iv_len,
+                        const unsigned char *add, size_t add_len,
+                        size_t tag_len );
+
+int mbedtls_ccm_update( mbedtls_ccm_context *ctx,
+                        size_t length,
+                        const unsigned char *input,
+                        unsigned char *output );
+
+int mbedtls_ccm_finish( mbedtls_ccm_context *ctx,
+                        unsigned char *tag,
+                        size_t tag_len );
 
 /**
  * \brief           This function initializes the CCM context set in the

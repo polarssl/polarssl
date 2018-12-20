@@ -103,6 +103,9 @@ struct mbedtls_cipher_base_t
     /** Allocate a new context */
     void * (*ctx_alloc_func)( void );
 
+    /** Clone context **/
+    void (*ctx_clone_func)( void *dst, const void *src );
+
     /** Free the given context */
     void (*ctx_free_func)( void *ctx );
 

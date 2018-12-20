@@ -76,6 +76,11 @@ mbedtls_gcm_context;
 #include "gcm_alt.h"
 #endif /* !MBEDTLS_GCM_ALT */
 
+int mbedtls_gcm_clone( mbedtls_gcm_context *dst,
+                       const mbedtls_gcm_context *src );
+
+int mbedtls_gcm_gen_table( mbedtls_gcm_context *ctx );
+
 /**
  * \brief           This function initializes the specified GCM context,
  *                  to make references valid, and prepares the context

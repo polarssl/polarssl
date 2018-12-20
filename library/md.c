@@ -209,6 +209,9 @@ int mbedtls_md_clone( mbedtls_md_context_t *dst,
 
     dst->md_info->clone_func( dst->md_ctx, src->md_ctx );
 
+    if( dst->hmac_ctx != NULL && src->hmac_ctx != NULL )
+        memcpy( dst->hmac_ctx, src->hmac_ctx, 2 * src->md_info->block_size );
+
     return( 0 );
 }
 

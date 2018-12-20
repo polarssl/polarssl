@@ -88,6 +88,26 @@ void mbedtls_gcm_init( mbedtls_gcm_context *ctx )
     memset( ctx, 0, sizeof( mbedtls_gcm_context ) );
 }
 
+int mbedtls_gcm_clone( mbedtls_gcm_context *dst,
+                       const mbedtls_gcm_context *src )
+{
+    if( dst == NULL || src == NULL )
+    {
+        return( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    }
+
+    mbedtls_cipher_clone( &dst->cipher_ctx, &src->cipher_ctx );
+    memcpy( dst->HL, src->HL, 16 * sizeof(uint64_t ) );
+    memcpy( dst->HH, src->HH, 16 * sizeof(uint64_t ) );
+    dst->len = src->len;
+    dst->add_len = src->add_len;
+    memcpy( dst->base_ectr, src->base_ectr, 16 );
+    memcpy( dst->y, src->y, 16 );
+    memcpy( dst->buf, src->buf, 16 );
+    dst->mode = src->mode;
+    return( 0 );
+}
+
 /*
  * Precompute small multiples of H, that is set
  *      HH[i] || HL[i] = H times i,
@@ -96,7 +116,7 @@ void mbedtls_gcm_init( mbedtls_gcm_context *ctx )
  * is the high-order bit of HH corresponds to P^0 and the low-order bit of HL
  * corresponds to P^127.
  */
-static int gcm_gen_table( mbedtls_gcm_context *ctx )
+int mbedtls_gcm_gen_table( mbedtls_gcm_context *ctx )
 {
     int ret, i, j;
     uint64_t hi, lo;
@@ -182,7 +202,7 @@ int mbedtls_gcm_setkey( mbedtls_gcm_context *ctx,
         return( ret );
     }
 
-    if( ( ret = gcm_gen_table( ctx ) ) != 0 )
+    if( ( ret = mbedtls_gcm_gen_table( ctx ) ) != 0 )
         return( ret );
 
     return( 0 );

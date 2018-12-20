@@ -69,6 +69,20 @@ struct mbedtls_cmac_context_t
 #endif /* !MBEDTLS_CMAC_ALT */
 
 /**
+ * \brief               Initialises and allocat cmac context memory
+ *                      Must be called with an initialized cipher context.
+ *
+ * \param ctx           The cipher context used for the CMAC operation, initialized
+ *                      as one of the following types: MBEDTLS_CIPHER_AES_128_ECB,
+ *                      MBEDTLS_CIPHER_AES_192_ECB, MBEDTLS_CIPHER_AES_256_ECB,
+ *                      or MBEDTLS_CIPHER_DES_EDE3_ECB.
+ * \return              \c 0 on success.
+ * \return              A cipher-specific error code on failure.
+ */
+int mbedtls_cipher_cmac_setup(mbedtls_cipher_context_t *ctx);
+
+
+/**
  * \brief               This function sets the CMAC key, and prepares to authenticate
  *                      the input data.
  *                      Must be called with an initialized cipher context.

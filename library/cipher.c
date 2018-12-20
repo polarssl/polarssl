@@ -173,6 +173,36 @@ void mbedtls_cipher_free( mbedtls_cipher_context_t *ctx )
     mbedtls_platform_zeroize( ctx, sizeof(mbedtls_cipher_context_t) );
 }
 
+int mbedtls_cipher_clone( mbedtls_cipher_context_t *dst,
+                          const mbedtls_cipher_context_t *src )
+{
+    if( dst == NULL || dst->cipher_info == NULL ||
+        src == NULL || src->cipher_info == NULL)
+    {
+        return( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    }
+
+    dst->cipher_info = src->cipher_info;
+    dst->key_bitlen = src->key_bitlen;
+    dst->operation = src->operation;
+#if defined(MBEDTLS_CIPHER_MODE_WITH_PADDING)
+    dst->add_padding = src->add_padding;
+    dst->get_padding = src->get_padding;
+#endif
+    memcpy( dst->unprocessed_data, src->unprocessed_data, MBEDTLS_MAX_BLOCK_LENGTH );
+    dst->unprocessed_len = src->unprocessed_len;
+    memcpy( dst->iv, src->iv, MBEDTLS_MAX_IV_LENGTH );
+    dst->iv_size = src->iv_size;
+    if( dst->cipher_info->base->ctx_clone_func )
+        dst->cipher_info->base->ctx_clone_func( dst->cipher_ctx, src->cipher_ctx );
+
+#if defined(MBEDTLS_CMAC_C)
+    if ( dst->cmac_ctx != NULL && src->cmac_ctx != NULL )
+        memcpy( dst->cmac_ctx, src->cmac_ctx, sizeof( mbedtls_cmac_context_t ) );
+#endif
+    return( 0 );
+}
+
 int mbedtls_cipher_setup( mbedtls_cipher_context_t *ctx, const mbedtls_cipher_info_t *cipher_info )
 {
     if( NULL == cipher_info || NULL == ctx )
@@ -196,6 +226,15 @@ int mbedtls_cipher_setup( mbedtls_cipher_context_t *ctx, const mbedtls_cipher_in
 #endif
 #endif /* MBEDTLS_CIPHER_MODE_WITH_PADDING */
 
+    return( 0 );
+}
+
+int mbedtls_cipher_setup_info( mbedtls_cipher_context_t *ctx, const mbedtls_cipher_info_t *cipher_info )
+{
+    if( NULL == cipher_info || NULL == ctx )
+        return( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+
+    ctx->cipher_info = cipher_info;
     return( 0 );
 }
 

@@ -53,7 +53,6 @@
 
 #include <string.h>
 
-
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
 #else
@@ -199,11 +198,26 @@ static void cmac_pad( unsigned char padded_block[MBEDTLS_CIPHER_BLKSIZE_MAX],
     }
 }
 
+int mbedtls_cipher_cmac_setup(mbedtls_cipher_context_t *ctx)
+{
+    mbedtls_cmac_context_t *cmac_ctx;
+
+    /* Allocated and initialise in the cipher context memory for the CMAC
+     * context */
+    cmac_ctx = mbedtls_calloc( 1, sizeof( mbedtls_cmac_context_t ) );
+    if( cmac_ctx == NULL )
+        return( MBEDTLS_ERR_CIPHER_ALLOC_FAILED );
+
+    ctx->cmac_ctx = cmac_ctx;
+
+    mbedtls_platform_zeroize( cmac_ctx->state, sizeof( cmac_ctx->state ) );
+    return 0;
+}
+
 int mbedtls_cipher_cmac_starts( mbedtls_cipher_context_t *ctx,
                                 const unsigned char *key, size_t keybits )
 {
     mbedtls_cipher_type_t type;
-    mbedtls_cmac_context_t *cmac_ctx;
     int retval;
 
     if( ctx == NULL || ctx->cipher_info == NULL || key == NULL )
@@ -226,17 +240,11 @@ int mbedtls_cipher_cmac_starts( mbedtls_cipher_context_t *ctx,
             return( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
     }
 
-    /* Allocated and initialise in the cipher context memory for the CMAC
-     * context */
-    cmac_ctx = mbedtls_calloc( 1, sizeof( mbedtls_cmac_context_t ) );
-    if( cmac_ctx == NULL )
-        return( MBEDTLS_ERR_CIPHER_ALLOC_FAILED );
+    /*check if cmac ctx had been allocated by mbedtls_cipher_cmac_setup()*/
+    if (ctx->cmac_ctx != NULL)
+        return 0;
 
-    ctx->cmac_ctx = cmac_ctx;
-
-    mbedtls_platform_zeroize( cmac_ctx->state, sizeof( cmac_ctx->state ) );
-
-    return 0;
+    return mbedtls_cipher_cmac_setup( ctx );
 }
 
 int mbedtls_cipher_cmac_update( mbedtls_cipher_context_t *ctx,
