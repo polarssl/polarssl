@@ -906,4 +906,47 @@
 #endif /* C (generic)  */
 #endif /* C (longlong) */
 
+/* helper macro used by mpi_sqr_hlp */
+#if defined(MBEDTLS_MPI_SQR) && !defined(MUL_XY)
+#if defined(MBEDTLS_HAVE_UDBL)
+
+#define MUL_XY(X, Y, r0, r1) \
+{                                       \
+    mbedtls_t_udbl r;                   \
+                                        \
+    r  = (mbedtls_t_udbl) (X) * (Y);    \
+    r0 = (mbedtls_mpi_uint) r;          \
+    r1 = (mbedtls_mpi_uint)( r >> biL );\
+}
+
+#else /* MBEDTLS_HAVE_UDBL */
+
+#define MUL_XY(X, Y, r0, r1) \
+{                                       \
+    mbedtls_mpi_uint x0, y0, x1, y1, t; \
+                                        \
+    x0 = ( (X) << biH ) >> biH;         \
+    x1 = ( (X) >> biH );                \
+    y0 = ( (Y) << biH ) >> biH;         \
+    y1 = ( (Y) >> biH );                \
+                                        \
+    r0 = x0 * y0;                       \
+    r1 = x1 * y1;                       \
+                                        \
+    t = x0 * y1;                        \
+    r1 += (t >> biH);                   \
+    t <<= biH;                          \
+    r0 += t;                            \
+    r1 += (r0 < t);                     \
+                                        \
+    t = x1 * y0;                        \
+    r1 += (t >> biH);                   \
+    t <<= biH;                          \
+    r0 += t;                            \
+    r1 += (r0 < t);                     \
+}
+
+#endif /* MBEDTLS_HAVE_UDBL */
+#endif /* MBEDTLS_MPI_SQR && !MUL_XY */
+
 #endif /* bn_mul.h */

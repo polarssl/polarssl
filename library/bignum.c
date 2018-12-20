@@ -1204,6 +1204,115 @@ void mpi_mul_hlp( size_t i, mbedtls_mpi_uint *s, mbedtls_mpi_uint *d, mbedtls_mp
     while( c != 0 );
 }
 
+#if defined(MBEDTLS_MPI_SQR)
+
+/*
+ * Squarification helper: X = A * A
+ */
+static int mpi_sqr_hlp( mbedtls_mpi *X, const mbedtls_mpi *A )
+{
+    int ret;
+    size_t n, k;
+    mbedtls_mpi TA;
+    mbedtls_mpi_uint r0, r1;
+    mbedtls_mpi_uint d0 = 0, d1 = 0, d2 = 0;
+
+    for( n = A->n; n > 0; n-- )
+        if( A->p[n - 1] != 0 )
+            break;
+
+    if( n == 0 )
+    {
+        // final 'X->p[2 * n - 1] = d0' will fail if input has zero length
+        // check it from the start to be sure the number is valid
+        return mbedtls_mpi_lset( X, 0 );
+    }
+
+    mbedtls_mpi_init( &TA );
+    
+    if( X == A ) { MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TA, A ) ); A = &TA; }
+    
+    MBEDTLS_MPI_CHK( mbedtls_mpi_grow( X, n * 2 ) );
+    
+    if( X->n > n * 2 )
+    {
+        // unlikely, but zero-out excessive limbs if any
+        memset(X->p + n * 2, 0, ( X->n - n * 2 ) * ciL );
+    }
+    
+    X->s = 1;
+    
+#define SQR_STEP_ADD \
+    d0 += r0;                           \
+    /* safe, can't overflow here: */    \
+    r1 += (d0 < r0);                    \
+    d1 += r1;                           \
+    d2 += (d1 < r1);
+    
+#define SQR_STEP_ADD_DBL \
+    d2 += (r1 >> (biL - 1));            \
+    r1 = (r1 << 1) | (r0 >> (biL - 1)); \
+    r0 = (r0 << 1);                     \
+    SQR_STEP_ADD
+
+    for( k = 0; k < n; k++ )
+    {
+        mbedtls_mpi_uint *x = A->p;
+        mbedtls_mpi_uint *y = A->p + k;
+
+        while( x < y )
+        {
+            MUL_XY(*x, *y, r0, r1);
+            SQR_STEP_ADD_DBL;
+            x++; y--;
+        }
+        
+        if( x == y )
+        {
+            MUL_XY(*x, *y, r0, r1);
+            SQR_STEP_ADD;
+        }
+        
+        X->p[k] = d0;
+        d0 = d1; d1 = d2; d2 = 0;
+    }
+    
+    for( ; k < n * 2 - 1; k++ )
+    {
+        mbedtls_mpi_uint *x = A->p + (k + 1 - n);
+        mbedtls_mpi_uint *y = A->p + n - 1;
+        
+        while( x < y )
+        {
+            MUL_XY(*x, *y, r0, r1);
+            SQR_STEP_ADD_DBL;
+            x++; y--;
+        }
+        
+        if( x == y )
+        {
+            MUL_XY(*x, *y, r0, r1);
+            SQR_STEP_ADD;
+        }
+        
+        X->p[k] = d0;
+        d0 = d1; d1 = d2; d2 = 0;
+    }
+    
+    X->p[2 * n - 1] = d0;
+
+#undef SQR_STEP_ADD
+#undef SQR_STEP_ADD_DBL
+
+cleanup:
+    
+    mbedtls_mpi_free( &TA );
+    
+    return( ret );
+}
+
+#endif /* MBEDTLS_MPI_SQR */
+
 /*
  * Baseline multiplication: X = A * B  (HAC 14.12)
  */
@@ -1212,7 +1321,14 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
     int ret;
     size_t i, j;
     mbedtls_mpi TA, TB;
-
+    
+#if defined(MBEDTLS_MPI_SQR)
+    if( A == B )
+    {
+        return mpi_sqr_hlp( X, A );
+    }
+#endif
+    
     mbedtls_mpi_init( &TA ); mbedtls_mpi_init( &TB );
 
     if( X == A ) { MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TA, A ) ); A = &TA; }
