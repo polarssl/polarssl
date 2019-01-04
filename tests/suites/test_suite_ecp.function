@@ -43,7 +43,9 @@ void ecp_invalid_param( )
     unsigned char buf[42] = { 0 };
     const unsigned char *null_buf = NULL;
     mbedtls_ecp_group_id valid_group = MBEDTLS_ECP_DP_SECP192R1;
+#if defined(MBEDTLS_ECP_RESTARTABLE)
     mbedtls_ecp_restart_ctx restart_ctx;
+#endif /* MBEDTLS_ECP_RESTARTABLE */
 
     TEST_INVALID_PARAM( mbedtls_ecp_point_init( NULL ) );
     TEST_INVALID_PARAM( mbedtls_ecp_keypair_init( NULL ) );

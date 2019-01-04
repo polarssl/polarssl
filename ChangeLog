@@ -1,5 +1,12 @@
 mbed TLS ChangeLog (Sorted per branch, date)
 
+= mbed TLS x.xx.x branch released xxxx-xx-xx
+
+Bugfix
+   * Fix compilation failure in the ECP test suite when
+     MBEDTLS_CHECK_PARAMS is set but MBEDTLS_ECP_RESTARTABLE isn't.
+     Fixes #2329.
+
 = mbed TLS 2.16.0 branch released 2018-12-21
 
 Features
