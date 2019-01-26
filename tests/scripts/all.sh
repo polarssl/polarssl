@@ -1093,6 +1093,13 @@ record_status ./tests/scripts/test_generate_test_code.py
 #### Termination
 ################################################################
 
+msg "build: threading"
+cleanup
+cp "$CONFIG_H" "$CONFIG_BAK"
+scripts/config.pl set MBEDTLS_THREADING_C
+scripts/config.pl set MBEDTLS_THREADING_PTHREAD
+PTHREAD=1 make
+
 msg "Done, cleaning up"
 cleanup
 
