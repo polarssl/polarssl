@@ -980,6 +980,9 @@ make test
 
 msg "build: Windows cross build - mingw64, make (Link Library)" # ~ 30s
 cleanup
+cp "$CONFIG_H" "$CONFIG_BAK"
+scripts/config.pl set MBEDTLS_THREADING_C
+scripts/config.pl set MBEDTLS_THREADING_SRWLOCK
 make CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-ar LD=i686-w64-minggw32-ld CFLAGS='-Werror -Wall -Wextra' WINDOWS_BUILD=1 lib programs
 
 # note Make tests only builds the tests, but doesn't run them
