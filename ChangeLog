@@ -11,6 +11,8 @@ Bugfix
      previously lead to a stack overflow on constrained targets.
    * Add `MBEDTLS_SELF_TEST` for the mbedtls_self_test functions
      in the header files, which missed the precompilation check. #971
+   * Return error code of mbedtls_aes_crypt_ecb() if failed, when calling it from
+     other modes and ciphers. Fix for #1092 reported by adustm.
 
 = mbed TLS 2.16.0 branch released 2018-12-21
 
