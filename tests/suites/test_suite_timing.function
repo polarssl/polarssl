@@ -401,3 +401,10 @@ exit:
                          hardclock0, hardclock1 );
 }
 /* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SELF_TEST */
+void timing_selftest()
+{
+    TEST_ASSERT( mbedtls_timing_self_test( 1 ) == 0 );
+}
+/* END_CASE */

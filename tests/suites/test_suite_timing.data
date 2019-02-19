@@ -39,3 +39,6 @@ timing_alarm:1:
 
 Timing: hardclock
 timing_hardclock:
+
+Timing Selftest
+timing_selftest:
