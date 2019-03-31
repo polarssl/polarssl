@@ -331,6 +331,10 @@ X509 Get Distinguished Name #4
 depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA1_C
 mbedtls_x509_dn_gets:"data_files/server2.crt":"issuer":"C=NL, O=PolarSSL, CN=PolarSSL Test CA"
 
+X509 Get Distinguished Name #5
+depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C
+mbedtls_x509_dn_gets:"data_files/server1.commas.crt":"subject":"C=NL, O=test\,inc., CN=PolarSSL"
+
 X509 Time Expired #1
 depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_HAVE_TIME_DATE:MBEDTLS_SHA1_C
 mbedtls_x509_time_is_past:"data_files/server1.crt":"valid_from":1

@@ -125,81 +125,302 @@ static const x509_attr_descriptor_t *x509_attr_descr_from_name( const char *name
     return( cur );
 }
 
-int mbedtls_x509_string_to_names( mbedtls_asn1_named_data **head, const char *name )
+static int x509_dn_check_special_chars( const char **cur, const char *end )
 {
     int ret = 0;
-    const char *s = name, *c = s;
-    const char *end = s + strlen( s );
-    const char *oid = NULL;
-    const x509_attr_descriptor_t* attr_descr = NULL;
-    int in_tag = 1;
+
+    /* Check for valid escaped characters */
+    if( *cur == end || *( *cur ) != ',' )
+    {
+        ret = MBEDTLS_ERR_X509_INVALID_NAME;
+    }
+
+    return( ret );
+}
+
+static int x509_dn_parse_tag( const char **cur, const char *end,
+                              const x509_attr_descriptor_t **attr_descr )
+{
+    int ret = 0;
+    const char *start = *cur;
+
+    /*
+     * As defined by RFC 1779, the DN is constructed from
+     * <string> | <key> <optional-space> "=" <optional-space> <string>
+     * where optional space is
+     * ( <CR> ) *( " " )
+     *
+     * When parsing the tag:
+     * 1. Skip whitespaces.
+     * 2. Read the characters, to evaluate as a valid tag.
+     * 3. Skip whitespaces until reaching "=" character.
+     */
+
+    /*
+     * Skip whitespaces
+     */
+    while( *cur < end && *( *cur ) == ' ' )
+    {
+        ( *cur )++;
+        start++;
+    }
+
+    /*
+     * Read the next characters to evaluate as a valid tag.
+     */
+    while( *cur < end && *( *cur ) != '=' && *( *cur ) != ' ' )
+    {
+        /*
+         * A valid tag can only be followed by a '=' or whitespace.
+         */
+        if( *( *cur ) == ',' )
+        {
+            ret = MBEDTLS_ERR_X509_INVALID_NAME;
+            goto exit;
+        }
+        ( *cur )++;
+    }
+
+    /*
+     * cur character is either '=' or ' '
+     * or we reached the end.
+     */
+
+    if( *cur == end )
+    {
+        ret = MBEDTLS_ERR_X509_INVALID_NAME;
+        goto exit;
+    }
+    *attr_descr = x509_attr_descr_from_name( start, *cur - start );
+    if( *attr_descr == NULL )
+    {
+        ret = MBEDTLS_ERR_X509_UNKNOWN_OID;
+        goto exit;
+    }
+
+    /*
+     * Skip all optional whitespaces
+     */
+    while( *cur < end && *( *cur ) == ' ' )
+    {
+        ( *cur )++;
+    }
+
+    /*
+     * The only valid character now is '='
+     */
+    if( *cur == end || *( *cur ) != '=' )
+    {
+        ret = MBEDTLS_ERR_X509_INVALID_NAME;
+    }
+
+    /*
+     * Increment the current position to after the '=' character.
+     */
+    ( *cur )++;
+
+exit:
+    return( ret );
+}
+
+static int x509_dn_parse_value( const char **cur, const char *end,
+                                const x509_attr_descriptor_t *attr_descr,
+                                mbedtls_asn1_named_data **head )
+{
+    int ret = 0;
+    /*
+     * `cur` points to the current character in the string being parsed.
+     * `d` acts as a write pointer into the temporary 'data' buffer which holds
+     * the unescaped and unquoted DN values found in 'name'.
+     */
+    int in_quot = 0;
+    size_t value_len = 0;
     char data[MBEDTLS_X509_MAX_DN_NAME_SIZE];
     char *d = data;
+
+    /*
+     * As defined by RFC 1779, the DN is constructed from
+     * <string> | <key> <optional-space> "=" <optional-space> <string>
+     * where optional space is
+     * ( <CR> ) *( " " )
+     *
+     * When parsing the value:
+     * 1. Skip whitespaces.
+     * 2. Check if it is a quoted string.
+     * 3. Read the characters, to evaluate as a valid value.
+     * 4. Skip whitespaces until reaching separator character (',').
+     */
+
+    /*
+     * Skip whitespaces
+     */
+    while( *cur < end && *( *cur ) == ' ' )
+    {
+        ( *cur )++;
+    }
+
+    if( *cur == end || *( *cur ) == ',' )
+    {
+        ret = MBEDTLS_ERR_X509_INVALID_NAME;
+        goto exit;
+    }
+    /*
+     * Check if it is a quoted string
+     */
+    else if( *( *cur ) == '\"' )
+    {
+        in_quot = 1;
+        ( *cur )++;
+    }
+
+    while( *cur < end )
+    {
+        /*
+         * Check whether reached end of value to evaluate,
+         * whether it is a closing quotation, or a separator character
+         */
+        if( in_quot == 1 && *( *cur ) == '\"' )
+        {
+            /*
+             * Increase the current position to after the closing quotation
+             */
+            ( *cur )++;
+            /*
+             * Mark that quotation has ended.
+             */
+            in_quot = 0;
+            break;
+        }
+        else if( in_quot == 0 && *( *cur ) == ',')
+        {
+            break;
+        }
+
+        if( *cur != end && *( *cur ) == '\\' )
+        {
+            ( *cur )++;
+            ret = x509_dn_check_special_chars( cur, end );
+            if( ret != 0 )
+            {
+                ret = MBEDTLS_ERR_X509_INVALID_NAME;
+                goto exit;
+            }
+        }
+
+        /*
+         * Fill the current data pointer with the unescaped character.
+         */
+        if( d - data == MBEDTLS_X509_MAX_DN_NAME_SIZE - 1 && *( *cur ) != ' ' )
+        {
+            /* The data buffer is not large enough to hold the value */
+            ret = MBEDTLS_ERR_X509_INVALID_NAME;
+            goto exit;
+        }
+        else if( d - data < MBEDTLS_X509_MAX_DN_NAME_SIZE - 1 )
+        {
+            /*
+             * Assume that the current character is part of the value tag, but
+             * this might actually not be the case if it is just trailing whitespace
+             */
+            *( d++ ) = *( *cur );
+        }
+        /*
+         * A whitespace can be part of the string,
+         * but it can also be a trailing whitespace, so don't set the
+         * value length until the character is  not a whitespace
+         */
+         if ( *( *cur ) != ' ' )
+             value_len = d - data;
+
+        ( *cur )++;
+    }
+
+    if( value_len == 0 )
+    {
+        ret = MBEDTLS_ERR_X509_INVALID_NAME;
+        goto exit;
+    }
+
+    /*
+     * Check if quotation has ended.
+     */
+    if( in_quot == 1 )
+    {
+        ret = MBEDTLS_ERR_X509_INVALID_NAME;
+        goto exit;
+    }
+
+    /*
+     * We have reached here in the following conditions:
+     * 1. The end of the input buffer was reached (*cur == end).
+     * 2. A quoted string  reached a closing string quotation.
+     *    (in_quot == 1 && *( *cur ) == '"').
+     * 3. An unquoted string reached a separator character.
+     *    (in_quot == 0 && *( *cur ) == ',').
+     */
+    /*
+     * Skip whitespaces until reaching end or
+     * separator character.
+     */
+    while( *cur < end && *( *cur ) == ' ' )
+    {
+        ( *cur )++;
+    }
+
+    /*
+     * Current position must be either end or separator character.
+     * Otherwise, return error.
+     */
+    if( *cur != end && *( *cur ) != ',' )
+    {
+        ret = MBEDTLS_ERR_X509_INVALID_NAME;
+        goto exit;
+    }
+
+    /*
+     * Change the current position to after the separator character
+     */
+    if( *cur != end )
+        ( *cur )++;
+
+    if( mbedtls_asn1_store_named_data( head, attr_descr->oid,
+                                       strlen( attr_descr->oid ),
+                                       (unsigned char *) data,
+                                       value_len ) == NULL )
+    {
+        ret = MBEDTLS_ERR_X509_ALLOC_FAILED;
+        goto exit;
+    }
+
+    ( *head )->val.tag = attr_descr->default_tag;
+
+exit:
+    return( ret );
+}
+
+int mbedtls_x509_string_to_names( mbedtls_asn1_named_data **head,
+                                  const char *name )
+{
+    int ret = 0;
+    const char *cur = name;
+    const char *end = name + strlen( name );
+    const x509_attr_descriptor_t* attr_descr = NULL;
 
     /* Clear existing chain if present */
     mbedtls_asn1_free_named_data_list( head );
 
-    while( c <= end )
+    /*
+     * Parse the name as pairs of tag and value.
+     */
+    while( cur < end )
     {
-        if( in_tag && *c == '=' )
-        {
-            if( ( attr_descr = x509_attr_descr_from_name( s, c - s ) ) == NULL )
-            {
-                ret = MBEDTLS_ERR_X509_UNKNOWN_OID;
-                goto exit;
-            }
+        ret = x509_dn_parse_tag( &cur, end, &attr_descr );
+        if( ret != 0 )
+            goto exit;
 
-            oid = attr_descr->oid;
-            s = c + 1;
-            in_tag = 0;
-            d = data;
-        }
-
-        if( !in_tag && *c == '\\' && c != end )
-        {
-            c++;
-
-            /* Check for valid escaped characters */
-            if( c == end || *c != ',' )
-            {
-                ret = MBEDTLS_ERR_X509_INVALID_NAME;
-                goto exit;
-            }
-        }
-        else if( !in_tag && ( *c == ',' || c == end ) )
-        {
-            mbedtls_asn1_named_data* cur =
-                mbedtls_asn1_store_named_data( head, oid, strlen( oid ),
-                                               (unsigned char *) data,
-                                               d - data );
-
-            if(cur == NULL )
-            {
-                return( MBEDTLS_ERR_X509_ALLOC_FAILED );
-            }
-
-            // set tagType
-            cur->val.tag = attr_descr->default_tag;
-
-            while( c < end && *(c + 1) == ' ' )
-                c++;
-
-            s = c + 1;
-            in_tag = 1;
-        }
-
-        if( !in_tag && s != c + 1 )
-        {
-            *(d++) = *c;
-
-            if( d - data == MBEDTLS_X509_MAX_DN_NAME_SIZE )
-            {
-                ret = MBEDTLS_ERR_X509_INVALID_NAME;
-                goto exit;
-            }
-        }
-
-        c++;
+        ret = x509_dn_parse_value( &cur, end, attr_descr, head );
+        if( ret != 0 )
+            goto exit;
     }
 
 exit:

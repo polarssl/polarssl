@@ -10,6 +10,11 @@ Bugfix
    * Fix private key DER output in the key_app_writer example. File contents
      were shifted by one byte, creating an invalid ASN.1 tag. Fixed by
      Christian Walther in #2239.
+   * Adapt X.509 DN handling to conform to RFC 1779. Specifically,
+     change mbedtls_x509_dn_gets() to add a '\' character before a comma,
+     in case it is part of the tag value, and modify mbedtls_x509_string_to_names()
+     to not interpret commas as separators when they are within a quoted string.
+     Raised in #769 by cwtios.
 
 Changes
    * Server's RSA certificate in certs.c was SHA-1 signed. In the default

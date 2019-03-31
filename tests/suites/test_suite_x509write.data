@@ -87,19 +87,88 @@ depends_on:MBEDTLS_SHA1_C:MBEDTLS_RSA_C:MBEDTLS_PKCS1_V15:MBEDTLS_DES_C:MBEDTLS_
 x509_crt_check:"data_files/server1.key":"":"C=NL,O=PolarSSL,CN=PolarSSL Server 1":"data_files/test-ca.key":"PolarSSLTest":"C=NL,O=PolarSSL,CN=PolarSSL Test CA":"1":"20110212144406":"20210212144406":MBEDTLS_MD_SHA1:0:0:0:0:0:MBEDTLS_X509_CRT_VERSION_1:"data_files/server1.v1.crt":1
 
 X509 String to Names #1
-mbedtls_x509_string_to_names:"C=NL,O=Offspark\, Inc., OU=PolarSSL":"C=NL, O=Offspark, Inc., OU=PolarSSL":0
+mbedtls_x509_string_to_names:"C=NL,O=Offspark\, Inc., OU=PolarSSL":"C=NL, O=Offspark\, Inc., OU=PolarSSL":0
 
 X509 String to Names #2
-mbedtls_x509_string_to_names:"C=NL, O=Offspark, Inc., OU=PolarSSL":"":MBEDTLS_ERR_X509_UNKNOWN_OID
+mbedtls_x509_string_to_names:"C=NL,O="Offspark, Inc.", OU=PolarSSL":"C=NL, O=Offspark\, Inc., OU=PolarSSL":0
 
-X509 String to Names #3 (Name precisely 255 bytes)
+X509 String to Names #3 (last quoted value)
+mbedtls_x509_string_to_names:"C=NL,O=Offspark\, Inc., OU="PolarSSL"":"C=NL, O=Offspark\, Inc., OU=PolarSSL":0
+
+X509 String to Names #4
+mbedtls_x509_string_to_names:"C=NL,O=Offspark, Inc., OU=PolarSSL":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #5
+mbedtls_x509_string_to_names:"C=NL,O=Offspark\,, and Inc., OU=PolarSSL":"":MBEDTLS_ERR_X509_UNKNOWN_OID
+
+X509 String to Names #6
+mbedtls_x509_string_to_names:"C=NL, O=Offspark, Inc., OU=PolarSSL":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #7 (Name precisely 255 bytes)
 mbedtls_x509_string_to_names:"C=NL, O=123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345,OU=PolarSSL":"C=NL, O=123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345, OU=PolarSSL":0
 
-X509 String to Names #4 (Name larger than 255 bytes)
+X509 String to Names #8 (Name larger than 255 bytes)
 mbedtls_x509_string_to_names:"C=NL, O=1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456, OU=PolarSSL":"":MBEDTLS_ERR_X509_INVALID_NAME
 
-X509 String to Names #5 (Escape non-allowed characters)
+X509 String to Names #9 (Escape non-allowed characters)
 mbedtls_x509_string_to_names:"C=NL, O=Offspark\a Inc., OU=PolarSSL":"":MBEDTLS_ERR_X509_INVALID_NAME
 
-X509 String to Names #6 (Escape at end)
+X509 String to Names #10 (Escape at end)
 mbedtls_x509_string_to_names:"C=NL, O=Offspark\":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #11 (unterminated quote)
+mbedtls_x509_string_to_names:"C=NL, O="Offspark":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #12 (empty last name)
+mbedtls_x509_string_to_names:"C=NL, O=":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+x509 String to Names #13 (empty name)
+mbedtls_x509_string_to_names:"C=, O=Offspark":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+x509 String to Names #14 (empty quoted name)
+mbedtls_x509_string_to_names:"C="", O=Offspark":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+x509 String to Names #15 (optional white spaces after end quote)
+mbedtls_x509_string_to_names:"C=NL,O="Offspark, Inc."    , OU=PolarSSL":"C=NL, O=Offspark\, Inc., OU=PolarSSL":0
+
+x509 String to Names #16 (optional white spaces before start quote)
+mbedtls_x509_string_to_names:"C=NL,O=    "Offspark, Inc.", OU=PolarSSL":"C=NL, O=Offspark\, Inc., OU=PolarSSL":0
+
+X509 String to Names #17 (optional white spaces after equal)
+mbedtls_x509_string_to_names:"C=NL,O=     Offspark\, Inc., OU=PolarSSL":"C=NL, O=Offspark\, Inc., OU=PolarSSL":0
+
+X509 String to Names #18 (optional white spaces before equal)
+mbedtls_x509_string_to_names:"C=NL,O     =Offspark\, Inc., OU=PolarSSL":"C=NL, O=Offspark\, Inc., OU=PolarSSL":0
+
+X509 String to Names #19 (preceding white space before first tag)
+mbedtls_x509_string_to_names:" C=NL,O=Offspark\, Inc., OU=PolarSSL":"C=NL, O=Offspark\, Inc., OU=PolarSSL":0
+
+X509 String to Names #20 (invalid whitespace within tag)
+mbedtls_x509_string_to_names:"C=NL,O=Offspark\, Inc., O U=PolarSSL":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #21 (input with all spaces)
+mbedtls_x509_string_to_names:"   ":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #22 (value with all spaces)
+mbedtls_x509_string_to_names:"C=   ":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #23 (valid tag with only spaces)
+mbedtls_x509_string_to_names:"C   ":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #24 (only comma separated valid tags)
+mbedtls_x509_string_to_names:"C,O,OU":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #25 (comma after valid tag)
+mbedtls_x509_string_to_names:"C,O=Arm":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #26 (invalid tag)
+mbedtls_x509_string_to_names:"C=NL,ABC=BAD, OU=PolarSSL":"":MBEDTLS_ERR_X509_UNKNOWN_OID
+
+X509 String to Names #27 (name with long trailing whitespaces)
+mbedtls_x509_string_to_names:"C=NL                                                                                                                                                                                                                                                                                                                 ":"C=NL":0
+
+X509 String to Names #28 (name with many whitespaces in the middle)
+mbedtls_x509_string_to_names:"C=NL                                                                                                                                                                                                                                                                          a":"":MBEDTLS_ERR_X509_INVALID_NAME
+
+X509 String to Names #29 (name precisely 255 bytes, with whitespaces)
+mbedtls_x509_string_to_names:"C=NL                                                                                                                                                                                                                                                            B":"C=NL                                                                                                                                                                                                                                                            B":0
