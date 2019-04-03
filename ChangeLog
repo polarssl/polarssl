@@ -21,6 +21,8 @@ Bugfix
    * Fix private key DER output in the key_app_writer example. File contents
      were shifted by one byte, creating an invalid ASN.1 tag. Fixed by
      Christian Walther in #2239.
+   * Fix compilation error on MINGW32/MINGW64 with deactivated option
+     MBEDTLS_HAVE_ASM in config file. Contributed by merlokk.
 
 Changes
    * Return from various debugging routines immediately if the

@@ -230,11 +230,19 @@ unsigned long mbedtls_timing_hardclock( void )
 
     if( hardclock_init == 0 )
     {
+#if defined(__MINGW32__) || defined(__MINGW64__)
+        mingw_gettimeofday( &tv_init, NULL );
+#else
         gettimeofday( &tv_init, NULL );
+#endif /* __MINGW32__ || __MINGW64__ */
         hardclock_init = 1;
     }
 
+#if defined(__MINGW32__) || defined(__MINGW64__)
+    mingw_gettimeofday( &tv_cur, NULL );
+#else
     gettimeofday( &tv_cur, NULL );
+#endif /* __MINGW32__ || __MINGW64__ */
     return( ( tv_cur.tv_sec  - tv_init.tv_sec  ) * 1000000
           + ( tv_cur.tv_usec - tv_init.tv_usec ) );
 }
