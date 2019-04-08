@@ -76,12 +76,11 @@ int main( void )
     mbedtls_printf("MBEDTLS_AES_C and/or MBEDTLS_SHA256_C "
                     "and/or MBEDTLS_FS_IO and/or MBEDTLS_MD_C "
                     "not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
 #if defined(MBEDTLS_CHECK_PARAMS)
-#include "mbedtls/platform_util.h"
 void mbedtls_param_failed( const char *failure_condition,
                            const char *file,
                            int line )
@@ -111,6 +110,9 @@ int main( int argc, char *argv[] )
     unsigned char buffer[1024];
     unsigned char diff;
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_aes_context aes_ctx;
     mbedtls_md_context_t sha_ctx;
 
@@ -123,13 +125,23 @@ int main( int argc, char *argv[] )
       off_t filesize, offset;
 #endif
 
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "mbedtls_platform_setup() returned -0x%04x\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
+
     mbedtls_aes_init( &aes_ctx );
     mbedtls_md_init( &sha_ctx );
 
     ret = mbedtls_md_setup( &sha_ctx, mbedtls_md_info_from_type( MBEDTLS_MD_SHA256 ), 1 );
     if( ret != 0 )
     {
-        mbedtls_printf( "  ! mbedtls_md_setup() returned -0x%04x\n", -ret );
+        mbedtls_fprintf(
+            stderr, "mbedtls_md_setup() returned -0x%04x\n", -ret );
         goto exit;
     }
 
@@ -475,7 +487,10 @@ exit:
 
     mbedtls_aes_free( &aes_ctx );
     mbedtls_md_free( &sha_ctx );
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_AES_C && MBEDTLS_SHA256_C && MBEDTLS_FS_IO */

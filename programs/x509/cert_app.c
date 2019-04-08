@@ -51,7 +51,7 @@ int main( void )
            "MBEDTLS_NET_C and/or MBEDTLS_RSA_C and/or "
            "MBEDTLS_X509_CRT_PARSE_C and/or MBEDTLS_FS_IO and/or "
            "MBEDTLS_CTR_DRBG_C not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -162,6 +162,9 @@ int main( int argc, char *argv[] )
 {
     int ret = 1;
     int exit_code = MBEDTLS_EXIT_FAILURE;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_net_context server_fd;
     unsigned char buf[1024];
     mbedtls_entropy_context entropy;
@@ -175,6 +178,15 @@ int main( int argc, char *argv[] )
     int verify = 0;
     char *p, *q;
     const char *pers = "cert_app";
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "mbedtls_platform_setup returned -0x%x\n\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     /*
      * Set to sane values
@@ -269,7 +281,7 @@ int main( int argc, char *argv[] )
     {
         if( ( ret = mbedtls_x509_crt_parse_path( &cacert, opt.ca_path ) ) < 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse_path returned -0x%x\n\n", -ret );
+            mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse_path returned -0x%x\n\n", -ret );
             goto exit;
         }
 
@@ -279,7 +291,7 @@ int main( int argc, char *argv[] )
     {
         if( ( ret = mbedtls_x509_crt_parse_file( &cacert, opt.ca_file ) ) < 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse_file returned -0x%x\n\n", -ret );
+            mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse_file returned -0x%x\n\n", -ret );
             goto exit;
         }
 
@@ -293,7 +305,7 @@ int main( int argc, char *argv[] )
     {
         if( ( ret = mbedtls_x509_crl_parse_file( &cacrl, opt.crl_file ) ) != 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_x509_crl_parse returned -0x%x\n\n", -ret );
+            mbedtls_printf( " failed\n  ! mbedtls_x509_crl_parse returned -0x%x\n\n", -ret );
             goto exit;
         }
 
@@ -317,14 +329,14 @@ int main( int argc, char *argv[] )
 
         if( ret < 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse_file returned %d\n\n", ret );
+            mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse_file returned -0x%x\n\n", -ret );
             mbedtls_x509_crt_free( &crt );
             goto exit;
         }
 
         if( opt.permissive == 0 && ret > 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse failed to parse %d certificates\n\n", ret );
+            mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse failed to parse %d certificates\n\n", ret );
             mbedtls_x509_crt_free( &crt );
             goto exit;
         }
@@ -341,7 +353,7 @@ int main( int argc, char *argv[] )
                                  cur );
             if( ret == -1 )
             {
-                mbedtls_printf( " failed\n  !  mbedtls_x509_crt_info returned %d\n\n", ret );
+                mbedtls_printf( " failed\n  ! mbedtls_x509_crt_info returned -0x%x\n\n", -ret );
                 mbedtls_x509_crt_free( &crt );
                 goto exit;
             }
@@ -388,7 +400,7 @@ int main( int argc, char *argv[] )
                                    (const unsigned char *) pers,
                                    strlen( pers ) ) ) != 0 )
         {
-            mbedtls_printf( " failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret );
+            mbedtls_printf( " failed\n  ! mbedtls_ctr_drbg_seed returned -0x%x\n", -ret );
             goto ssl_exit;
         }
 
@@ -408,7 +420,7 @@ int main( int argc, char *argv[] )
         if( ( ret = mbedtls_net_connect( &server_fd, opt.server_name,
                                  opt.server_port, MBEDTLS_NET_PROTO_TCP ) ) != 0 )
         {
-            mbedtls_printf( " failed\n  ! mbedtls_net_connect returned %d\n\n", ret );
+            mbedtls_printf( " failed\n  ! mbedtls_net_connect returned -0x%x\n\n", -ret );
             goto ssl_exit;
         }
 
@@ -420,7 +432,7 @@ int main( int argc, char *argv[] )
                         MBEDTLS_SSL_TRANSPORT_STREAM,
                         MBEDTLS_SSL_PRESET_DEFAULT ) ) != 0 )
         {
-            mbedtls_printf( " failed\n  ! mbedtls_ssl_config_defaults returned %d\n\n", ret );
+            mbedtls_printf( " failed\n  ! mbedtls_ssl_config_defaults returned -0x%x\n\n", -ret );
             goto exit;
         }
 
@@ -438,13 +450,13 @@ int main( int argc, char *argv[] )
 
         if( ( ret = mbedtls_ssl_setup( &ssl, &conf ) ) != 0 )
         {
-            mbedtls_printf( " failed\n  ! mbedtls_ssl_setup returned %d\n\n", ret );
+            mbedtls_printf( " failed\n  ! mbedtls_ssl_setup returned -0x%x\n\n", -ret );
             goto ssl_exit;
         }
 
         if( ( ret = mbedtls_ssl_set_hostname( &ssl, opt.server_name ) ) != 0 )
         {
-            mbedtls_printf( " failed\n  ! mbedtls_ssl_set_hostname returned %d\n\n", ret );
+            mbedtls_printf( " failed\n  ! mbedtls_ssl_set_hostname returned -0x%x\n\n", -ret );
             goto ssl_exit;
         }
 
@@ -457,7 +469,7 @@ int main( int argc, char *argv[] )
         {
             if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE )
             {
-                mbedtls_printf( " failed\n  ! mbedtls_ssl_handshake returned %d\n\n", ret );
+                mbedtls_printf( " failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", -ret );
                 goto ssl_exit;
             }
         }
@@ -475,7 +487,7 @@ int main( int argc, char *argv[] )
                                      mbedtls_ssl_get_peer_cert( &ssl ) );
         if( ret == -1 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_x509_crt_info returned %d\n\n", ret );
+            mbedtls_printf( " failed\n  ! mbedtls_x509_crt_info returned -0x%x\n\n", -ret );
             goto ssl_exit;
         }
 
@@ -502,13 +514,15 @@ exit:
 #endif
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
-
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_ENTROPY_C && MBEDTLS_SSL_TLS_C &&
           MBEDTLS_SSL_CLI_C && MBEDTLS_NET_C && MBEDTLS_RSA_C &&

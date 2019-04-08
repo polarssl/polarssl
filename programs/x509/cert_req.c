@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf         fprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -46,7 +47,7 @@ int main( void )
             "MBEDTLS_PK_PARSE_C and/or MBEDTLS_SHA256_C and/or "
             "MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C "
             "not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -172,10 +173,22 @@ int main( int argc, char *argv[] )
     char buf[1024];
     int i;
     char *p, *q, *r;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_x509write_csr req;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     const char *pers = "csr example app";
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "mbedtls_platform_setup returned %d\n\n", ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     /*
      * Set to sane values
@@ -370,7 +383,7 @@ int main( int argc, char *argv[] )
                                (const unsigned char *) pers,
                                strlen( pers ) ) ) != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_ctr_drbg_seed returned %d", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_ctr_drbg_seed returned %d", ret );
         goto exit;
     }
 
@@ -384,7 +397,7 @@ int main( int argc, char *argv[] )
 
     if( ( ret = mbedtls_x509write_csr_set_subject_name( &req, opt.subject_name ) ) != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509write_csr_set_subject_name returned %d", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509write_csr_set_subject_name returned %d", ret );
         goto exit;
     }
 
@@ -400,7 +413,7 @@ int main( int argc, char *argv[] )
 
     if( ret != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_pk_parse_keyfile returned %d", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_pk_parse_keyfile returned %d", ret );
         goto exit;
     }
 
@@ -417,7 +430,7 @@ int main( int argc, char *argv[] )
     if( ( ret = write_certificate_request( &req, opt.output_file,
                                            mbedtls_ctr_drbg_random, &ctr_drbg ) ) != 0 )
     {
-        mbedtls_printf( " failed\n  !  write_certifcate_request %d", ret );
+        mbedtls_printf( " failed\n  ! write_certifcate_request %d", ret );
         goto exit;
     }
 
@@ -431,7 +444,7 @@ exit:
     {
 #ifdef MBEDTLS_ERROR_C
         mbedtls_strerror( ret, buf, sizeof( buf ) );
-        mbedtls_printf( " - %s\n", buf );
+        mbedtls_fprintf( stderr, " - %s\n", buf );
 #else
         mbedtls_printf("\n");
 #endif
@@ -441,13 +454,15 @@ exit:
     mbedtls_pk_free( &key );
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
-
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_X509_CSR_WRITE_C && MBEDTLS_PK_PARSE_C && MBEDTLS_FS_IO &&
           MBEDTLS_ENTROPY_C && MBEDTLS_CTR_DRBG_C && MBEDTLS_PEM_WRITE_C */

@@ -33,10 +33,10 @@
 #define mbedtls_free       free
 #define mbedtls_time       time
 #define mbedtls_time_t     time_t
-#define mbedtls_calloc    calloc
+#define mbedtls_calloc     calloc
 #define mbedtls_fprintf    fprintf
 #define mbedtls_printf     printf
-#define mbedtls_exit            exit
+#define mbedtls_exit       exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
 #endif
@@ -49,7 +49,7 @@ int main( void )
     mbedtls_printf("MBEDTLS_ENTROPY_C and/or "
            "MBEDTLS_SSL_TLS_C and/or MBEDTLS_SSL_SRV_C and/or "
            "MBEDTLS_NET_C and/or MBEDTLS_CTR_DRBG_C and/or not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -1299,6 +1299,9 @@ int main( int argc, char *argv[] )
     const char *pers = "ssl_server2";
     unsigned char client_ip[16] = { 0 };
     size_t cliip_len;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
 #if defined(MBEDTLS_SSL_COOKIE_C)
     mbedtls_ssl_cookie_ctx cookie_ctx;
 #endif
@@ -1356,6 +1359,15 @@ int main( int argc, char *argv[] )
     const int *list;
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
     psa_status_t status;
+#endif
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "mbedtls_platform_setup returned -0x%04X\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
 #endif
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
@@ -1424,14 +1436,14 @@ int main( int argc, char *argv[] )
         list = mbedtls_ssl_list_ciphersuites();
         while( *list )
         {
-            mbedtls_printf(" %-42s", mbedtls_ssl_get_ciphersuite_name( *list ) );
+            mbedtls_printf( " %-42s", mbedtls_ssl_get_ciphersuite_name( *list ) );
             list++;
             if( !*list )
                 break;
-            mbedtls_printf(" %s\n", mbedtls_ssl_get_ciphersuite_name( *list ) );
+            mbedtls_printf( " %s\n", mbedtls_ssl_get_ciphersuite_name( *list ) );
             list++;
         }
-        mbedtls_printf("\n");
+        mbedtls_printf( "\n" );
         goto exit;
     }
 
@@ -2724,7 +2736,7 @@ int main( int argc, char *argv[] )
                                      (const unsigned char *) opt.psk_identity,
                                      strlen( opt.psk_identity ) ) ) != 0 )
         {
-            mbedtls_printf( "  failed\n  mbedtls_ssl_conf_psk returned -0x%04X\n\n", - ret );
+            mbedtls_printf( "  failed\n  mbedtls_ssl_conf_psk returned -0x%04X\n\n", -ret );
             goto exit;
         }
     }
@@ -2770,7 +2782,7 @@ int main( int argc, char *argv[] )
 #endif
     if( ret != 0 )
     {
-        mbedtls_printf( "  failed\n  mbedtls_ssl_conf_dh_param returned -0x%04X\n\n", - ret );
+        mbedtls_printf( "  failed\n  mbedtls_ssl_conf_dh_param returned -0x%04X\n\n", -ret );
         goto exit;
     }
 #endif
@@ -2828,7 +2840,7 @@ reset:
     {
         char error_buf[100];
         mbedtls_strerror( ret, error_buf, 100 );
-        mbedtls_printf("Last error was: %d - %s\n\n", ret, error_buf );
+        mbedtls_printf( "Last error was: %d - %s\n\n", ret, error_buf );
     }
 #endif
 
@@ -3351,7 +3363,7 @@ exit:
     {
         char error_buf[100];
         mbedtls_strerror( ret, error_buf, 100 );
-        mbedtls_printf("Last error was: -0x%X - %s\n\n", -ret, error_buf );
+        mbedtls_printf( "Last error was: -0x%X - %s\n\n", -ret, error_buf );
     }
 #endif
 
@@ -3437,16 +3449,17 @@ exit:
 
     mbedtls_printf( " done.\n" );
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
-
-    // Shell can not handle large exit numbers -> 1 for errors
-    if( ret < 0 )
-        ret = 1;
-
-    return( ret );
+    if( ret == 0 )
+        mbedtls_exit( MBEDTLS_EXIT_SUCCESS );
+    else
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_ENTROPY_C && MBEDTLS_SSL_TLS_C &&
           MBEDTLS_SSL_SRV_C && MBEDTLS_NET_C && MBEDTLS_RSA_C &&

@@ -48,7 +48,7 @@
 int main( void )
 {
     mbedtls_printf("MBEDTLS_MD_C and/or MBEDTLS_FS_IO not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -190,7 +190,14 @@ int main( int argc, char *argv[] )
     int exit_code = MBEDTLS_EXIT_FAILURE;
     const mbedtls_md_info_t *md_info;
     mbedtls_md_context_t md_ctx;
-
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf( stderr, "Failed initializing platform\n" );
+        mbedtls_exit( exit_code );
+    }
+#endif
     mbedtls_md_init( &md_ctx );
 
     if( argc == 1 )
@@ -213,8 +220,7 @@ int main( int argc, char *argv[] )
         mbedtls_printf( "\n  Press Enter to exit this program.\n" );
         fflush( stdout ); getchar();
 #endif
-
-        return( exit_code );
+        goto exit;
     }
 
     /*
@@ -224,12 +230,12 @@ int main( int argc, char *argv[] )
     if( md_info == NULL )
     {
         mbedtls_fprintf( stderr, "Message Digest '%s' not found\n", argv[1] );
-        return( exit_code );
+        goto exit;
     }
     if( mbedtls_md_setup( &md_ctx, md_info, 0 ) )
     {
         mbedtls_fprintf( stderr, "Failed to initialize context.\n" );
-        return( exit_code );
+        goto exit;
     }
 
     ret = 0;
@@ -247,7 +253,10 @@ int main( int argc, char *argv[] )
 
 exit:
     mbedtls_md_free( &md_ctx );
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_MD_C && MBEDTLS_FS_IO */

@@ -29,9 +29,10 @@
 #include "mbedtls/platform.h"
 #else
 #include <stdio.h>
+#include <stdlib.h>
 #define mbedtls_printf     printf
 #define mbedtls_fprintf    fprintf
-#define mbedtls_exit            exit
+#define mbedtls_exit       exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
 #endif
@@ -48,7 +49,7 @@ int main( void )
             "MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C and/or "
             "MBEDTLS_X509_CRT_PARSE_C and/or MBEDTLS_RSA_C and/or "
             "MBEDTLS_CERTS_C and/or MBEDTLS_PEM_PARSE_C not defined.\n" );
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -113,6 +114,9 @@ int main( int argc, char *argv[] )
     const char *pers = "dtls_client";
     int retry_left = MAX_RETRY;
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
@@ -122,6 +126,15 @@ int main( int argc, char *argv[] )
 
     ((void) argc);
     ((void) argv);
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "platform_setup returned %d\n\n", ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
 #if defined(MBEDTLS_DEBUG_C)
     mbedtls_debug_set_threshold( DEBUG_LEVEL );
@@ -160,7 +173,7 @@ int main( int argc, char *argv[] )
                           mbedtls_test_cas_pem_len );
     if( ret < 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse returned %d\n\n", ret );
         goto exit;
     }
 
@@ -236,7 +249,7 @@ int main( int argc, char *argv[] )
 
     if( ret != 0 )
     {
-        mbedtls_printf( " failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", -ret );
+        mbedtls_printf( " failed\n  ! mbedtls_ssl_handshake returned %d\n\n", ret );
         goto exit;
     }
 
@@ -314,7 +327,7 @@ send_request:
                 goto close_notify;
 
             default:
-                mbedtls_printf( " mbedtls_ssl_read returned -0x%x\n\n", -ret );
+                mbedtls_printf( " mbedtls_ssl_read returned %d\n\n", ret );
                 goto exit;
         }
     }
@@ -357,16 +370,19 @@ exit:
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
+
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    /* Shell can not handle large exit numbers -> 1 for errors */
-    if( ret < 0 )
-        ret = 1;
-
-    return( ret );
+    if( ret == 0 )
+        mbedtls_exit( MBEDTLS_EXIT_SUCCESS );
+    else
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif /* MBEDTLS_SSL_CLI_C && MBEDTLS_SSL_PROTO_DTLS && MBEDTLS_NET_C &&
           MBEDTLD_TIMING_C && MBEDTLS_ENTROPY_C && MBEDTLS_CTR_DRBG_C &&

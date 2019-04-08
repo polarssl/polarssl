@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf         fprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -133,7 +134,7 @@ int main( void )
             "MBEDTLS_ENTROPY_C and/or MBEDTLS_CTR_DRBG_C and/or "
             "MBEDTLS_PEM_WRITE_C"
             "not defined.\n" );
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -203,18 +204,30 @@ static int write_private_key( mbedtls_pk_context *key, const char *output_file )
 
 int main( int argc, char *argv[] )
 {
-    int ret = 1;
+    int ret = 0;
     int exit_code = MBEDTLS_EXIT_FAILURE;
     mbedtls_pk_context key;
     char buf[1024];
     int i;
     char *p, *q;
     mbedtls_mpi N, P, Q, D, E, DP, DQ, QP;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     const char *pers = "gen_key";
 #if defined(MBEDTLS_ECP_C)
     const mbedtls_ecp_curve_info *curve_info;
+#endif
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "mbedtls_platform_setup returned -0x%04x\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
 #endif
 
     /*
@@ -434,13 +447,13 @@ int main( int argc, char *argv[] )
 
 exit:
 
-    if( exit_code != MBEDTLS_EXIT_SUCCESS )
+    if( exit_code != MBEDTLS_EXIT_SUCCESS && ret != 0 )
     {
 #ifdef MBEDTLS_ERROR_C
         mbedtls_strerror( ret, buf, sizeof( buf ) );
-        mbedtls_printf( " - %s\n", buf );
+        mbedtls_fprintf( stderr, " - %s\n", buf );
 #else
-        mbedtls_printf("\n");
+        mbedtls_fprintf( stderr, "\n" );
 #endif
     }
 
@@ -452,12 +465,15 @@ exit:
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_PK_WRITE_C && MBEDTLS_PEM_WRITE_C && MBEDTLS_FS_IO &&
         * MBEDTLS_ENTROPY_C && MBEDTLS_CTR_DRBG_C */

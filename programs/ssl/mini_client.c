@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf         fprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -54,13 +55,12 @@
 #if !defined(MBEDTLS_CTR_DRBG_C) || !defined(MBEDTLS_ENTROPY_C) || \
     !defined(MBEDTLS_NET_C) || !defined(MBEDTLS_SSL_CLI_C) || \
     !defined(UNIX)
-
 int main( void )
 {
     mbedtls_printf( "MBEDTLS_CTR_DRBG_C and/or MBEDTLS_ENTROPY_C and/or "
             "MBEDTLS_NET_C and/or MBEDTLS_SSL_CLI_C and/or UNIX "
             "not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -181,6 +181,9 @@ void mbedtls_param_failed( const char *failure_condition,
 int main( void )
 {
     int ret = exit_ok;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_net_context server_fd;
     struct sockaddr_in addr;
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -191,11 +194,18 @@ int main( void )
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;
-    mbedtls_ctr_drbg_init( &ctr_drbg );
 
     /*
      * 0. Initialize and setup stuff
      */
+#if defined(MBEDTLS_PLATFORM_C)
+    if( mbedtls_platform_setup( &platform_ctx ) != 0 )
+    {
+        mbedtls_fprintf( stderr, "Failed initializing platform.\n" );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
+    mbedtls_ctr_drbg_init( &ctr_drbg );
     mbedtls_net_init( &server_fd );
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
@@ -306,7 +316,13 @@ exit:
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
     mbedtls_x509_crt_free( &ca );
 #endif
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 
-    return( ret );
+    if( ret == 0 )
+        mbedtls_exit( MBEDTLS_EXIT_SUCCESS );
+    else
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif
