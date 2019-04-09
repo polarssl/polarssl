@@ -51,7 +51,7 @@ int main( void )
            "MBEDTLS_NET_C and/or MBEDTLS_RSA_C and/or "
            "MBEDTLS_CTR_DRBG_C and/or MBEDTLS_X509_CRT_PARSE_C "
            "not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -95,8 +95,11 @@ static void my_debug( void *ctx, int level,
 
 int main( void )
 {
-    int ret = 1, len;
+    int ret = 0, len;
     int exit_code = MBEDTLS_EXIT_FAILURE;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_net_context server_fd;
     uint32_t flags;
     unsigned char buf[1024];
@@ -115,6 +118,14 @@ int main( void )
     /*
      * 0. Initialize the RNG and the session data
      */
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "platform_setup returned %d\n\n", ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
     mbedtls_net_init( &server_fd );
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
@@ -145,7 +156,7 @@ int main( void )
                           mbedtls_test_cas_pem_len );
     if( ret < 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse returned %d\n\n", ret );
         goto exit;
     }
 
@@ -214,7 +225,7 @@ int main( void )
     {
         if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE )
         {
-            mbedtls_printf( " failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", -ret );
+            mbedtls_printf( " failed\n  ! mbedtls_ssl_handshake returned %d\n\n", ret );
             goto exit;
         }
     }
@@ -302,11 +313,12 @@ int main( void )
 exit:
 
 #ifdef MBEDTLS_ERROR_C
-    if( exit_code != MBEDTLS_EXIT_SUCCESS )
+    if( exit_code != MBEDTLS_EXIT_SUCCESS && ret != 0 )
     {
         char error_buf[100];
         mbedtls_strerror( ret, error_buf, 100 );
-        mbedtls_printf("Last error was: %d - %s\n\n", ret, error_buf );
+        mbedtls_fprintf(
+            stderr, "Last error was: %d - %s\n\n", ret, error_buf );
     }
 #endif
 
@@ -317,13 +329,15 @@ exit:
     mbedtls_ssl_config_free( &conf );
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
-
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_ENTROPY_C && MBEDTLS_SSL_TLS_C &&
           MBEDTLS_SSL_CLI_C && MBEDTLS_NET_C && MBEDTLS_RSA_C &&

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #define mbedtls_printf       printf
+#define mbedtls_fprintf      fprintf
 #define mbedtls_exit         exit
 #define MBEDTLS_EXIT_SUCCESS EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE EXIT_FAILURE
@@ -44,7 +45,7 @@
 int main( void )
 {
     mbedtls_printf("MBEDTLS_MD5_C not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -66,21 +67,37 @@ int main( void )
     unsigned char digest[16];
     char str[] = "Hello, world!";
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "platform_setup returned %d\n\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
+
     mbedtls_printf( "\n  MD5('%s') = ", str );
 
     if( ( ret = mbedtls_md5_ret( (unsigned char *) str, 13, digest ) ) != 0 )
-        return( MBEDTLS_EXIT_FAILURE );
+        goto exit;
 
     for( i = 0; i < 16; i++ )
         mbedtls_printf( "%02x", digest[i] );
 
     mbedtls_printf( "\n\n" );
 
+exit:
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
-
-    return( MBEDTLS_EXIT_SUCCESS );
+    if( ret == 0 )
+        mbedtls_exit( MBEDTLS_EXIT_SUCCESS );
+    else
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif /* MBEDTLS_MD5_C */

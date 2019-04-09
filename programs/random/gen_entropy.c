@@ -47,7 +47,7 @@
 int main( void )
 {
     mbedtls_printf("MBEDTLS_ENTROPY_C and/or MBEDTLS_FS_IO not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -68,19 +68,31 @@ int main( int argc, char *argv[] )
     FILE *f;
     int i, k, ret = 1;
     int exit_code = MBEDTLS_EXIT_FAILURE;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_entropy_context entropy;
     unsigned char buf[MBEDTLS_ENTROPY_BLOCK_SIZE];
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( mbedtls_platform_setup( &platform_ctx ) != 0 )
+    {
+        mbedtls_fprintf( stderr, "Platform initialization failed!\n" );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     if( argc < 2 )
     {
         mbedtls_fprintf( stderr, "usage: %s <output filename>\n", argv[0] );
-        return( exit_code );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
     }
 
     if( ( f = fopen( argv[1], "wb+" ) ) == NULL )
     {
-        mbedtls_printf( "failed to open '%s' for writing.\n", argv[1] );
-        return( exit_code );
+        mbedtls_fprintf(
+            stderr, "failed to open '%s' for writing.\n", argv[1] );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
     }
 
     mbedtls_entropy_init( &entropy );
@@ -90,8 +102,8 @@ int main( int argc, char *argv[] )
         ret = mbedtls_entropy_func( &entropy, buf, sizeof( buf ) );
         if( ret != 0 )
         {
-            mbedtls_printf( "  failed\n  !  mbedtls_entropy_func returned -%04X\n",
-                            ret );
+            mbedtls_fprintf( stderr,
+                "  failed\n  ! mbedtls_entropy_func returned -%04X\n", ret );
             goto cleanup;
         }
 
@@ -109,7 +121,9 @@ cleanup:
 
     fclose( f );
     mbedtls_entropy_free( &entropy );
-
-    return( exit_code );
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_ENTROPY_C */

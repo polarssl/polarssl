@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf         fprintf
 #define mbedtls_snprintf        snprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
@@ -45,7 +46,7 @@ int main( void )
     mbedtls_printf("MBEDTLS_BIGNUM_C and/or MBEDTLS_RSA_C and/or "
             "MBEDTLS_MD_C and/or "
             "MBEDTLS_SHA256_C and/or MBEDTLS_FS_IO not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -70,14 +71,25 @@ void mbedtls_param_failed( const char *failure_condition,
 int main( int argc, char *argv[] )
 {
     FILE *f;
-    int ret = 1, c;
+    int ret = 0, c;
     int exit_code = MBEDTLS_EXIT_FAILURE;
     size_t i;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_rsa_context rsa;
     unsigned char hash[32];
     unsigned char buf[MBEDTLS_MPI_MAX_SIZE];
     char filename[512];
 
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "platform_setup returned -0x%0x\n\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
     mbedtls_rsa_init( &rsa, MBEDTLS_RSA_PKCS_V15, 0 );
 
     if( argc != 2 )
@@ -104,7 +116,7 @@ int main( int argc, char *argv[] )
     if( ( ret = mbedtls_mpi_read_file( &rsa.N, 16, f ) ) != 0 ||
         ( ret = mbedtls_mpi_read_file( &rsa.E, 16, f ) ) != 0 )
     {
-        mbedtls_printf( " failed\n  ! mbedtls_mpi_read_file returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_mpi_read_file returned -0x%0x\n\n", -ret );
         fclose( f );
         goto exit;
     }
@@ -164,15 +176,16 @@ int main( int argc, char *argv[] )
     exit_code = MBEDTLS_EXIT_SUCCESS;
 
 exit:
-
     mbedtls_rsa_free( &rsa );
-
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_RSA_C && MBEDTLS_SHA256_C &&
           MBEDTLS_FS_IO */

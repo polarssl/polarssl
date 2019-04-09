@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf         fprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -71,7 +72,7 @@ int main( void )
 {
     mbedtls_printf("MBEDTLS_BIGNUM_C and/or "
            "MBEDTLS_PK_PARSE_C and/or MBEDTLS_FS_IO not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -100,14 +101,26 @@ struct options
 
 int main( int argc, char *argv[] )
 {
-    int ret = 1;
+    int ret = 0;
     int exit_code = MBEDTLS_EXIT_FAILURE;
     char buf[1024];
     int i;
     char *p, *q;
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_pk_context pk;
     mbedtls_mpi N, P, Q, D, E, DP, DQ, QP;
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "platform_setup returned -0x%04x\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     /*
      * Set to sane values
@@ -161,7 +174,8 @@ int main( int argc, char *argv[] )
     {
         if( strlen( opt.password ) && strlen( opt.password_file ) )
         {
-            mbedtls_printf( "Error: cannot have both password and password_file\n" );
+            mbedtls_fprintf( stderr,
+                "Error: cannot have both password and password_file\n" );
             goto usage;
         }
 
@@ -172,7 +186,7 @@ int main( int argc, char *argv[] )
             mbedtls_printf( "\n  . Loading the password file ..." );
             if( ( f = fopen( opt.password_file, "rb" ) ) == NULL )
             {
-                mbedtls_printf( " failed\n  !  fopen returned NULL\n" );
+                mbedtls_printf( " failed\n  ! fopen returned NULL\n" );
                 goto cleanup;
             }
             if( fgets( buf, sizeof(buf), f ) == NULL )
@@ -199,7 +213,7 @@ int main( int argc, char *argv[] )
 
         if( ret != 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_pk_parse_keyfile returned -0x%04x\n", -ret );
+            mbedtls_printf( " failed\n  ! mbedtls_pk_parse_keyfile returned -0x%04x\n", -ret );
             goto cleanup;
         }
 
@@ -244,7 +258,8 @@ int main( int argc, char *argv[] )
         else
 #endif
         {
-            mbedtls_printf("Do not know how to print key information for this type\n" );
+            mbedtls_fprintf( stderr,
+                "Do not know how to print key information for this type\n" );
             goto cleanup;
         }
     }
@@ -260,7 +275,9 @@ int main( int argc, char *argv[] )
 
         if( ret != 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_pk_parse_public_keyfile returned -0x%04x\n", -ret );
+            mbedtls_printf(
+                " failed\n  ! mbedtls_pk_parse_public_keyfile returned -0x%04x\n",
+                -ret );
             goto cleanup;
         }
 
@@ -306,7 +323,7 @@ int main( int argc, char *argv[] )
 cleanup:
 
 #if defined(MBEDTLS_ERROR_C)
-    if( exit_code != MBEDTLS_EXIT_SUCCESS )
+    if( ret != 0 )
     {
         mbedtls_strerror( ret, buf, sizeof( buf ) );
         mbedtls_printf( "  !  Last error was: %s\n", buf );
@@ -317,12 +334,14 @@ cleanup:
     mbedtls_mpi_free( &N ); mbedtls_mpi_free( &P ); mbedtls_mpi_free( &Q );
     mbedtls_mpi_free( &D ); mbedtls_mpi_free( &E ); mbedtls_mpi_free( &DP );
     mbedtls_mpi_free( &DQ ); mbedtls_mpi_free( &QP );
-
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_PK_PARSE_C && MBEDTLS_FS_IO */

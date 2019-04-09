@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf         fprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -94,7 +95,7 @@
 int main( void )
 {
     mbedtls_printf( "MBEDTLS_PK_PARSE_C and/or MBEDTLS_PK_WRITE_C and/or MBEDTLS_FS_IO not defined.\n" );
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -208,14 +209,26 @@ static int write_private_key( mbedtls_pk_context *key, const char *output_file )
 
 int main( int argc, char *argv[] )
 {
-    int ret = 1;
+    int ret = 0;
     int exit_code = MBEDTLS_EXIT_FAILURE;
     char buf[1024];
     int i;
     char *p, *q;
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_pk_context key;
     mbedtls_mpi N, P, Q, D, E, DP, DQ, QP;
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "platform_setup returned -0x%04x\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     /*
      * Set to sane values
@@ -287,13 +300,15 @@ int main( int argc, char *argv[] )
 
     if( opt.mode == MODE_NONE && opt.output_mode != OUTPUT_MODE_NONE )
     {
-        mbedtls_printf( "\nCannot output a key without reading one.\n");
+        mbedtls_fprintf(
+            stderr, "\nCannot output a key without reading one.\n");
         goto exit;
     }
 
     if( opt.mode == MODE_PUBLIC && opt.output_mode == OUTPUT_MODE_PRIVATE )
     {
-        mbedtls_printf( "\nCannot output a private key from a public key.\n");
+        mbedtls_fprintf(
+            stderr, "\nCannot output a private key from a public key.\n");
         goto exit;
     }
 
@@ -310,7 +325,7 @@ int main( int argc, char *argv[] )
         if( ret != 0 )
         {
             mbedtls_strerror( ret, (char *) buf, sizeof(buf) );
-            mbedtls_printf( " failed\n  !  mbedtls_pk_parse_keyfile returned -0x%04x - %s\n\n", -ret, buf );
+            mbedtls_printf( " failed\n  ! mbedtls_pk_parse_keyfile returned -0x%04x - %s\n\n", -ret, buf );
             goto exit;
         }
 
@@ -355,7 +370,7 @@ int main( int argc, char *argv[] )
         }
         else
 #endif
-            mbedtls_printf("key type not supported yet\n");
+            mbedtls_fprintf( stderr, "key type not supported yet\n" );
 
     }
     else if( opt.mode == MODE_PUBLIC )
@@ -371,7 +386,7 @@ int main( int argc, char *argv[] )
         if( ret != 0 )
         {
             mbedtls_strerror( ret, (char *) buf, sizeof(buf) );
-            mbedtls_printf( " failed\n  !  mbedtls_pk_parse_public_key returned -0x%04x - %s\n\n", -ret, buf );
+            mbedtls_printf( " failed\n  ! mbedtls_pk_parse_public_key returned -0x%04x - %s\n\n", -ret, buf );
             goto exit;
         }
 
@@ -408,7 +423,7 @@ int main( int argc, char *argv[] )
         }
         else
 #endif
-            mbedtls_printf("key type not supported yet\n");
+            mbedtls_fprintf( stderr, "key type not supported yet\n" );
     }
     else
         goto usage;
@@ -426,13 +441,13 @@ int main( int argc, char *argv[] )
 
 exit:
 
-    if( exit_code != MBEDTLS_EXIT_SUCCESS )
+    if( exit_code != MBEDTLS_EXIT_SUCCESS && ret != 0 )
     {
 #ifdef MBEDTLS_ERROR_C
         mbedtls_strerror( ret, buf, sizeof( buf ) );
-        mbedtls_printf( " - %s\n", buf );
+        mbedtls_fprintf( stderr, " - %s\n", buf );
 #else
-        mbedtls_printf("\n");
+        mbedtls_fprintf( stderr, "\n" );
 #endif
     }
 
@@ -442,11 +457,14 @@ exit:
 
     mbedtls_pk_free( &key );
 
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_PK_PARSE_C && MBEDTLS_PK_WRITE_C && MBEDTLS_FS_IO */

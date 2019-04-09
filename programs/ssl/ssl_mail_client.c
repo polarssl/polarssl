@@ -56,7 +56,7 @@ int main( void )
            "MBEDTLS_NET_C and/or MBEDTLS_RSA_C and/or "
            "MBEDTLS_CTR_DRBG_C and/or MBEDTLS_X509_CRT_PARSE_C "
            "not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -368,6 +368,9 @@ int main( int argc, char *argv[] )
 {
     int ret = 1, len;
     int exit_code = MBEDTLS_EXIT_FAILURE;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_net_context server_fd;
 #if defined(MBEDTLS_BASE64_C)
     unsigned char base[1024];
@@ -393,6 +396,15 @@ int main( int argc, char *argv[] )
     size_t n;
     char *p, *q;
     const int *list;
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "platform_setup returned %d\n\n", ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     /*
      * Make sure memory references are valid in case we exit early.
@@ -532,7 +544,7 @@ int main( int argc, char *argv[] )
 #endif
     if( ret < 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse returned %d\n\n", ret );
         goto exit;
     }
 
@@ -556,13 +568,13 @@ int main( int argc, char *argv[] )
                               mbedtls_test_cli_crt_len );
 #else
     {
-        mbedtls_printf("MBEDTLS_CERTS_C not defined.");
+        mbedtls_fprintf( stderr, "MBEDTLS_CERTS_C not defined." );
         goto exit;
     }
 #endif
     if( ret != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse returned %d\n\n", ret );
         goto exit;
     }
 
@@ -576,13 +588,14 @@ int main( int argc, char *argv[] )
                 mbedtls_test_cli_key_len, NULL, 0 );
 #else
     {
-        mbedtls_printf("MBEDTLS_CERTS_C or MBEDTLS_PEM_PARSE_C not defined.");
+        mbedtls_fprintf(
+            stderr, "MBEDTLS_CERTS_C or MBEDTLS_PEM_PARSE_C not defined.");
         goto exit;
     }
 #endif
     if( ret != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_pk_parse_key returned %d\n\n", ret );
         goto exit;
     }
 
@@ -858,13 +871,15 @@ exit:
     mbedtls_ssl_config_free( &conf );
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
-
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_ENTROPY_C && MBEDTLS_SSL_TLS_C &&
           MBEDTLS_SSL_CLI_C && MBEDTLS_NET_C && MBEDTLS_RSA_C **

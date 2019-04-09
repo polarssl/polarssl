@@ -34,7 +34,7 @@
 #define mbedtls_fprintf    fprintf
 #define mbedtls_printf     printf
 #define mbedtls_snprintf   snprintf
-#define mbedtls_exit            exit
+#define mbedtls_exit       exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
 #endif
@@ -54,7 +54,7 @@ int main( void )
            "MBEDTLS_CTR_DRBG_C and/or MBEDTLS_X509_CRT_PARSE_C and/or "
            "MBEDTLS_THREADING_C and/or MBEDTLS_THREADING_PTHREAD "
            "and/or MBEDTLS_PEM_PARSE_C not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -242,7 +242,7 @@ static void *handle_ssl_connection( void *data )
         if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE )
         {
             mbedtls_printf( "  [ #%ld ]  failed: mbedtls_ssl_write returned -0x%04x\n",
-                    thread_id, ret );
+                    thread_id, -ret );
             goto thread_exit;
         }
     }
@@ -259,7 +259,7 @@ static void *handle_ssl_connection( void *data )
             ret != MBEDTLS_ERR_SSL_WANT_WRITE )
         {
             mbedtls_printf( "  [ #%ld ]  failed: mbedtls_ssl_close_notify returned -0x%04x\n",
-                    thread_id, ret );
+                    thread_id, -ret );
             goto thread_exit;
         }
     }
@@ -331,6 +331,9 @@ static int thread_create( mbedtls_net_context *client_fd )
 int main( void )
 {
     int ret;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_net_context listen_fd, client_fd;
     const char pers[] = "ssl_pthread_server";
 
@@ -345,6 +348,15 @@ int main( void )
 #endif
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
+#endif
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "mbedtls_platform_setup returned -0x%04x\n\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
 #endif
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
@@ -388,7 +400,7 @@ int main( void )
                           mbedtls_test_srv_crt_len );
     if( ret != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse returned -0x%04x\n\n", -ret );
         goto exit;
     }
 
@@ -396,7 +408,7 @@ int main( void )
                           mbedtls_test_cas_pem_len );
     if( ret != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509_crt_parse returned -0x%04x\n\n", -ret );
         goto exit;
     }
 
@@ -405,7 +417,7 @@ int main( void )
                          mbedtls_test_srv_key_len, NULL, 0 );
     if( ret != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_pk_parse_key returned -0x%04x\n\n", -ret );
         goto exit;
     }
 
@@ -457,7 +469,7 @@ int main( void )
     mbedtls_ssl_conf_ca_chain( &conf, &cachain, NULL );
     if( ( ret = mbedtls_ssl_conf_own_cert( &conf, &srvcert, &pkey ) ) != 0 )
     {
-        mbedtls_printf( " failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_ssl_conf_own_cert returned -0x%04x\n\n", -ret );
         goto exit;
     }
 
@@ -472,7 +484,7 @@ int main( void )
 
     if( ( ret = mbedtls_net_bind( &listen_fd, NULL, "4433", MBEDTLS_NET_PROTO_TCP ) ) != 0 )
     {
-        mbedtls_printf( " failed\n  ! mbedtls_net_bind returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_net_bind returned -0x%04x\n\n", -ret );
         goto exit;
     }
 
@@ -484,7 +496,8 @@ reset:
     {
         char error_buf[100];
         mbedtls_strerror( ret, error_buf, 100 );
-        mbedtls_printf( "  [ main ]  Last error was: -0x%04x - %s\n", -ret, error_buf );
+        mbedtls_fprintf( stderr,
+            "  [ main ]  Last error was: -0x%04x - %s\n", -ret, error_buf );
     }
 #endif
 
@@ -496,7 +509,7 @@ reset:
     if( ( ret = mbedtls_net_accept( &listen_fd, &client_fd,
                                     NULL, 0, NULL ) ) != 0 )
     {
-        mbedtls_printf( "  [ main ] failed: mbedtls_net_accept returned -0x%04x\n", ret );
+        mbedtls_printf( "  [ main ] failed: mbedtls_net_accept returned -0x%04x\n", -ret );
         goto exit;
     }
 
@@ -505,7 +518,7 @@ reset:
 
     if( ( ret = thread_create( &client_fd ) ) != 0 )
     {
-        mbedtls_printf( "  [ main ]  failed: thread_create returned %d\n", ret );
+        mbedtls_printf( "  [ main ]  failed: thread_create returned -0x%04x\n", -ret );
         mbedtls_net_free( &client_fd );
         goto reset;
     }
@@ -530,13 +543,18 @@ exit:
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
     mbedtls_memory_buffer_alloc_free();
 #endif
-
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( ret );
+    if( ret == 0 )
+        mbedtls_exit( MBEDTLS_EXIT_SUCCESS );
+    else
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_CERTS_C && MBEDTLS_ENTROPY_C &&

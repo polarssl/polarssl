@@ -48,7 +48,7 @@ int main( void )
     mbedtls_printf("MBEDTLS_ENTROPY_C and/or "
            "MBEDTLS_SSL_TLS_C and/or MBEDTLS_SSL_CLI_C and/or "
            "MBEDTLS_NET_C and/or MBEDTLS_CTR_DRBG_C and/or not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -539,6 +539,9 @@ int idle( mbedtls_net_context *fd,
 int main( int argc, char *argv[] )
 {
     int ret = 0, len, tail_len, i, written, frags, retry_left;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_net_context server_fd;
 
     unsigned char buf[MAX_REQUEST_SIZE + 1];
@@ -576,6 +579,15 @@ int main( int argc, char *argv[] )
 #endif
     char *p, *q;
     const int *list;
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "platform_setup returned -0x%x\n\n", -ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     /*
      * Make sure memory references are valid.
@@ -1281,7 +1293,7 @@ int main( int argc, char *argv[] )
 #else
     {
         ret = 1;
-        mbedtls_printf("MBEDTLS_CERTS_C not defined.");
+        mbedtls_printf( "MBEDTLS_CERTS_C not defined." );
     }
 #endif
     if( ret != 0 )
@@ -1306,7 +1318,7 @@ int main( int argc, char *argv[] )
 #else
     {
         ret = 1;
-        mbedtls_printf("MBEDTLS_CERTS_C not defined.");
+        mbedtls_printf( "MBEDTLS_CERTS_C not defined." );
     }
 #endif
     if( ret != 0 )
@@ -2113,7 +2125,7 @@ exit:
     {
         char error_buf[100];
         mbedtls_strerror( ret, error_buf, 100 );
-        mbedtls_printf("Last error was: -0x%X - %s\n\n", -ret, error_buf );
+        mbedtls_printf( "Last error was: -0x%X - %s\n\n", -ret, error_buf );
     }
 #endif
 
@@ -2130,16 +2142,38 @@ exit:
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
 
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED) && \
+    defined(MBEDTLS_USE_PSA_CRYPTO)
+    if( opt.psk_opaque != 0 )
+    {
+        /* This is ok even if the slot hasn't been
+         * initialized (we might have jumed here
+         * immediately because of bad cmd line params,
+         * for example). */
+        status = psa_destroy_key( slot );
+        if( status != PSA_SUCCESS )
+        {
+            mbedtls_printf( "Failed to destroy key slot %u - error was %d",
+                            (unsigned) slot, (int) status );
+            if( ret == 0 )
+                ret = MBEDTLS_ERR_SSL_HW_ACCEL_FAILED;
+        }
+    }
+#endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED &&
+          MBEDTLS_USE_PSA_CRYPTO */
+
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    // Shell can not handle large exit numbers -> 1 for errors
-    if( ret < 0 )
-        ret = 1;
-
-    return( ret );
+    if( ret == 0 )
+        mbedtls_exit( MBEDTLS_EXIT_SUCCESS );
+    else
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_ENTROPY_C && MBEDTLS_SSL_TLS_C &&
           MBEDTLS_SSL_CLI_C && MBEDTLS_NET_C && MBEDTLS_RSA_C &&

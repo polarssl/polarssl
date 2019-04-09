@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf         fprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -42,7 +43,7 @@ int main( void )
 {
     mbedtls_printf("MBEDTLS_BIGNUM_C and/or MBEDTLS_RSA_C and/or "
            "MBEDTLS_X509_CSR_PARSE_C and/or MBEDTLS_FS_IO not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -62,7 +63,6 @@ int main( void )
     "\n"
 
 #if defined(MBEDTLS_CHECK_PARAMS)
-#define mbedtls_exit            exit
 void mbedtls_param_failed( const char *failure_condition,
                            const char *file,
                            int line )
@@ -89,6 +89,15 @@ int main( int argc, char *argv[] )
     mbedtls_x509_csr csr;
     int i;
     char *p, *q;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+    if( ( ret = mbedtls_platform_setup( &platform_ctx ) ) != 0 )
+    {
+        mbedtls_fprintf(
+            stderr, "mbedtls_platform_setup returned %d\n\n", ret );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     /*
      * Set to sane values
@@ -127,7 +136,7 @@ int main( int argc, char *argv[] )
 
     if( ret != 0 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_csr_parse_file returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509_csr_parse_file returned %d\n\n", ret );
         mbedtls_x509_csr_free( &csr );
         goto exit;
     }
@@ -141,7 +150,7 @@ int main( int argc, char *argv[] )
     ret = mbedtls_x509_csr_info( (char *) buf, sizeof( buf ) - 1, "      ", &csr );
     if( ret == -1 )
     {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_csr_info returned %d\n\n", ret );
+        mbedtls_printf( " failed\n  ! mbedtls_x509_csr_info returned %d\n\n", ret );
         mbedtls_x509_csr_free( &csr );
         goto exit;
     }
@@ -152,13 +161,15 @@ int main( int argc, char *argv[] )
 
 exit:
     mbedtls_x509_csr_free( &csr );
-
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
 #if defined(_WIN32)
     mbedtls_printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
-    return( exit_code );
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_BIGNUM_C && MBEDTLS_RSA_C && MBEDTLS_X509_CSR_PARSE_C &&
           MBEDTLS_FS_IO */

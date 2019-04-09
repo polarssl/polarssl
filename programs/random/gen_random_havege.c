@@ -48,7 +48,7 @@
 int main( void )
 {
     mbedtls_printf("MBEDTLS_HAVEGE_C not defined.\n");
-    return( 0 );
+    mbedtls_exit( 0 );
 }
 #else
 
@@ -66,23 +66,35 @@ void mbedtls_param_failed( const char *failure_condition,
 
 int main( int argc, char *argv[] )
 {
-    FILE *f;
+    FILE *f = NULL;
     time_t t;
     int i, k, ret = 1;
     int exit_code = MBEDTLS_EXIT_FAILURE;
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_context platform_ctx;
+#endif
     mbedtls_havege_state hs;
     unsigned char buf[1024];
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( mbedtls_platform_setup( &platform_ctx ) != 0 )
+    {
+        mbedtls_fprintf( stderr, "Failed to initialize platform.\n" );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
+    }
+#endif
 
     if( argc < 2 )
     {
         mbedtls_fprintf( stderr, "usage: %s <output filename>\n", argv[0] );
-        return( exit_code );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
     }
 
     if( ( f = fopen( argv[1], "wb+" ) ) == NULL )
     {
-        mbedtls_printf( "failed to open '%s' for writing.\n", argv[1] );
-        return( exit_code );
+        mbedtls_fprintf(
+            stderr, "failed to open '%s' for writing.\n", argv[1] );
+        mbedtls_exit( MBEDTLS_EXIT_FAILURE );
     }
 
     mbedtls_havege_init( &hs );
@@ -93,8 +105,7 @@ int main( int argc, char *argv[] )
     {
         if( ( ret = mbedtls_havege_random( &hs, buf, sizeof( buf ) ) ) != 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_havege_random returned -0x%04X",
-                            -ret );
+            mbedtls_fprintf( stderr, "havege_random returned -0x%04X", -ret );
             goto exit;
         }
 
@@ -114,7 +125,11 @@ int main( int argc, char *argv[] )
 
 exit:
     mbedtls_havege_free( &hs );
-    fclose( f );
-    return( exit_code );
+    if( f != NULL )
+        fclose( f );
+#if defined(MBEDTLS_PLATFORM_C)
+    mbedtls_platform_teardown( &platform_ctx );
+#endif
+    mbedtls_exit( exit_code );
 }
 #endif /* MBEDTLS_HAVEGE_C */
