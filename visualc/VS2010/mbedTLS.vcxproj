@@ -224,6 +224,7 @@
     <ClInclude Include="..\..\include\mbedtls\x509_crl.h" />
     <ClInclude Include="..\..\include\mbedtls\x509_crt.h" />
     <ClInclude Include="..\..\include\mbedtls\x509_csr.h" />
+    <ClInclude Include="..\..\include\mbedtls\x509_internal.h" />
     <ClInclude Include="..\..\include\mbedtls\xtea.h" />
   </ItemGroup>
   <ItemGroup>

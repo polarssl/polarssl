@@ -61,6 +61,18 @@ Features
    * Add MBEDTLS_REMOVE_3DES_CIPHERSUITES to allow removing 3DES ciphersuites
      from the default list (enabled by default). See
      https://sweet32.info/SWEET32_CCS16.pdf.
+   * Add a new compile-time option `MBEDTLS_X509_ON_DEMAND_PARSING`,
+     disabled by default, which allows to parse and cache X.509 CRTs
+     on demand only, at the benefit of lower RAM usage. Enabling
+     this option breaks the structure API of X.509 in that most
+     fields of `mbedtls_x509_crt` are removed, but it keeps the
+     X.509 function API. See the API changes section as well as
+     the documentation in `config.h` for more information.
+   * Add support for parsing otherName entries in the Subject Alternative Name
+     X.509 certificate extension, as defined in RFC 4108 section 5.
+   * Add support for parsing certificate policies extension, as defined in
+     RFC 5280 section 4.2.1.4. Currently, only the "Any Policy" policy is
+     supported.
 
 API Changes
    * Add a new X.509 API call `mbedtls_x509_parse_der_nocopy()`.
@@ -72,6 +84,28 @@ API Changes
      always return NULL, and removes the peer_cert field from the
      mbedtls_ssl_session structure which otherwise stores the peer's
      certificate.
+   * Add a new X.509 CRT structure `mbedtls_x509_crt_frame` providing
+     access to basic CRT structure fields (such as the CRT version) as
+     well as pointers to raw ASN.1 data for more complex structured fields
+     (such as issuer and subject name). Further, add the X.509 API call
+     `mbedtls_x509_crt_get_frame()` to obtain a frame structure from an
+     `mbedtls_x509_crt` CRT. This works both regardless of whether the new
+     compile-time option `MBEDTLS_X509_ON_DEMAND_PARSING` is enabled. If
+     if is, users must use this function to obtain basic structure fields
+     from the CRT.
+   * Add a new X.509 API call `mbedtls_x509_get_pk()` which extracts
+     the public key context from an X.509 CRT. Fixes #2294. This works both
+     regardless of whether the new compile-time option
+     `MBEDTLS_X509_ON_DEMAND_PARSING` is enabled. If if is, users must use
+     this function to obtain the PK from a CRT.
+   * Add new X.509 API calls `mbedtls_x509_crt_get_issuer()`,
+     `mbedtls_x509_crt_get_subject()`, `mbedtls_x509_get_subject_alt_names()`,
+     and `mbedtls_x509_get_ext_key_usage()` as a replacement of directly
+     accessing the `issuer`, `subject`, `subject_alt_names` and `ext_key_usage`
+     fields from `mbedtls_x509_crt`. These functions are provided regardless
+     of whether the new compile-time option `MBEDTLS_X509_ON_DEMAND_PARSING`
+     is enabled. If if is, users must use these functions to extract
+     the respective fields from the CRT.
 
 Security
    * Make mbedtls_ecdh_get_params return an error if the second key
@@ -106,6 +140,11 @@ Bugfix
      extensions in CSRs and CRTs that caused these bitstrings to not be encoded
      correctly as trailing zeroes were not accounted for as unused bits in the
      leading content octet. Fixes #1610.
+   * Fix missing bounds checks in X.509 parsing functions that could
+     lead to successful parsing of ill-formed X.509 CRTs. Fixes #2437.
+   * Fix multiple X.509 functions previously returning ASN.1 low-level error
+     codes to always wrap these codes into X.509 high level error codes before
+     returning. Fixes #2431.
 
 Changes
    * Reduce RAM consumption during session renegotiation by not storing
@@ -132,6 +171,7 @@ Changes
      been disabled for lack of a sufficiently recent version of GnuTLS on the CI.
    * Ciphersuites based on 3DES now have the lowest priority by default when
      they are enabled.
+   * Replace multiple uses of MD2 by SHA-256 in X.509 test suite. Fixes #821.
 
 = mbed TLS 2.16.0 branch released 2018-12-21
 

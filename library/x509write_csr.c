@@ -33,6 +33,7 @@
 #if defined(MBEDTLS_X509_CSR_WRITE_C)
 
 #include "mbedtls/x509_csr.h"
+#include "mbedtls/x509_internal.h"
 #include "mbedtls/oid.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"

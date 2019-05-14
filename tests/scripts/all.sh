@@ -998,6 +998,22 @@ component_test_asan_remove_peer_certificate () {
     if_build_succeeded tests/compat.sh
 }
 
+component_test_asan_on_demand_parsing_remove_peer_cert () {
+    msg "build: default config, no peer CRT, on-demand CRT parsing (ASan build)"
+    scripts/config.pl unset MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
+    scripts/config.pl set MBEDTLS_X509_ON_DEMAND_PARSING
+    scripts/config.pl set MBEDTLS_THREADING_C
+    scripts/config.pl set MBEDTLS_THREADING_PTHREAD
+    CC=gcc cmake -D CMAKE_BUILD_TYPE:String=Asan .
+    make
+
+    msg "test: !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE, MBEDTLS_X509_ON_DEMAND_PARSING"
+    make test
+
+    msg "test: ssl-opt.sh, !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE, MBEDTLS_X509_ON_DEMAND_PARSING"
+    if_build_succeeded tests/ssl-opt.sh
+}
+
 component_test_no_max_fragment_length_small_ssl_out_content_len () {
     msg "build: no MFL extension, small SSL_OUT_CONTENT_LEN (ASan build)"
     scripts/config.pl unset MBEDTLS_SSL_MAX_FRAGMENT_LENGTH

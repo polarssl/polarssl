@@ -2299,7 +2299,15 @@ static int ssl_write_encrypted_pms( mbedtls_ssl_context *ssl,
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
         return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
     }
-    peer_pk = &ssl->session_negotiate->peer_cert->pk;
+
+    ret = mbedtls_x509_crt_pk_acquire( ssl->session_negotiate->peer_cert,
+                                       &peer_pk );
+    if( ret != 0 )
+    {
+        /* Should never happen */
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    }
 #endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
 
     /*
@@ -2308,7 +2316,8 @@ static int ssl_write_encrypted_pms( mbedtls_ssl_context *ssl,
     if( ! mbedtls_pk_can_do( peer_pk, MBEDTLS_PK_RSA ) )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "certificate key type mismatch" ) );
-        return( MBEDTLS_ERR_SSL_PK_TYPE_MISMATCH );
+        ret = MBEDTLS_ERR_SSL_PK_TYPE_MISMATCH;
+        goto cleanup;
     }
 
     if( ( ret = mbedtls_pk_encrypt( peer_pk,
@@ -2318,7 +2327,7 @@ static int ssl_write_encrypted_pms( mbedtls_ssl_context *ssl,
                             ssl->conf->f_rng, ssl->conf->p_rng ) ) != 0 )
     {
         MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_rsa_pkcs1_encrypt", ret );
-        return( ret );
+        goto cleanup;
     }
 
 #if defined(MBEDTLS_SSL_PROTO_TLS1) || defined(MBEDTLS_SSL_PROTO_TLS1_1) || \
@@ -2331,11 +2340,16 @@ static int ssl_write_encrypted_pms( mbedtls_ssl_context *ssl,
     }
 #endif
 
+cleanup:
+
 #if !defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
     /* We don't need the peer's public key anymore. Free it. */
     mbedtls_pk_free( peer_pk );
-#endif /* !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
-    return( 0 );
+#else
+    mbedtls_x509_crt_pk_release( ssl->session_negotiate->peer_cert );
+#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
+
+    return( ret );
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_RSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED */
@@ -2421,13 +2435,22 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
         return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
     }
-    peer_pk = &ssl->session_negotiate->peer_cert->pk;
+
+    ret = mbedtls_x509_crt_pk_acquire( ssl->session_negotiate->peer_cert,
+                                       &peer_pk );
+    if( ret != 0 )
+    {
+        /* Should never happen */
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    }
 #endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
 
     if( ! mbedtls_pk_can_do( peer_pk, MBEDTLS_PK_ECKEY ) )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "server key not ECDH capable" ) );
-        return( MBEDTLS_ERR_SSL_PK_TYPE_MISMATCH );
+        ret = MBEDTLS_ERR_SSL_PK_TYPE_MISMATCH;
+        goto cleanup;
     }
 
     peer_key = mbedtls_pk_ec( *peer_pk );
@@ -2436,21 +2459,26 @@ static int ssl_get_ecdh_params_from_cert( mbedtls_ssl_context *ssl )
                                  MBEDTLS_ECDH_THEIRS ) ) != 0 )
     {
         MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ecdh_get_params" ), ret );
-        return( ret );
+        goto cleanup;
     }
 
     if( ssl_check_server_ecdh_params( ssl ) != 0 )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad server certificate (ECDH curve)" ) );
-        return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE );
+        ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE;
+        goto cleanup;
     }
+
+cleanup:
 
 #if !defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
     /* We don't need the peer's public key anymore. Free it,
      * so that more RAM is available for upcoming expensive
      * operations like ECDHE. */
     mbedtls_pk_free( peer_pk );
-#endif /* !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
+#else
+    mbedtls_x509_crt_pk_release( ssl->session_negotiate->peer_cert );
+#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
 
     return( ret );
 }
@@ -2775,7 +2803,15 @@ start_processing:
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
             return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
         }
-        peer_pk = &ssl->session_negotiate->peer_cert->pk;
+
+        ret = mbedtls_x509_crt_pk_acquire( ssl->session_negotiate->peer_cert,
+                                           &peer_pk );
+        if( ret != 0 )
+        {
+            /* Should never happen */
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+        }
 #endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
 
         /*
@@ -2786,6 +2822,9 @@ start_processing:
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad server key exchange message" ) );
             mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
                                             MBEDTLS_SSL_ALERT_MSG_HANDSHAKE_FAILURE );
+#if defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
+            mbedtls_x509_crt_pk_release( ssl->session_negotiate->peer_cert );
+#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
             return( MBEDTLS_ERR_SSL_PK_TYPE_MISMATCH );
         }
 
@@ -2807,6 +2846,9 @@ start_processing:
             if( ret == MBEDTLS_ERR_ECP_IN_PROGRESS )
                 ret = MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS;
 #endif
+#if defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
+            mbedtls_x509_crt_pk_release( ssl->session_negotiate->peer_cert );
+#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
             return( ret );
         }
 
@@ -2815,7 +2857,9 @@ start_processing:
          * so that more RAM is available for upcoming expensive
          * operations like ECDHE. */
         mbedtls_pk_free( peer_pk );
-#endif /* !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
+#else
+        mbedtls_x509_crt_pk_release( ssl->session_negotiate->peer_cert );
+#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
     }
 #endif /* MBEDTLS_KEY_EXCHANGE__WITH_SERVER_SIGNATURE__ENABLED */
 

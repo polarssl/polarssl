@@ -212,7 +212,10 @@
  * { iso(1) identified-organization(3) dod(6) internet(1)
  *                      private(4) enterprise(1) WiSUN(45605) FieldAreaNetwork(1) }
  */
-#define MBEDTLS_OID_WISUN_FAN                  MBEDTLS_OID_INTERNET "\x04\x01\x82\xe4\x25\x01"
+#define MBEDTLS_OID_WISUN_FAN                   MBEDTLS_OID_INTERNET "\x04\x01\x82\xe4\x25\x01"
+
+#define MBEDTLS_OID_ON                          MBEDTLS_OID_PKIX "\x08" /**< id-on OBJECT IDENTIFIER ::= { id-pkix 8 } */
+#define MBEDTLS_OID_ON_HW_MODULE_NAME           MBEDTLS_OID_ON "\x04" /**< id-on-hardwareModuleName OBJECT IDENTIFIER ::= { id-on 4 } */
 
 /*
  * PKCS definition OIDs
