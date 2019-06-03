@@ -190,6 +190,34 @@ typedef struct mbedtls_mpi
 }
 mbedtls_mpi;
 
+// *****************MPI on Stack***************************
+#if defined(__GNUC__)
+size_t mbedtls_used_limbs(const mbedtls_mpi * X);
+void   mbedtls_stack_init(mbedtls_mpi * X, mbedtls_mpi_uint * limbs, size_t num_limbs);
+
+#define MBEDTLS_MAX_STACK_LIMBS        128
+#define MBEDTLS_SET_STACK_MPI(X, Y)                            \
+        uint32_t num_limbs##X;                        \
+        num_limbs##X = mbedtls_used_limbs(Y);        \
+        mbedtls_mpi_uint limbs##X[num_limbs##X];    \
+        mbedtls_stack_init(&X, limbs##X, num_limbs##X);
+
+#define MBEDTLS_SET_STACK_MPI_MULTI(X, Y, Z)                \
+        uint32_t num_limbs##X;                        \
+        num_limbs##X = mbedtls_used_limbs(Y);        \
+        num_limbs##X += mbedtls_used_limbs(Z);        \
+        mbedtls_mpi_uint limbs##X[num_limbs##X];    \
+        mbedtls_stack_init(&X, limbs##X, num_limbs##X);
+
+#define MBEDTLS_SET_STACK_MPI_FIX_SIZE(X, size)                \
+        mbedtls_mpi_uint limbs##X[size];            \
+        mbedtls_stack_init(&X, limbs##X, size);
+
+#define MBEDTLS_FREE_STACK_MPI_ALLOCATION(X)                \
+        if(X.n > MBEDTLS_MAX_STACK_LIMBS){ mbedtls_mpi_free(&X);}
+//********************************************************
+#endif
+
 /**
  * \brief           Initialize an MPI context.
  *

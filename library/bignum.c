@@ -1256,6 +1256,9 @@ int mbedtls_mpi_sub_abs( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
         return( MBEDTLS_ERR_MPI_NEGATIVE_VALUE );
 
     mbedtls_mpi_init( &TB );
+#if defined(__GNUC__)
+    MBEDTLS_SET_STACK_MPI(TB, B)
+#endif
 
     if( X == B )
     {
@@ -1280,8 +1283,9 @@ int mbedtls_mpi_sub_abs( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
     mpi_sub_hlp( n, B->p, X->p );
 
 cleanup:
-
+#if !defined(__GNUC__)
     mbedtls_mpi_free( &TB );
+#endif
 
     return( ret );
 }
@@ -1478,6 +1482,11 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
 
     mbedtls_mpi_init( &TA ); mbedtls_mpi_init( &TB );
 
+#if defined(__GNUC__)
+    MBEDTLS_SET_STACK_MPI(TB, B)
+    MBEDTLS_SET_STACK_MPI(TA, A)
+#endif
+
     if( X == A ) { MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TA, A ) ); A = &TA; }
     if( X == B ) { MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TB, B ) ); B = &TB; }
 
@@ -1498,8 +1507,9 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
     X->s = A->s * B->s;
 
 cleanup:
-
+#if !defined(__GNUC__)
     mbedtls_mpi_free( &TB ); mbedtls_mpi_free( &TA );
+#endif
 
     return( ret );
 }
@@ -2322,6 +2332,27 @@ cleanup:
 
     return( ret );
 }
+
+size_t mbedtls_used_limbs(const mbedtls_mpi * X)
+{
+    size_t i;
+    for( i = X->n - 1; i > 0; i-- )
+    {
+        if( X->p[i] != 0 )
+        {
+            break;
+        }
+    }
+    return (i+1);
+}
+
+void mbedtls_stack_init(mbedtls_mpi * X, mbedtls_mpi_uint * limbs, size_t num_limbs)
+{
+    X->p = limbs;
+    X->n = num_limbs;
+    memset(limbs, 0, sizeof(num_limbs));
+}
+
 
 #if defined(MBEDTLS_GENPRIME)
 

@@ -1302,6 +1302,13 @@ static int ecp_double_jac( const mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
 
     mbedtls_mpi_init( &M ); mbedtls_mpi_init( &S ); mbedtls_mpi_init( &T ); mbedtls_mpi_init( &U );
 
+#if defined(__GNUC__)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(M, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(S, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(T, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(U, MBEDTLS_MAX_STACK_LIMBS)
+#endif
+
     /* Special case for A = -3 */
     if( grp->A.p == NULL )
     {
@@ -1358,8 +1365,16 @@ static int ecp_double_jac( const mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
     MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &R->Z, &U ) );
 
 cleanup:
-    mbedtls_mpi_free( &M ); mbedtls_mpi_free( &S ); mbedtls_mpi_free( &T ); mbedtls_mpi_free( &U );
-
+#if defined(__GNUC__)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(M)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(S)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(T)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(U)
+#else
+    {
+        mbedtls_mpi_free( &M ); mbedtls_mpi_free( &S ); mbedtls_mpi_free( &T ); mbedtls_mpi_free( &U );
+    }
+#endif
     return( ret );
 }
 
@@ -1414,6 +1429,16 @@ static int ecp_add_mixed( const mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
     mbedtls_mpi_init( &T1 ); mbedtls_mpi_init( &T2 ); mbedtls_mpi_init( &T3 ); mbedtls_mpi_init( &T4 );
     mbedtls_mpi_init( &X ); mbedtls_mpi_init( &Y ); mbedtls_mpi_init( &Z );
 
+#if defined(__GNUC__)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(T1, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(T2, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(T3, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(T4, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(X, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(Y, MBEDTLS_MAX_STACK_LIMBS)
+    MBEDTLS_SET_STACK_MPI_FIX_SIZE(Z, MBEDTLS_MAX_STACK_LIMBS)
+#endif
+
     MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T1,  &P->Z,  &P->Z ) );  MOD_MUL( T1 );
     MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T2,  &T1,    &P->Z ) );  MOD_MUL( T2 );
     MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T1,  &T1,    &Q->X ) );  MOD_MUL( T1 );
@@ -1454,10 +1479,18 @@ static int ecp_add_mixed( const mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
     MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &R->Z, &Z ) );
 
 cleanup:
-
+#if defined(__GNUC__)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(T1)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(T2)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(T3)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(T4)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(X)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(Y)
+    MBEDTLS_FREE_STACK_MPI_ALLOCATION(Z)
+#else
     mbedtls_mpi_free( &T1 ); mbedtls_mpi_free( &T2 ); mbedtls_mpi_free( &T3 ); mbedtls_mpi_free( &T4 );
     mbedtls_mpi_free( &X ); mbedtls_mpi_free( &Y ); mbedtls_mpi_free( &Z );
-
+#endif
     return( ret );
 }
 

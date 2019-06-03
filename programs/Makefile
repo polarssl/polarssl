@@ -3,7 +3,7 @@
 # To compile with PKCS11: add "-lpkcs11-helper" to LDFLAGS
 
 CFLAGS	?= -O2
-WARNING_CFLAGS ?= -Wall -W -Wdeclaration-after-statement
+WARNING_CFLAGS ?= -Wall -W
 WARNING_CXXFLAGS ?= -Wall -W
 LDFLAGS ?=
 
