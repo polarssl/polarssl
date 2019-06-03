@@ -62,8 +62,8 @@ void mbedtls_param_failed( const char *failure_condition,
                            const char *file,
                            int line )
 {
-    mbedtls_printf( "%s:%i: Input param failed - %s\n",
-                    file, line, failure_condition );
+    mbedtls_fprintf( stderr, "%s:%i: Input param failed - %s\n",
+                     file, line, failure_condition );
     mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif
@@ -150,7 +150,7 @@ exit:
     if( exit_code != MBEDTLS_EXIT_SUCCESS )
     {
         mbedtls_strerror( ret, (char *) buf, sizeof(buf) );
-        mbedtls_printf( "  !  Last error was: %s\n", buf );
+        mbedtls_fprintf( stderr, "  !  Last error was: %s\n", buf );
     }
 #endif
 

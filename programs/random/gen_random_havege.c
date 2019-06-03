@@ -58,8 +58,8 @@ void mbedtls_param_failed( const char *failure_condition,
                            const char *file,
                            int line )
 {
-    mbedtls_printf( "%s:%i: Input param failed - %s\n",
-                    file, line, failure_condition );
+    mbedtls_fprintf( stderr, "%s:%i: Input param failed - %s\n",
+                     file, line, failure_condition );
     mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif
@@ -81,7 +81,7 @@ int main( int argc, char *argv[] )
 
     if( ( f = fopen( argv[1], "wb+" ) ) == NULL )
     {
-        mbedtls_printf( "failed to open '%s' for writing.\n", argv[1] );
+        mbedtls_fprintf( stderr, "failed to open '%s' for writing.\n", argv[1] );
         return( exit_code );
     }
 
@@ -93,8 +93,9 @@ int main( int argc, char *argv[] )
     {
         if( ( ret = mbedtls_havege_random( &hs, buf, sizeof( buf ) ) ) != 0 )
         {
-            mbedtls_printf( " failed\n  !  mbedtls_havege_random returned -0x%04X",
-                            -ret );
+            mbedtls_fprintf( stderr,
+                             " failed\n  !  mbedtls_havege_random returned -0x%04X",
+                             -ret );
             goto exit;
         }
 

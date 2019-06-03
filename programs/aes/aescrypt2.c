@@ -86,8 +86,8 @@ void mbedtls_param_failed( const char *failure_condition,
                            const char *file,
                            int line )
 {
-    mbedtls_printf( "%s:%i: Input param failed - %s\n",
-                    file, line, failure_condition );
+    mbedtls_fprintf( stderr, "%s:%i: Input param failed - %s\n",
+                     file, line, failure_condition );
     mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif
@@ -129,7 +129,7 @@ int main( int argc, char *argv[] )
     ret = mbedtls_md_setup( &sha_ctx, mbedtls_md_info_from_type( MBEDTLS_MD_SHA256 ), 1 );
     if( ret != 0 )
     {
-        mbedtls_printf( "  ! mbedtls_md_setup() returned -0x%04x\n", -ret );
+        mbedtls_fprintf( stderr, "  ! mbedtls_md_setup() returned -0x%04x\n", -ret );
         goto exit;
     }
 

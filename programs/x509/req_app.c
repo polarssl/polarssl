@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf          printf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -67,8 +68,8 @@ void mbedtls_param_failed( const char *failure_condition,
                            const char *file,
                            int line )
 {
-    mbedtls_printf( "%s:%i: Input param failed - %s\n",
-                    file, line, failure_condition );
+    mbedtls_fprintf( stderr, "%s:%i: Input param failed - %s\n",
+                     file, line, failure_condition );
     mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif

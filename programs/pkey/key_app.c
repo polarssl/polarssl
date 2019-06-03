@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define mbedtls_printf          printf
+#define mbedtls_fprintf         fprintf
 #define mbedtls_exit            exit
 #define MBEDTLS_EXIT_SUCCESS    EXIT_SUCCESS
 #define MBEDTLS_EXIT_FAILURE    EXIT_FAILURE
@@ -81,8 +82,8 @@ void mbedtls_param_failed( const char *failure_condition,
                            const char *file,
                            int line )
 {
-    mbedtls_printf( "%s:%i: Input param failed - %s\n",
-                    file, line, failure_condition );
+    mbedtls_fprintf( stderr, "%s:%i: Input param failed - %s\n",
+                     file, line, failure_condition );
     mbedtls_exit( MBEDTLS_EXIT_FAILURE );
 }
 #endif
@@ -161,7 +162,9 @@ int main( int argc, char *argv[] )
     {
         if( strlen( opt.password ) && strlen( opt.password_file ) )
         {
-            mbedtls_printf( "Error: cannot have both password and password_file\n" );
+            mbedtls_fprintf(
+                stderr,
+                "Error: cannot have both password and password_file\n" );
             goto usage;
         }
 
@@ -309,7 +312,7 @@ cleanup:
     if( exit_code != MBEDTLS_EXIT_SUCCESS )
     {
         mbedtls_strerror( ret, buf, sizeof( buf ) );
-        mbedtls_printf( "  !  Last error was: %s\n", buf );
+        mbedtls_fprintf( stderr, "  !  Last error was: %s\n", buf );
     }
 #endif
 
