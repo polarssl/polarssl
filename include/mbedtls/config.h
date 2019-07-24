@@ -2058,6 +2058,22 @@
 #define MBEDTLS_ASN1_PARSE_C
 
 /**
+ * \def MBEDTLS_ASN1_PARSE_NEGINT
+ *
+ * Enable negative integer parsing in the generic ASN1 parser.
+ *
+ * Module:  library/asn1parse.c
+ * Caller:  library/pkcs12.c
+ *          library/pkcs5.c
+ *          library/pkparse.c
+ *          library/x509.c
+ *          library/x509_crl.c
+ *          library/x509_crt.c
+ *          library/x509_csr.c
+ */
+#define MBEDTLS_ASN1_PARSE_NEGINT
+
+/**
  * \def MBEDTLS_ASN1_WRITE_C
  *
  * Enable the generic ASN1 writer.

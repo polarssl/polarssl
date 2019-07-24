@@ -146,11 +146,27 @@ int mbedtls_asn1_get_int( unsigned char **p,
     int ret;
     size_t len;
 
+#if defined(MBEDTLS_ASN1_PARSE_NEGINT)
+    int neg = 0;
+#endif /* MBEDTLS_ASN1_PARSE_NEGINT */
+
     if( ( ret = mbedtls_asn1_get_tag( p, end, &len, MBEDTLS_ASN1_INTEGER ) ) != 0 )
         return( ret );
 
-    if( len == 0 || len > sizeof( int ) || ( **p & 0x80 ) != 0 )
+    if( len == 0 || len > sizeof( int ) )
         return( MBEDTLS_ERR_ASN1_INVALID_LENGTH );
+
+    if( ( **p & 0x80 ) != 0 )
+#if defined(MBEDTLS_ASN1_PARSE_NEGINT)
+    {
+        neg = -1 << ( ( 8 * len ) - 1 );
+        **p &= ~(0x80);
+    }
+#else
+    {
+        return( MBEDTLS_ERR_ASN1_INVALID_DATA );
+    }
+#endif /* MBEDTLS_ASN1_PARSE_NEGINT */
 
     *val = 0;
 
@@ -159,6 +175,10 @@ int mbedtls_asn1_get_int( unsigned char **p,
         *val = ( *val << 8 ) | **p;
         (*p)++;
     }
+
+#if defined(MBEDTLS_ASN1_PARSE_NEGINT)
+    *val += neg;
+#endif /* MBEDTLS_ASN1_PARSE_NEGINT */
 
     return( 0 );
 }
