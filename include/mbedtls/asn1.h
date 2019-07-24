@@ -351,6 +351,40 @@ void mbedtls_asn1_free_named_data( mbedtls_asn1_named_data *entry );
  */
 void mbedtls_asn1_free_named_data_list( mbedtls_asn1_named_data **head );
 
+/**
+ * \brief       Verify that the integer is the smallest possible number
+ *              of octets.
+ *
+ * \param p     The start of the buffer which is encoded by ASN1
+ * \param len   The length of the buffer
+ */
+static inline int mbedtls_check_shortest_asn1_integer( unsigned char *p, size_t len )
+{
+    if( len < 2 )
+    {
+        return( 0 );
+    }
+
+    /*
+     * If the contents octets of an integer value encoding consist of
+     * more than one octet,
+     * then the bits of the first octet and bit 8 of the second octet:
+     *  a) shall not all be ones and
+     *  b) shall not all be zero.
+     * These rules ensure that an integer value is always encoded in
+     * the smallest possible number of octets.
+     */
+    if( *p == 0x00 && ( *(p+1) & 0x80 ) == 0 )
+    {
+        return( MBEDTLS_ERR_ASN1_INVALID_DATA );
+    }
+    else if( *p == 0xff && ( *(p+1) & 0x80 ) != 0 )
+    {
+        return( MBEDTLS_ERR_ASN1_INVALID_DATA );
+    }
+
+    return( 0 );
+}
 #ifdef __cplusplus
 }
 #endif

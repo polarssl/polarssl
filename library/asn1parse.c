@@ -152,6 +152,9 @@ int mbedtls_asn1_get_int( unsigned char **p,
     if( len == 0 || len > sizeof( int ) || ( **p & 0x80 ) != 0 )
         return( MBEDTLS_ERR_ASN1_INVALID_LENGTH );
 
+    if( ( ret = mbedtls_check_shortest_asn1_integer( *p, len ) ) != 0 )
+        return( ret );
+
     *val = 0;
 
     while( len-- > 0 )
@@ -172,6 +175,9 @@ int mbedtls_asn1_get_mpi( unsigned char **p,
     size_t len;
 
     if( ( ret = mbedtls_asn1_get_tag( p, end, &len, MBEDTLS_ASN1_INTEGER ) ) != 0 )
+        return( ret );
+
+    if( ( ret = mbedtls_check_shortest_asn1_integer( *p, len ) ) != 0 )
         return( ret );
 
     ret = mbedtls_mpi_read_binary( X, *p, len );

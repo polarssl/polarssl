@@ -234,13 +234,16 @@ int mbedtls_asn1_write_bool( unsigned char **p, unsigned char *start, int boolea
 int mbedtls_asn1_write_int( unsigned char **p, unsigned char *start, int val )
 {
     int ret;
-    size_t len = 0;
+    size_t i, len = 0;
 
-    if( *p - start < 1 )
-        return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+    for( i = 0 ; i < sizeof(int) ; i++ )
+    {
+        if( *p - start < 1 )
+            return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
-    len += 1;
-    *--(*p) = val;
+        *--(*p) = ( val >> ( i * 8 ) ) & 0xff;
+        len += 1;
+    }
 
     if( val > 0 && **p & 0x80 )
     {
@@ -249,6 +252,16 @@ int mbedtls_asn1_write_int( unsigned char **p, unsigned char *start, int val )
 
         *--(*p) = 0x00;
         len += 1;
+    }
+
+    for( i = 0; i < sizeof(int) ; i++ )
+    {
+       if( mbedtls_check_shortest_asn1_integer( *p, len ) == 0 )
+       {
+           break;
+       }
+       ++(*p);
+       len -= 1;
     }
 
     MBEDTLS_ASN1_CHK_ADD( len, mbedtls_asn1_write_len( p, start, len ) );
