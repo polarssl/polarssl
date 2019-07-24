@@ -39,62 +39,107 @@ exit:
 }
 /* END_CASE */
 
-/* BEGIN_CASE */
+/* BEGIN_CASE depends_on:MBEDTLS_CHECK_PARAMS:!MBEDTLS_PARAM_FAILED_ALT */
 void md_null_args(  )
 {
     mbedtls_md_context_t ctx;
+    mbedtls_md_context_t good_ctx;
     const mbedtls_md_info_t *info = mbedtls_md_info_from_type( *( mbedtls_md_list() ) );
     unsigned char buf[1] = { 0 };
 
     mbedtls_md_init( &ctx );
+    mbedtls_md_init( &good_ctx );
+    TEST_ASSERT( 0 == mbedtls_md_setup( &good_ctx, info, 0 ) );
+	
+    TEST_INVALID_PARAM_RET( 0,
+                            mbedtls_md_get_size( NULL ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_MD_NONE,
+                            mbedtls_md_get_type( NULL ) );
+    TEST_INVALID_PARAM_RET( NULL,
+                            mbedtls_md_get_name( NULL ) );
 
-    TEST_ASSERT( mbedtls_md_get_size( NULL ) == 0 );
-    TEST_ASSERT( mbedtls_md_get_type( NULL ) == MBEDTLS_MD_NONE );
-    TEST_ASSERT( mbedtls_md_get_name( NULL ) == NULL );
+    TEST_INVALID_PARAM_RET( NULL,
+                            mbedtls_md_info_from_string( NULL ) );
 
-    TEST_ASSERT( mbedtls_md_info_from_string( NULL ) == NULL );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_setup( &ctx, NULL, 0 ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_setup( NULL, info, 0 ) );
 
-    TEST_ASSERT( mbedtls_md_setup( &ctx, NULL, 0 ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_setup( NULL, info, 0 ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_starts( NULL ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_starts( &ctx ) );
 
-    TEST_ASSERT( mbedtls_md_starts( NULL ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_starts( &ctx ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_update( NULL, buf, 1 ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_update( &ctx, buf, 1 ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_update( &good_ctx, NULL, 1 ) );
 
-    TEST_ASSERT( mbedtls_md_update( NULL, buf, 1 ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_update( &ctx, buf, 1 ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_finish( NULL, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_finish( &ctx, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_finish( &ctx, NULL ) );
 
-    TEST_ASSERT( mbedtls_md_finish( NULL, buf ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_finish( &ctx, buf ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-
-    TEST_ASSERT( mbedtls_md( NULL, buf, 1, buf ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md( NULL, buf, 1, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md( info, NULL, 1, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md( info, buf, 1, NULL ) );
 
 #if defined(MBEDTLS_FS_IO)
-    TEST_ASSERT( mbedtls_md_file( NULL, "", buf ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_file( NULL, "", buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_file( info, NULL, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_file( info, "", NULL ) );
 #endif
 
-    TEST_ASSERT( mbedtls_md_hmac_starts( NULL, buf, 1 )
-                 == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_hmac_starts( &ctx, buf, 1 )
-                 == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_starts( NULL, buf, 1 ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_starts( &ctx, buf, 1 ) );
 
-    TEST_ASSERT( mbedtls_md_hmac_update( NULL, buf, 1 )
-                 == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_hmac_update( &ctx, buf, 1 )
-                 == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_update( NULL, buf, 1 ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_update( &ctx, buf, 1 ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_update( &good_ctx, NULL, 1 ) );
 
-    TEST_ASSERT( mbedtls_md_hmac_finish( NULL, buf )
-                 == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_hmac_finish( &ctx, buf )
-                 == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_finish( NULL, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_finish( &ctx, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_finish( &ctx, NULL ) );
 
-    TEST_ASSERT( mbedtls_md_hmac_reset( NULL ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_hmac_reset( &ctx ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_reset( NULL ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac_reset( &ctx ) );
 
-    TEST_ASSERT( mbedtls_md_hmac( NULL, buf, 1, buf, 1, buf )
-                 == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-
-    TEST_ASSERT( mbedtls_md_process( NULL, buf ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
-    TEST_ASSERT( mbedtls_md_process( &ctx, buf ) == MBEDTLS_ERR_MD_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac( NULL, buf, 1, buf, 1, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac( info, NULL, 1, buf, 1, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac( info, buf, 1, NULL, 1, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_hmac( info, buf, 1, buf, 1, NULL ) );
+                            
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_process( NULL, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_process( &ctx, buf ) );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_MD_BAD_INPUT_DATA,
+                            mbedtls_md_process( &good_ctx, NULL ) );
 
     /* Ok, this is not NULL arg but NULL return... */
     TEST_ASSERT( mbedtls_md_info_from_type( MBEDTLS_MD_NONE ) == NULL );
