@@ -234,6 +234,7 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx,
     size_t use_len;
     unsigned char *out_p = output;
     unsigned char counter[4];
+    mbedtls_md_context_t init_ctx;
 
     memset( counter, 0, 4 );
     counter[3] = 1;
@@ -243,21 +244,35 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx,
         return( MBEDTLS_ERR_PKCS5_BAD_INPUT_DATA );
 #endif
 
+    if( ( ret = mbedtls_md_hmac_starts( ctx, password, plen ) ) != 0 )
+        return( ret );
+
+    /* Copy the initial digest state to init_ctx for reuse later.  This
+     * avoids the rehashing of password if it larger than the digest block
+     * size and the recomputation of the digest across the HMAC input pad
+     * for every iteration. */
+    mbedtls_md_init( &init_ctx );
+    if( ( ret = mbedtls_md_setup( &init_ctx, ctx->md_info, 0 ) ) != 0 )
+        return( ret );
+
+    if( ( ret = mbedtls_md_clone( &init_ctx, ctx ) ) != 0 )
+        goto out_init_ctx;
+
     while( key_length )
     {
         // U1 ends up in work
         //
-        if( ( ret = mbedtls_md_hmac_starts( ctx, password, plen ) ) != 0 )
-            return( ret );
+        if( ( ret = mbedtls_md_clone( ctx, &init_ctx ) ) != 0 )
+            goto out_init_ctx;
 
         if( ( ret = mbedtls_md_hmac_update( ctx, salt, slen ) ) != 0 )
-            return( ret );
+            goto out_init_ctx;
 
         if( ( ret = mbedtls_md_hmac_update( ctx, counter, 4 ) ) != 0 )
-            return( ret );
+            goto out_init_ctx;
 
         if( ( ret = mbedtls_md_hmac_finish( ctx, work ) ) != 0 )
-            return( ret );
+            goto out_init_ctx;
 
         memcpy( md1, work, md_size );
 
@@ -265,14 +280,14 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx,
         {
             // U2 ends up in md1
             //
-            if( ( ret = mbedtls_md_hmac_starts( ctx, password, plen ) ) != 0 )
-                return( ret );
+            if( ( ret = mbedtls_md_clone( ctx, &init_ctx ) ) != 0 )
+                goto out_init_ctx;
 
             if( ( ret = mbedtls_md_hmac_update( ctx, md1, md_size ) ) != 0 )
-                return( ret );
+                goto out_init_ctx;
 
             if( ( ret = mbedtls_md_hmac_finish( ctx, md1 ) ) != 0 )
-                return( ret );
+                goto out_init_ctx;
 
             // U1 xor U2
             //
@@ -291,7 +306,10 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx,
                 break;
     }
 
-    return( 0 );
+out_init_ctx:
+    mbedtls_md_free( &init_ctx );
+
+    return( ret );
 }
 
 #if defined(MBEDTLS_SELF_TEST)
