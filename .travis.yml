@@ -1,8 +1,6 @@
+os: linux
+dist: xenial
 language: c
-compiler:
-- clang
-- gcc
-sudo: false
 cache: ccache
 
 # blocklist
@@ -11,22 +9,194 @@ branches:
   - development-psa
   - coverity_scan
 
+install:
+# Install openssl 1.0.2g
+- wget -q https://www.openssl.org/source/old/1.0.2/openssl-1.0.2g.tar.gz
+- tar xf openssl-1.0.2g.tar.gz
+- pushd openssl-1.0.2g && ./config --openssldir=/usr/local/openssl-1.0.2g && make && sudo make install && popd
+- rm -rf openssl-1.0.2g*
+- export OPENSSL=/usr/local/openssl-1.0.2g/bin/openssl
+- export PATH=/usr/local/openssl-1.0.2g/bin:$PATH
+# Install openssl 1.0.1j for legacy testing
+- wget -q https://www.openssl.org/source/old/1.0.1/openssl-1.0.1j.tar.gz
+- tar xf openssl-1.0.1j.tar.gz
+- pushd openssl-1.0.1j && ./config --openssldir=/usr/local/openssl-1.0.1j && make && sudo make install && popd
+- rm -rf openssl-1.0.1j*
+- export OPENSSL_LEGACY=/usr/local/openssl-1.0.1j/bin/openssl
+- export PATH=/usr/local/openssl-1.0.1j/bin:$PATH
+# Install openssl 1.1.1a for ARIA cipher testing
+- wget -q https://www.openssl.org/source/openssl-1.1.1a.tar.gz
+- tar xf openssl-1.1.1a.tar.gz
+- pushd openssl-1.1.1a && ./config --prefix=/usr/local/openssl-1.1.1a -Wl,--enable-new-dtags,-rpath,'$(LIBRPATH)' && make && sudo make install && popd
+- rm -rf openssl-1.1.1a*
+- export OPENSSL_NEXT=/usr/local/openssl-1.1.1a/bin/openssl
+- export PATH=/usr/local/openssl-1.1.1a/bin:$PATH
+# Install Gnu TLS 3.4.10
+- wget -q https://ftp.gnu.org/gnu/nettle/nettle-3.1.tar.gz
+- tar xf nettle-3.1.tar.gz
+- pushd nettle-3.1 && ./configure --prefix=/usr/local/libnettle-3.1 --exec_prefix=/usr/local/libnettle-3.1 --disable-shared && make && sudo make install && popd
+- rm -rf nettle-3.1*
+- export PKG_CONFIG_PATH=/usr/local/libnettle-3.1/lib/pkgconfig:/usr/local/libnettle-3.1/lib64/pkgconfig:/usr/local/lib/pkgconfig
+- wget -q https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.3.tar.gz
+- tar xf libtasn1-4.3.tar.gz
+- pushd libtasn1-4.3 && ./configure && make && sudo make install && popd
+- rm -rf libtasn1-4.3*
+- wget -q https://github.com/p11-glue/p11-kit/releases/download/0.23.10/p11-kit-0.23.10.tar.gz
+- tar xf p11-kit-0.23.10.tar.gz
+- pushd p11-kit-0.23.10 && ./configure --prefix=/usr/local/libp11-kit-0.23.10 && make && sudo make install && popd
+- rm -rf p11-kit-0.23.10*
+- export PKG_CONFIG_PATH=/usr/local/lib/libp11-kit-0.23.10/lib/pkgconfig:/usr/local/lib/libp11-kit-0.23.10/lib64/pkgconfig:$PKG_CONFIG_PATH
+- wget -q https://www.gnupg.org/ftp/gcrypt/gnutls/v3.4/gnutls-3.4.10.tar.xz
+- tar xf gnutls-3.4.10.tar.xz
+- pushd gnutls-3.4.10 && ./configure --prefix=/usr/local/gnutls-3.4.10 --exec_prefix=/usr/local/gnutls-3.4.10 --disable-shared && make && sudo make install && popd
+- rm -rf gnutls-3.4.10*
+- export GNUTLS_CLI=/usr/local/gnutls-3.4.10/bin/gnutls-cli
+- export GNUTLS_SERV=/usr/local/gnutls-3.4.10/bin/gnutls-serv
+- export PATH=/usr/local/gnutls-3.4.10/bin:$PATH
+# Install Gnu TLS 3.3.8 for legacy testing
+- wget -q https://ftp.gnu.org/gnu/nettle/nettle-2.7.1.tar.gz
+- tar xf nettle-2.7.1.tar.gz
+- pushd nettle-2.7.1 && ./configure --prefix=/usr/local/libnettle-2.7.1 --exec_prefix=/usr/local/libnettle-2.7.1 --disable-shared && make && sudo make install && popd
+- rm -rf nettle-2.7.1*
+- export PKG_CONFIG_PATH=/usr/local/libnettle-2.7.1/lib/pkgconfig:/usr/local/libnettle-2.7.1/lib64/pkgconfig:/usr/local/lib/pkgconfig
+- wget -q https://www.gnupg.org/ftp/gcrypt/gnutls/v3.3/gnutls-3.3.8.tar.xz
+- tar xf gnutls-3.3.8.tar.xz
+- pushd gnutls-3.3.8 && ./configure --prefix=/usr/local/gnutls-3.3.8 --exec_prefix=/usr/local/gnutls-3.3.8 --disable-shared && make && sudo make install && popd
+- rm -rf gnutls-3.3.8*
+- export GNUTLS_LEGACY_CLI=/usr/local/gnutls-3.3.8/bin/gnutls-cli
+- export GNUTLS_LEGACY_SERV=/usr/local/gnutls-3.3.8/bin/gnutls-serv
+# Install GNU TLS 3.6.5 for broader interoperability testing
+- wget -q https://ftp.gnu.org/gnu/nettle/nettle-3.4.1.tar.gz
+- tar xf nettle-3.4.1.tar.gz
+- pushd nettle-3.4.1 && ./configure --prefix=/usr/local/libnettle-3.4.1 --exec_prefix=/usr/local/libnettle-3.4.1 --disable-shared && make && sudo make install && popd
+- rm -rf nettle-3.4.1*
+- wget -q https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.9.tar.gz
+- tar xf libtasn1-4.9.tar.gz
+- pushd libtasn1-4.9 && ./configure && make && sudo make install && popd
+- rm -rf libtasn1-4.9*
+- export PKG_CONFIG_PATH=/usr/local/libnettle-3.4.1/lib/pkgconfig:/usr/local/libnettle-3.4.1/lib64/pkgconfig:/usr/local/lib/pkgconfig
+- wget -q https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.5.tar.xz
+- tar xf gnutls-3.6.5.tar.xz
+- pushd gnutls-3.6.5 && ./configure --prefix=/usr/local/gnutls-3.6.5 --exec_prefix=/usr/local/gnutls-3.6.5 --disable-shared && make && sudo make install && popd
+- rm -rf gnutls-3.6.5*
+- export GNUTLS_NEXT_CLI=/usr/local/gnutls-3.6.5/bin/gnutls-cli
+- export GNUTLS_NEXT_SERV=/usr/local/gnutls-3.6.5/bin/gnutls-serv
+
+# Very fragile list of all.sh components. May want to autogenerate this.
+matrix:
+  include:
+  - name: "check_recursion"
+    env: COMPONENT=check_recursion
+  - name: "check_generated_files"
+    env: COMPONENT=check_generated_files
+  - name: "check_doxy_blocks"
+    env: COMPONENT=check_doxy_blocks
+  - name: "check_files"
+    env: COMPONENT=check_files
+  - name: "check_names"
+    env: COMPONENT=check_names
+  - name: "check_doxygen_warnings"
+    env: COMPONENT=check_doxygen_warnings
+  - name: "test_default_out_of_box"
+    env: COMPONENT=test_default_out_of_box
+  - name: "test_default_cmake_gcc_asan"
+    env: COMPONENT=test_default_cmake_gcc_asan
+  - name: "test_ref_configs"
+    env: COMPONENT=test_ref_configs
+  - name: "test_sslv3"
+    env: COMPONENT=test_sslv3
+  - name: "test_no_renegotiation"
+    env: COMPONENT=test_no_renegotiation
+  - name: "test_no_pem_no_fs"
+    env: COMPONENT=test_no_pem_no_fs
+  - name: "test_rsa_no_crt"
+    env: COMPONENT=test_rsa_no_crt
+  - name: "test_small_ssl_out_content_len"
+    env: COMPONENT=test_small_ssl_out_content_len
+  - name: "test_small_ssl_in_content_len"
+    env: COMPONENT=test_small_ssl_in_content_len
+  - name: "test_small_ssl_dtls_max_buffering"
+    env: COMPONENT=test_small_ssl_dtls_max_buffering
+  - name: "test_small_mbedtls_ssl_dtls_max_buffering"
+    env: COMPONENT=test_small_mbedtls_ssl_dtls_max_buffering
+  - name: "test_full_cmake_clang"
+    env: COMPONENT=test_full_cmake_clang
+  - name: "build_deprecated"
+    env: COMPONENT=build_deprecated
+  - name: "test_depends_curves"
+    env: COMPONENT=test_depends_curves
+  - name: "test_depends_hashes"
+    env: COMPONENT=test_depends_hashes
+  - name: "test_depends_pkalgs"
+    env: COMPONENT=test_depends_pkalgs
+  - name: "build_key_exchanges"
+    env: COMPONENT=build_key_exchanges
+  - name: "build_default_make_gcc_and_cxx"
+    env: COMPONENT=build_default_make_gcc_and_cxx
+  - name: "test_no_use_psa_crypto_full_cmake_asan"
+    env: COMPONENT=test_no_use_psa_crypto_full_cmake_asan
+  - name: "test_check_params_functionality"
+    env: COMPONENT=test_check_params_functionality
+  - name: "test_check_params_without_platform"
+    env: COMPONENT=test_check_params_without_platform
+  - name: "test_check_params_silent"
+    env: COMPONENT=test_check_params_silent
+  - name: "test_no_platform"
+    env: COMPONENT=test_no_platform
+  - name: "build_no_std_function"
+    env: COMPONENT=build_no_std_function
+  - name: "build_no_ssl_srv"
+    env: COMPONENT=build_no_ssl_srv
+  - name: "build_no_ssl_cli"
+    env: COMPONENT=build_no_ssl_cli
+  - name: "build_no_sockets"
+    env: COMPONENT=build_no_sockets
+  - name: "test_no_max_fragment_length"
+    env: COMPONENT=test_no_max_fragment_length
+  - name: "test_asan_remove_peer_certificate"
+    env: COMPONENT=test_asan_remove_peer_certificate
+  - name: "test_no_max_fragment_length_small_ssl_out_content_len"
+    env: COMPONENT=test_no_max_fragment_length_small_ssl_out_content_len
+  - name: "test_when_no_ciphersuites_have_mac"
+    env: COMPONENT=test_when_no_ciphersuites_have_mac
+  - name: "test_null_entropy"
+    env: COMPONENT=test_null_entropy
+  - name: "test_platform_calloc_macro"
+    env: COMPONENT=test_platform_calloc_macro
+  - name: "test_make_shared"
+    env: COMPONENT=test_make_shared
+  - name: "test_m32_o0"
+    env: COMPONENT=test_m32_o0
+  - name: "test_m32_o1"
+    env: COMPONENT=test_m32_o1
+  - name: "test_mx32"
+    env: COMPONENT=test_mx32
+  - name: "build_arm_none_eabi_gcc"
+    env: COMPONENT=build_arm_none_eabi_gcc
+  - name: "build_arm_none_eabi_gcc_no_udbl_division"
+    env: COMPONENT=build_arm_none_eabi_gcc_no_udbl_division
+  - name: "build_arm_none_eabi_gcc_no_64bit_multiplication"
+    env: COMPONENT=build_arm_none_eabi_gcc_no_64bit_multiplication
+  - name: "build_armcc"
+    env: COMPONENT=build_armcc
+  - name: "test_allow_sha1"
+    env: COMPONENT=test_allow_sha1
+  - name: "build_mingw"
+    env: COMPONENT=build_mingw
+  - name: "test_memsan"
+    env: COMPONENT=test_memsan
+  - name: "test_valgrind"
+    env: COMPONENT=test_valgrind
+  - name: "test_cmake_out_of_source"
+    env: COMPONENT=test_cmake_out_of_source
+  - name: "test_zeroize"
+    env: COMPONENT=test_zeroize
+  - name: "check_python_files"
+    env: COMPONENT=check_python_files
+  - name: "check_generate_test_code"
+    env: COMPONENT=check_generate_test_code
 script:
-- tests/scripts/recursion.pl library/*.c
-- tests/scripts/check-generated-files.sh
-- tests/scripts/check-doxy-blocks.pl
-- tests/scripts/check-names.sh
-- tests/scripts/check-files.py
-- tests/scripts/doxygen.sh
-- cmake -D CMAKE_BUILD_TYPE:String="Check" .
-- make
-- make test
-- programs/test/selftest
-- OSSL_NO_DTLS=1 tests/compat.sh
-- tests/ssl-opt.sh -e '\(DTLS\|SCSV\).*openssl'
-- tests/scripts/test-ref-configs.pl
-- tests/scripts/curves.pl
-- tests/scripts/key-exchanges.pl
+- tests/scripts/all.sh --release-test --no-armcc $COMPONENT
 after_failure:
 - tests/scripts/travis-log-failure.sh
 env:
@@ -37,8 +207,20 @@ env:
 addons:
   apt:
     packages:
+    - clang
     - doxygen
+    - gcc-mingw-w64-i686
+    - gcc-multilib
     - graphviz
+    - libgmp-dev
+    - libgmp10
+    - libp11-kit-dev
+    - libunistring-dev
+    - m4
+    - p11-kit
+    - pkg-config
+    - valgrind
+    - wget
   coverity_scan:
     project:
       name: "ARMmbed/mbedtls"
