@@ -1,5 +1,13 @@
 mbed TLS ChangeLog (Sorted per branch, date)
 
+= mbed TLS x.xx.x branch released xxxx-xx-xx
+
+Bugfix
+   * Fix parsing of X.509 SubjectAlternativeName extension. Previously,
+     malformed alternative name components were not caught during initial
+     certificate parsing, but only on subsequent calls to
+     mbedtls_x509_parse_subject_alt_name(). Fixes #2838.
+
 = mbed TLS 2.19.0 branch released 2019-09-06
 
 Security
