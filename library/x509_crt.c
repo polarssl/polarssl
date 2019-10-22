@@ -2954,22 +2954,158 @@ find_parent:
 }
 
 /*
+ * parse ipv4 address from canonical string form into bytes.
+ * return 1 if success, 0 otherwise (consistent with inet_pton)
+ */
+static int parse_ipv4( const char *h, char *addr )
+{
+    unsigned char ip[4];
+    int i;
+    const char *strt = h;
+    char *endp;
+    unsigned long v;
+    for( i = 0; i < 4; i++ )
+    {
+        v = strtoul( strt, &endp, 10 );
+        if( endp == strt || v > 255 )
+        {
+            return ( 0 );
+        }
+
+        if( i < 3 && *endp != '.' )
+        {
+            return ( 0 );
+        }
+        ip[i] = v & (unsigned char)0xFF;
+        strt = endp + 1;
+    }
+
+    memcpy( addr, ip, sizeof( ip ) );
+    return ( 1 );
+}
+
+/*
+ * parse ipv6 address from canonical string form into bytes.
+ * return 1 if success, 0 otherwise (consistent with inet_pton)
+ */
+static int parse_ipv6( const char *h, size_t hlen, char *addr )
+{
+    const char *hend = h + hlen;
+    unsigned char ip[16];
+    const char *strt = h;
+    char *endp = (char*)strt;
+    unsigned char *colonp = NULL;
+    unsigned char *ipp = ip;
+    unsigned long v;
+
+    /* can only start with double colon when network part is all zeros */
+    if( *strt == ':' )
+    {
+        strt++;
+        if (*strt != ':' ) {
+            return ( 0 );
+        }
+    }
+
+    while( endp < hend )
+    {
+        /* ended with a single colon */
+        if( strt == hend )
+        {
+            return ( 0 );
+        }
+
+        if( *strt == ':')
+        {
+            if( colonp )
+            {
+                return ( 0 );
+            }
+            colonp = ipp;
+            strt++;
+        }
+        v = strtoul( strt, &endp, 16 );
+        if( v > 0xFFFF)
+        {
+            return ( 0 );
+        }
+        *ipp++ = (v >> 8) & (unsigned char)0xFF;
+        *ipp++ = v & (unsigned char)0xFF;
+
+        if( *endp == ':' )
+        {
+            strt = endp + 1;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    /* not enough digits without shorthand */
+    if( colonp == NULL && ipp < ip + sizeof( ip ) )
+    {
+        return ( 0 );
+    }
+
+    /* did not consume the whole address */
+    if( endp != hend )
+    {
+        return ( 0 );
+    }
+
+    memset( addr, 0, sizeof( ip ) );
+    if( colonp )
+    {
+        memcpy( addr, ip, colonp - ip );
+        memcpy( addr + 16 - (ipp - colonp), colonp, ipp - colonp );
+    }
+    else
+    {
+        memcpy( addr, ip, sizeof( ip ) );
+    }
+    return ( 1 );
+}
+/*
  * Check for CN match
  */
 static int x509_crt_check_cn( const mbedtls_x509_buf *name,
                               const char *cn, size_t cn_len )
 {
-    /* try exact match */
-    if( name->len == cn_len &&
-        x509_memcasecmp( cn, name->p, cn_len ) == 0 )
-    {
-        return( 0 );
-    }
+    int san_type = name->tag & 0x1f; /* last 5 bits */
 
-    /* try wildcard match */
-    if( x509_check_wildcard( cn, name ) == 0 )
+    if( san_type == MBEDTLS_X509_SAN_IP_ADDRESS )
     {
-        return( 0 );
+        char ipv4[4];
+        char ipv6[16];
+
+        if( name->len == 4 &&
+            parse_ipv4( cn, ipv4 ) == 1 &&
+            memcmp( &ipv4, name->p, name->len ) == 0 )
+        {
+            return( 0 );
+        }
+        else if( name->len == 16 &&
+                 parse_ipv6( cn, cn_len, ipv6 ) == 1 &&
+                 memcmp( ipv6, name->p, name->len ) == 0 )
+        {
+            return( 0 );
+        }
+    }
+    else
+    {
+        /* try exact match */
+        if( name->len == cn_len &&
+            x509_memcasecmp( cn, name->p, cn_len ) == 0 )
+        {
+            return( 0 );
+        }
+
+        /* try wildcard match */
+        if( x509_check_wildcard( cn, name ) == 0 )
+        {
+            return( 0 );
+        }
     }
 
     return( -1 );
