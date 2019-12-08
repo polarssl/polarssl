@@ -413,6 +413,10 @@ API Changes
      report errors whereas the old functions return void. We recommend that
      applications use the new functions.
 
+Changes
+   * Skip test and benchmark application in case the returned error is
+     MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
+
 = mbed TLS 2.14.0 branch released 2018-11-19
 
 Security

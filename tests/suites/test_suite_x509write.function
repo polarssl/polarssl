@@ -88,7 +88,6 @@ void x509_csr_check( char * key_file, char * cert_req_check_file, int md_type,
     mbedtls_x509write_csr req;
     unsigned char buf[4096];
     unsigned char check_buf[4000];
-    int ret;
     size_t olen = 0, pem_len = 0;
     int der_len = -1;
     FILE *f;
@@ -98,20 +97,19 @@ void x509_csr_check( char * key_file, char * cert_req_check_file, int md_type,
     memset( &rnd_info, 0x2a, sizeof( rnd_pseudo_info ) );
 
     mbedtls_pk_init( &key );
-    TEST_ASSERT( mbedtls_pk_parse_keyfile( &key, key_file, NULL ) == 0 );
+    TEST_ASSERT_RET( mbedtls_pk_parse_keyfile( &key, key_file, NULL ), 0 );
 
     mbedtls_x509write_csr_init( &req );
     mbedtls_x509write_csr_set_md_alg( &req, md_type );
     mbedtls_x509write_csr_set_key( &req, &key );
-    TEST_ASSERT( mbedtls_x509write_csr_set_subject_name( &req, subject_name ) == 0 );
+    TEST_ASSERT_RET( mbedtls_x509write_csr_set_subject_name( &req, subject_name ), 0 );
     if( set_key_usage != 0 )
-        TEST_ASSERT( mbedtls_x509write_csr_set_key_usage( &req, key_usage ) == 0 );
+        TEST_ASSERT_RET( mbedtls_x509write_csr_set_key_usage( &req, key_usage ), 0 );
     if( set_cert_type != 0 )
-        TEST_ASSERT( mbedtls_x509write_csr_set_ns_cert_type( &req, cert_type ) == 0 );
+        TEST_ASSERT_RET( mbedtls_x509write_csr_set_ns_cert_type( &req, cert_type ), 0 );
 
-    ret = mbedtls_x509write_csr_pem( &req, buf, sizeof( buf ),
-                             rnd_pseudo_rand, &rnd_info );
-    TEST_ASSERT( ret == 0 );
+    TEST_ASSERT_RET( mbedtls_x509write_csr_pem( &req, buf, sizeof( buf ),
+                                                rnd_pseudo_rand, &rnd_info ), 0 );
 
     pem_len = strlen( (char *) buf );
 
@@ -130,9 +128,9 @@ void x509_csr_check( char * key_file, char * cert_req_check_file, int md_type,
     if( der_len == 0 )
         goto exit;
 
-    ret = mbedtls_x509write_csr_der( &req, buf, (size_t)( der_len - 1 ),
-                            rnd_pseudo_rand, &rnd_info );
-    TEST_ASSERT( ret == MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+    TEST_ASSERT_RET( mbedtls_x509write_csr_der( &req, buf, (size_t)( der_len - 1 ),
+                                                rnd_pseudo_rand, &rnd_info ),
+                                                MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
 exit:
     mbedtls_x509write_csr_free( &req );
@@ -203,7 +201,6 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
     unsigned char buf[4096];
     unsigned char check_buf[5000];
     mbedtls_mpi serial;
-    int ret;
     size_t olen = 0, pem_len = 0;
     int der_len = -1;
     FILE *f;
@@ -218,21 +215,21 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
 
     mbedtls_x509write_crt_init( &crt );
 
-    TEST_ASSERT( mbedtls_pk_parse_keyfile( &subject_key, subject_key_file,
-                                         subject_pwd ) == 0 );
+    TEST_ASSERT_RET( mbedtls_pk_parse_keyfile( &subject_key, subject_key_file,
+                                         subject_pwd ), 0 );
 
-    TEST_ASSERT( mbedtls_pk_parse_keyfile( &issuer_key, issuer_key_file,
-                                         issuer_pwd ) == 0 );
+    TEST_ASSERT_RET( mbedtls_pk_parse_keyfile( &issuer_key, issuer_key_file,
+                                         issuer_pwd ), 0 );
 
 #if defined(MBEDTLS_RSA_C)
     /* For RSA PK contexts, create a copy as an alternative RSA context. */
     if( rsa_alt == 1 && mbedtls_pk_get_type( &issuer_key ) == MBEDTLS_PK_RSA )
     {
-        TEST_ASSERT( mbedtls_pk_setup_rsa_alt( &issuer_key_alt,
-                                            mbedtls_pk_rsa( issuer_key ),
-                                            mbedtls_rsa_decrypt_func,
-                                            mbedtls_rsa_sign_func,
-                                            mbedtls_rsa_key_len_func ) == 0 );
+        TEST_ASSERT_RET( mbedtls_pk_setup_rsa_alt( &issuer_key_alt,
+                                                   mbedtls_pk_rsa( issuer_key ),
+                                                   mbedtls_rsa_decrypt_func,
+                                                   mbedtls_rsa_sign_func,
+                                                   mbedtls_rsa_key_len_func ), 0 );
 
         key = &issuer_key_alt;
     }
@@ -240,36 +237,35 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
     (void) rsa_alt;
 #endif
 
-    TEST_ASSERT( mbedtls_mpi_read_string( &serial, 10, serial_str ) == 0 );
+    TEST_ASSERT_RET( mbedtls_mpi_read_string( &serial, 10, serial_str ), 0 );
 
     if( ver != -1 )
         mbedtls_x509write_crt_set_version( &crt, ver );
 
-    TEST_ASSERT( mbedtls_x509write_crt_set_serial( &crt, &serial ) == 0 );
-    TEST_ASSERT( mbedtls_x509write_crt_set_validity( &crt, not_before,
-                                                     not_after ) == 0 );
+    TEST_ASSERT_RET( mbedtls_x509write_crt_set_serial( &crt, &serial ), 0 );
+    TEST_ASSERT_RET( mbedtls_x509write_crt_set_validity( &crt, not_before,
+                                                         not_after ), 0 );
     mbedtls_x509write_crt_set_md_alg( &crt, md_type );
-    TEST_ASSERT( mbedtls_x509write_crt_set_issuer_name( &crt, issuer_name ) == 0 );
-    TEST_ASSERT( mbedtls_x509write_crt_set_subject_name( &crt, subject_name ) == 0 );
+    TEST_ASSERT_RET( mbedtls_x509write_crt_set_issuer_name( &crt, issuer_name ), 0 );
+    TEST_ASSERT_RET( mbedtls_x509write_crt_set_subject_name( &crt, subject_name ), 0 );
     mbedtls_x509write_crt_set_subject_key( &crt, &subject_key );
 
     mbedtls_x509write_crt_set_issuer_key( &crt, key );
 
     if( crt.version >= MBEDTLS_X509_CRT_VERSION_3 )
     {
-        TEST_ASSERT( mbedtls_x509write_crt_set_basic_constraints( &crt, 0, 0 ) == 0 );
-        TEST_ASSERT( mbedtls_x509write_crt_set_subject_key_identifier( &crt ) == 0 );
+        TEST_ASSERT_RET( mbedtls_x509write_crt_set_basic_constraints( &crt, 0, 0 ), 0 );
+        TEST_ASSERT_RET( mbedtls_x509write_crt_set_subject_key_identifier( &crt ), 0 );
         if( auth_ident )
-            TEST_ASSERT( mbedtls_x509write_crt_set_authority_key_identifier( &crt ) == 0 );
+            TEST_ASSERT_RET( mbedtls_x509write_crt_set_authority_key_identifier( &crt ), 0 );
         if( set_key_usage != 0 )
-            TEST_ASSERT( mbedtls_x509write_crt_set_key_usage( &crt, key_usage ) == 0 );
+            TEST_ASSERT_RET( mbedtls_x509write_crt_set_key_usage( &crt, key_usage ), 0 );
         if( set_cert_type != 0 )
-            TEST_ASSERT( mbedtls_x509write_crt_set_ns_cert_type( &crt, cert_type ) == 0 );
+            TEST_ASSERT_RET( mbedtls_x509write_crt_set_ns_cert_type( &crt, cert_type ), 0 );
     }
 
-    ret = mbedtls_x509write_crt_pem( &crt, buf, sizeof( buf ),
-                                     rnd_pseudo_rand, &rnd_info );
-    TEST_ASSERT( ret == 0 );
+    TEST_ASSERT_RET( mbedtls_x509write_crt_pem( &crt, buf, sizeof( buf ),
+                                                rnd_pseudo_rand, &rnd_info ), 0 );
 
     pem_len = strlen( (char *) buf );
 
@@ -284,14 +280,17 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
 
     der_len = mbedtls_x509write_crt_der( &crt, buf, sizeof( buf ),
                                          rnd_pseudo_rand, &rnd_info );
-    TEST_ASSERT( der_len >= 0 );
+    if( der_len == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )
+    {
+        goto exit;
+    }
 
     if( der_len == 0 )
         goto exit;
 
-    ret = mbedtls_x509write_crt_der( &crt, buf, (size_t)( der_len - 1 ),
-                                     rnd_pseudo_rand, &rnd_info );
-    TEST_ASSERT( ret == MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+    TEST_ASSERT_RET( mbedtls_x509write_crt_der( &crt, buf, (size_t)( der_len - 1 ),
+                                                rnd_pseudo_rand, &rnd_info ),
+                                                MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
 exit:
     mbedtls_x509write_crt_free( &crt );

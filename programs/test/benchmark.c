@@ -118,7 +118,6 @@ int main( void )
 #define TIME_AND_TSC( TITLE, CODE )                                     \
 do {                                                                    \
     unsigned long ii, jj, tsc;                                          \
-    int ret = 0;                                                        \
                                                                         \
     mbedtls_printf( HEADER_FORMAT, TITLE );                             \
     fflush( stdout );                                                   \
@@ -135,7 +134,12 @@ do {                                                                    \
         ret = CODE;                                                     \
     }                                                                   \
                                                                         \
-    if( ret != 0 )                                                      \
+    if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )               \
+    {                                                                   \
+        mbedtls_printf( "Feature not supported. Skipping.\n" );         \
+        ret = 0;                                                        \
+    }                                                                   \
+    else if( ret != 0 )                                                 \
     {                                                                   \
         PRINT_ERROR;                                                    \
     }                                                                   \
@@ -172,7 +176,6 @@ do {                                                                    \
 #define TIME_PUBLIC( TITLE, TYPE, CODE )                                \
 do {                                                                    \
     unsigned long ii;                                                   \
-    int ret;                                                            \
     MEMORY_MEASURE_INIT;                                                \
                                                                         \
     mbedtls_printf( HEADER_FORMAT, TITLE );                             \
@@ -202,6 +205,23 @@ do {                                                                    \
     }                                                                   \
 } while( 0 )
 
+#define SET_KEY_ENC( MODULE, CTX, KEYSIZE )                             \
+        ret = mbedtls_##MODULE##_setkey_enc( CTX, tmp, KEYSIZE );       \
+        if( ret != 0 )                                                  \
+        {                                                               \
+            mbedtls_printf( HEADER_FORMAT, title );                     \
+            if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )       \
+            {                                                           \
+                mbedtls_printf( "Feature not supported. Skipping.\n" ); \
+                ret = 0;                                                \
+            }                                                           \
+            else                                                        \
+            {                                                           \
+                PRINT_ERROR;                                            \
+            }                                                           \
+            continue;                                                   \
+        }                                                               \
+
 static int myrand( void *rng_state, unsigned char *output, size_t len )
 {
     size_t use_len;
@@ -229,14 +249,30 @@ static int myrand( void *rng_state, unsigned char *output, size_t len )
     {                                                                   \
         int CHECK_AND_CONTINUE_ret = ( R );                             \
         if( CHECK_AND_CONTINUE_ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED ) { \
+            mbedtls_printf( HEADER_FORMAT, title );                     \
             mbedtls_printf( "Feature not supported. Skipping.\n" );     \
             continue;                                                   \
         }                                                               \
         else if( CHECK_AND_CONTINUE_ret != 0 ) {                        \
+            mbedtls_printf( HEADER_FORMAT, title );                     \
+            PRINT_ERROR                                                 \
             mbedtls_exit( 1 );                                          \
         }                                                               \
     }
 
+#define CHECK_AND_BREAK( R )                                            \
+    {                                                                   \
+        int CHECK_AND_CONTINUE_ret = ( R );                             \
+        if( CHECK_AND_CONTINUE_ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED ) { \
+            ret = MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;             \
+            break;                                                      \
+        }                                                               \
+        else if( CHECK_AND_CONTINUE_ret != 0 ) {                        \
+            mbedtls_printf( HEADER_FORMAT, title );                     \
+            PRINT_ERROR                                                 \
+            mbedtls_exit( 1 );                                          \
+        }                                                               \
+    }
 /*
  * Clear some memory that was used to prepare the context
  */
@@ -273,7 +309,7 @@ typedef struct {
 
 int main( int argc, char *argv[] )
 {
-    int i;
+    int i, ret = 0;
     unsigned char tmp[200];
     char title[TITLE_LEN];
     todo_list todo;
@@ -410,9 +446,27 @@ int main( int argc, char *argv[] )
     {
         mbedtls_des3_context des3;
         mbedtls_des3_init( &des3 );
-        mbedtls_des3_set3key_enc( &des3, tmp );
-        TIME_AND_TSC( "3DES",
-                mbedtls_des3_crypt_cbc( &des3, MBEDTLS_DES_ENCRYPT, BUFSIZE, tmp, buf, buf ) );
+        mbedtls_snprintf( title, sizeof( title ), "3DES" );
+        ret = mbedtls_des3_set3key_enc( &des3, tmp );
+        if( ret != 0 )
+        {
+            mbedtls_printf( HEADER_FORMAT, title );
+            if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )
+            {
+                mbedtls_printf( "Feature not supported. Skipping.\n" );
+                ret = 0;
+            }
+            else
+            {
+                PRINT_ERROR;
+            }
+        }
+        else
+        {
+            TIME_AND_TSC( title,
+                    mbedtls_des3_crypt_cbc( &des3, MBEDTLS_DES_ENCRYPT, BUFSIZE,
+                                            tmp, buf, buf ) );
+        }
         mbedtls_des3_free( &des3 );
     }
 
@@ -420,9 +474,26 @@ int main( int argc, char *argv[] )
     {
         mbedtls_des_context des;
         mbedtls_des_init( &des );
-        mbedtls_des_setkey_enc( &des, tmp );
-        TIME_AND_TSC( "DES",
-                mbedtls_des_crypt_cbc( &des, MBEDTLS_DES_ENCRYPT, BUFSIZE, tmp, buf, buf ) );
+        mbedtls_snprintf( title, sizeof( title ), "DES" );
+        ret = mbedtls_des_setkey_enc( &des, tmp );
+        if( ret != 0 )
+        {
+            mbedtls_printf( HEADER_FORMAT, title );
+            if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )
+            {
+                mbedtls_printf( "Feature not supported. Skipping.\n" );
+                ret = 0;
+            }
+            else
+            {
+                 PRINT_ERROR;
+            }
+        }
+        else
+        {
+            TIME_AND_TSC( title,
+                    mbedtls_des_crypt_cbc( &des, MBEDTLS_DES_ENCRYPT, BUFSIZE, tmp, buf, buf ) );
+        }
         mbedtls_des_free( &des );
     }
 
@@ -458,7 +529,7 @@ int main( int argc, char *argv[] )
 
             memset( buf, 0, sizeof( buf ) );
             memset( tmp, 0, sizeof( tmp ) );
-            mbedtls_aes_setkey_enc( &aes, tmp, keysize );
+            SET_KEY_ENC( aes, &aes, keysize );
 
             TIME_AND_TSC( title,
                 mbedtls_aes_crypt_cbc( &aes, MBEDTLS_AES_ENCRYPT, BUFSIZE, tmp, buf, buf ) );
@@ -479,7 +550,7 @@ int main( int argc, char *argv[] )
 
             memset( buf, 0, sizeof( buf ) );
             memset( tmp, 0, sizeof( tmp ) );
-            mbedtls_aes_xts_setkey_enc( &ctx, tmp, keysize * 2 );
+            SET_KEY_ENC( aes_xts, &ctx, keysize * 2 );
 
             TIME_AND_TSC( title,
                     mbedtls_aes_crypt_xts( &ctx, MBEDTLS_AES_ENCRYPT, BUFSIZE,
@@ -502,7 +573,21 @@ int main( int argc, char *argv[] )
 
             memset( buf, 0, sizeof( buf ) );
             memset( tmp, 0, sizeof( tmp ) );
-            mbedtls_gcm_setkey( &gcm, MBEDTLS_CIPHER_ID_AES, tmp, keysize );
+            ret = mbedtls_gcm_setkey( &gcm, MBEDTLS_CIPHER_ID_AES, tmp, keysize );
+            if( ret != 0 )
+            {
+                mbedtls_printf( HEADER_FORMAT, title );
+                if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )
+                {
+                    mbedtls_printf( "Feature not supported. Skipping.\n" );
+                    ret = 0;
+                }
+                else
+                {
+                    PRINT_ERROR;
+                }
+                continue;
+            }
 
             TIME_AND_TSC( title,
                     mbedtls_gcm_crypt_and_tag( &gcm, MBEDTLS_GCM_ENCRYPT, BUFSIZE, tmp,
@@ -525,7 +610,21 @@ int main( int argc, char *argv[] )
 
             memset( buf, 0, sizeof( buf ) );
             memset( tmp, 0, sizeof( tmp ) );
-            mbedtls_ccm_setkey( &ccm, MBEDTLS_CIPHER_ID_AES, tmp, keysize );
+            ret = mbedtls_ccm_setkey( &ccm, MBEDTLS_CIPHER_ID_AES, tmp, keysize );
+            if( ret != 0 )
+            {
+                mbedtls_printf( HEADER_FORMAT, title );
+                if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )
+                {
+                    mbedtls_printf( "Feature not supported. Skipping.\n" );
+                    ret = 0;
+                }
+                else
+                {
+                    PRINT_ERROR;
+                }
+                continue;
+            }
 
             TIME_AND_TSC( title,
                     mbedtls_ccm_encrypt_and_tag( &ccm, BUFSIZE, tmp,
@@ -546,12 +645,27 @@ int main( int argc, char *argv[] )
 
         mbedtls_snprintf( title, sizeof( title ), "ChaCha20-Poly1305" );
 
-        mbedtls_chachapoly_setkey( &chachapoly, tmp );
+        ret = mbedtls_chachapoly_setkey( &chachapoly, tmp );
+        if( ret != 0 )
+        {
+            mbedtls_printf( HEADER_FORMAT, title );
+            if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )
+            {
+                mbedtls_printf( "Feature not supported. Skipping.\n" );
+                ret = 0;
+            }
+            else
+            {
+                PRINT_ERROR;
+            }
+        }
+        else
+        {
 
-        TIME_AND_TSC( title,
-                mbedtls_chachapoly_encrypt_and_tag( &chachapoly,
-                    BUFSIZE, tmp, NULL, 0, buf, buf, tmp ) );
-
+            TIME_AND_TSC( title,
+                    mbedtls_chachapoly_encrypt_and_tag( &chachapoly,
+                        BUFSIZE, tmp, NULL, 0, buf, buf, tmp ) );
+        }
         mbedtls_chachapoly_free( &chachapoly );
     }
 #endif
@@ -600,7 +714,7 @@ int main( int argc, char *argv[] )
 
             memset( buf, 0, sizeof( buf ) );
             memset( tmp, 0, sizeof( tmp ) );
-            mbedtls_aria_setkey_enc( &aria, tmp, keysize );
+            SET_KEY_ENC( aria, &aria, keysize );
 
             TIME_AND_TSC( title,
                     mbedtls_aria_crypt_cbc( &aria, MBEDTLS_ARIA_ENCRYPT,
@@ -622,7 +736,7 @@ int main( int argc, char *argv[] )
 
             memset( buf, 0, sizeof( buf ) );
             memset( tmp, 0, sizeof( tmp ) );
-            mbedtls_camellia_setkey_enc( &camellia, tmp, keysize );
+            SET_KEY_ENC( camellia, &camellia, keysize );
 
             TIME_AND_TSC( title,
                     mbedtls_camellia_crypt_cbc( &camellia, MBEDTLS_CAMELLIA_ENCRYPT,
@@ -659,7 +773,21 @@ int main( int argc, char *argv[] )
 
             memset( buf, 0, sizeof( buf ) );
             memset( tmp, 0, sizeof( tmp ) );
-            mbedtls_blowfish_setkey( &blowfish, tmp, keysize );
+            ret = mbedtls_blowfish_setkey( &blowfish, tmp, keysize );
+            if( ret != 0 )
+            {
+                mbedtls_printf( HEADER_FORMAT, title );
+                if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )
+                {
+                    mbedtls_printf( "Feature not supported. Skipping.\n" );
+                    ret = 0;
+                }
+                else
+                {
+                    PRINT_ERROR;
+                }
+                continue;
+            }
 
             TIME_AND_TSC( title,
                     mbedtls_blowfish_crypt_cbc( &blowfish, MBEDTLS_BLOWFISH_ENCRYPT, BUFSIZE,
@@ -807,11 +935,26 @@ int main( int argc, char *argv[] )
             }
 
             dhm.len = mbedtls_mpi_size( &dhm.P );
-            mbedtls_dhm_make_public( &dhm, (int) dhm.len, buf, dhm.len, myrand, NULL );
+            mbedtls_snprintf( title, sizeof( title ), "DHE-%d", dhm_sizes[i] );
+            ret = mbedtls_dhm_make_public( &dhm, (int) dhm.len, buf, dhm.len, myrand, NULL );
+            if( ret != 0 )
+            {
+                mbedtls_printf( HEADER_FORMAT, title );
+                if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED )
+                {
+                    mbedtls_printf( "Feature not supported. Skipping.\n" );
+                    ret = 0;
+                    continue;
+                }
+                else
+                {
+                    mbedtls_printf( "Failed.\n");
+                    mbedtls_exit( 1 );
+                }
+            }
             if( mbedtls_mpi_copy( &dhm.GY, &dhm.GX ) != 0 )
                 mbedtls_exit( 1 );
 
-            mbedtls_snprintf( title, sizeof( title ), "DHE-%d", dhm_sizes[i] );
             TIME_PUBLIC( title, "handshake",
                     ret |= mbedtls_dhm_make_public( &dhm, (int) dhm.len, buf, dhm.len,
                                             myrand, NULL );
@@ -843,16 +986,14 @@ int main( int argc, char *argv[] )
                 continue;
 
             mbedtls_ecdsa_init( &ecdsa );
-
-            if( mbedtls_ecdsa_genkey( &ecdsa, curve_info->grp_id, myrand, NULL ) != 0 )
-                mbedtls_exit( 1 );
-            ecp_clear_precomputed( &ecdsa.grp );
-
             mbedtls_snprintf( title, sizeof( title ), "ECDSA-%s",
                                               curve_info->name );
+            CHECK_AND_CONTINUE( mbedtls_ecdsa_genkey( &ecdsa, curve_info->grp_id, myrand, NULL ) );
+            ecp_clear_precomputed( &ecdsa.grp );
+
             TIME_PUBLIC( title, "sign",
-                    ret = mbedtls_ecdsa_write_signature( &ecdsa, MBEDTLS_MD_SHA256, buf, curve_info->bit_size,
-                                                tmp, &sig_len, myrand, NULL ) );
+                    CHECK_AND_BREAK( mbedtls_ecdsa_write_signature( &ecdsa, MBEDTLS_MD_SHA256, buf, curve_info->bit_size,
+                                                tmp, &sig_len, myrand, NULL ) ) );
 
             mbedtls_ecdsa_free( &ecdsa );
         }
@@ -866,19 +1007,16 @@ int main( int argc, char *argv[] )
 
             mbedtls_ecdsa_init( &ecdsa );
 
-            if( mbedtls_ecdsa_genkey( &ecdsa, curve_info->grp_id, myrand, NULL ) != 0 ||
-                mbedtls_ecdsa_write_signature( &ecdsa, MBEDTLS_MD_SHA256, buf, curve_info->bit_size,
-                                               tmp, &sig_len, myrand, NULL ) != 0 )
-            {
-                mbedtls_exit( 1 );
-            }
-            ecp_clear_precomputed( &ecdsa.grp );
-
             mbedtls_snprintf( title, sizeof( title ), "ECDSA-%s",
                                               curve_info->name );
+            CHECK_AND_CONTINUE( mbedtls_ecdsa_genkey( &ecdsa, curve_info->grp_id, myrand, NULL ) );
+            CHECK_AND_CONTINUE( mbedtls_ecdsa_write_signature( &ecdsa, MBEDTLS_MD_SHA256, buf, curve_info->bit_size,
+                                               tmp, &sig_len, myrand, NULL ) );
+            ecp_clear_precomputed( &ecdsa.grp );
+
             TIME_PUBLIC( title, "verify",
-                    ret = mbedtls_ecdsa_read_signature( &ecdsa, buf, curve_info->bit_size,
-                                                tmp, sig_len ) );
+                    CHECK_AND_BREAK( mbedtls_ecdsa_read_signature( &ecdsa, buf, curve_info->bit_size,
+                                                tmp, sig_len ) ) );
 
             mbedtls_ecdsa_free( &ecdsa );
         }
@@ -910,6 +1048,8 @@ int main( int argc, char *argv[] )
                 continue;
 
             mbedtls_ecdh_init( &ecdh );
+            mbedtls_snprintf( title, sizeof( title ), "ECDHE-%s",
+                                              curve_info->name );
 
             CHECK_AND_CONTINUE( mbedtls_ecp_group_load( &ecdh.grp, curve_info->grp_id ) );
             CHECK_AND_CONTINUE( mbedtls_ecdh_make_public( &ecdh, &olen, buf, sizeof( buf),
@@ -917,12 +1057,10 @@ int main( int argc, char *argv[] )
             CHECK_AND_CONTINUE( mbedtls_ecp_copy( &ecdh.Qp, &ecdh.Q ) );
             ecp_clear_precomputed( &ecdh.grp );
 
-            mbedtls_snprintf( title, sizeof( title ), "ECDHE-%s",
-                                              curve_info->name );
             TIME_PUBLIC( title, "handshake",
-                    CHECK_AND_CONTINUE( mbedtls_ecdh_make_public( &ecdh, &olen, buf, sizeof( buf),
+                    CHECK_AND_BREAK( mbedtls_ecdh_make_public( &ecdh, &olen, buf, sizeof( buf),
                                              myrand, NULL ) );
-                    CHECK_AND_CONTINUE( mbedtls_ecdh_calc_secret( &ecdh, &olen, buf, sizeof( buf ),
+                    CHECK_AND_BREAK( mbedtls_ecdh_calc_secret( &ecdh, &olen, buf, sizeof( buf ),
                                              myrand, NULL ) ) );
             mbedtls_ecdh_free( &ecdh );
         }
@@ -935,15 +1073,16 @@ int main( int argc, char *argv[] )
             mbedtls_ecdh_init( &ecdh );
             mbedtls_mpi_init( &z );
 
+            mbedtls_snprintf( title, sizeof(title), "ECDHE-%s",
+                              curve_info->name );
+
             CHECK_AND_CONTINUE( mbedtls_ecp_group_load( &ecdh.grp, curve_info->grp_id ) );
             CHECK_AND_CONTINUE( mbedtls_ecdh_gen_public( &ecdh.grp, &ecdh.d, &ecdh.Qp, myrand, NULL ) );
 
-            mbedtls_snprintf( title, sizeof(title), "ECDHE-%s",
-                              curve_info->name );
             TIME_PUBLIC(  title, "handshake",
-                    CHECK_AND_CONTINUE( mbedtls_ecdh_gen_public( &ecdh.grp, &ecdh.d, &ecdh.Q,
+                    CHECK_AND_BREAK( mbedtls_ecdh_gen_public( &ecdh.grp, &ecdh.d, &ecdh.Q,
                                             myrand, NULL ) );
-                    CHECK_AND_CONTINUE( mbedtls_ecdh_compute_shared( &ecdh.grp, &z, &ecdh.Qp, &ecdh.d,
+                    CHECK_AND_BREAK( mbedtls_ecdh_compute_shared( &ecdh.grp, &z, &ecdh.Qp, &ecdh.d,
                                                 myrand, NULL ) ) );
 
             mbedtls_ecdh_free( &ecdh );
@@ -959,18 +1098,20 @@ int main( int argc, char *argv[] )
 
             mbedtls_ecdh_init( &ecdh );
 
+            mbedtls_snprintf( title, sizeof( title ), "ECDH-%s",
+                                              curve_info->name );
+
             CHECK_AND_CONTINUE( mbedtls_ecp_group_load( &ecdh.grp, curve_info->grp_id ) );
             CHECK_AND_CONTINUE( mbedtls_ecdh_make_public( &ecdh, &olen, buf, sizeof( buf),
                                   myrand, NULL ) );
             CHECK_AND_CONTINUE( mbedtls_ecp_copy( &ecdh.Qp, &ecdh.Q ) );
             CHECK_AND_CONTINUE( mbedtls_ecdh_make_public( &ecdh, &olen, buf, sizeof( buf),
                                   myrand, NULL ) );
+
             ecp_clear_precomputed( &ecdh.grp );
 
-            mbedtls_snprintf( title, sizeof( title ), "ECDH-%s",
-                                              curve_info->name );
             TIME_PUBLIC( title, "handshake",
-                    CHECK_AND_CONTINUE( mbedtls_ecdh_calc_secret( &ecdh, &olen, buf, sizeof( buf ),
+                    CHECK_AND_BREAK( mbedtls_ecdh_calc_secret( &ecdh, &olen, buf, sizeof( buf ),
                                              myrand, NULL ) ) );
             mbedtls_ecdh_free( &ecdh );
         }
@@ -983,15 +1124,17 @@ int main( int argc, char *argv[] )
             mbedtls_ecdh_init( &ecdh );
             mbedtls_mpi_init( &z );
 
+            mbedtls_snprintf( title, sizeof(title), "ECDH-%s",
+                              curve_info->name );
+
             CHECK_AND_CONTINUE( mbedtls_ecp_group_load( &ecdh.grp, curve_info->grp_id ) );
             CHECK_AND_CONTINUE( mbedtls_ecdh_gen_public( &ecdh.grp, &ecdh.d, &ecdh.Qp,
                                  myrand, NULL ) );
             CHECK_AND_CONTINUE( mbedtls_ecdh_gen_public( &ecdh.grp, &ecdh.d, &ecdh.Q, myrand, NULL ) );
 
-            mbedtls_snprintf( title, sizeof(title), "ECDH-%s",
-                              curve_info->name );
+
             TIME_PUBLIC(  title, "handshake",
-                    CHECK_AND_CONTINUE( mbedtls_ecdh_compute_shared( &ecdh.grp, &z, &ecdh.Qp, &ecdh.d,
+                    CHECK_AND_BREAK( mbedtls_ecdh_compute_shared( &ecdh.grp, &z, &ecdh.Qp, &ecdh.d,
                                                 myrand, NULL ) ) );
 
             mbedtls_ecdh_free( &ecdh );
@@ -1023,16 +1166,16 @@ int main( int argc, char *argv[] )
             TIME_PUBLIC( title, "full handshake",
                 const unsigned char * p_srv = buf_srv;
 
-                CHECK_AND_CONTINUE( mbedtls_ecdh_setup( &ecdh_srv, curve_info->grp_id ) );
-                CHECK_AND_CONTINUE( mbedtls_ecdh_make_params( &ecdh_srv, &olen, buf_srv, sizeof( buf_srv ), myrand, NULL ) );
+                CHECK_AND_BREAK( mbedtls_ecdh_setup( &ecdh_srv, curve_info->grp_id ) );
+                CHECK_AND_BREAK( mbedtls_ecdh_make_params( &ecdh_srv, &olen, buf_srv, sizeof( buf_srv ), myrand, NULL ) );
 
-                CHECK_AND_CONTINUE( mbedtls_ecdh_read_params( &ecdh_cli, &p_srv, p_srv + olen ) );
-                CHECK_AND_CONTINUE( mbedtls_ecdh_make_public( &ecdh_cli, &olen, buf_cli, sizeof( buf_cli ), myrand, NULL ) );
+                CHECK_AND_BREAK( mbedtls_ecdh_read_params( &ecdh_cli, &p_srv, p_srv + olen ) );
+                CHECK_AND_BREAK( mbedtls_ecdh_make_public( &ecdh_cli, &olen, buf_cli, sizeof( buf_cli ), myrand, NULL ) );
 
-                CHECK_AND_CONTINUE( mbedtls_ecdh_read_public( &ecdh_srv, buf_cli, olen ) );
-                CHECK_AND_CONTINUE( mbedtls_ecdh_calc_secret( &ecdh_srv, &olen, buf_srv, sizeof( buf_srv ), myrand, NULL ) );
+                CHECK_AND_BREAK( mbedtls_ecdh_read_public( &ecdh_srv, buf_cli, olen ) );
+                CHECK_AND_BREAK( mbedtls_ecdh_calc_secret( &ecdh_srv, &olen, buf_srv, sizeof( buf_srv ), myrand, NULL ) );
 
-                CHECK_AND_CONTINUE( mbedtls_ecdh_calc_secret( &ecdh_cli, &olen, buf_cli, sizeof( buf_cli ), myrand, NULL ) );
+                CHECK_AND_BREAK( mbedtls_ecdh_calc_secret( &ecdh_cli, &olen, buf_cli, sizeof( buf_cli ), myrand, NULL ) );
                 mbedtls_ecdh_free( &ecdh_cli );
 
                 mbedtls_ecdh_free( &ecdh_srv );

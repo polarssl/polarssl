@@ -530,7 +530,11 @@ int main( int argc, char *argv[] )
         /*
          * Write the final block of data
          */
-        mbedtls_cipher_finish( &cipher_ctx, output, &olen );
+        if( mbedtls_cipher_finish( &cipher_ctx, output, &olen ) != 0)
+        {
+            mbedtls_fprintf( stderr,"mbedtls_cipher_finish() returned error\n");
+            goto exit;
+        }
 
         if( fwrite( output, 1, olen, fout ) != olen )
         {

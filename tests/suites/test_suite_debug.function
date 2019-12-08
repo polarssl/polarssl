@@ -150,7 +150,7 @@ void mbedtls_debug_print_crt( char * crt_file, char * file, int line,
 
     mbedtls_ssl_conf_dbg( &conf, string_debug, &buffer);
 
-    TEST_ASSERT( mbedtls_x509_crt_parse_file( &crt, crt_file ) == 0 );
+    TEST_ASSERT_RET( mbedtls_x509_crt_parse_file( &crt, crt_file ), 0 );
     mbedtls_debug_print_crt( &ssl, 0, file, line, prefix, &crt);
 
     TEST_ASSERT( strcmp( buffer.buf, result_str ) == 0 );

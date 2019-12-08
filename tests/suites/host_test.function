@@ -739,14 +739,23 @@ int execute_tests( int argc , const char ** argv )
             }
             else if( ret == DISPATCH_TEST_SUCCESS )
             {
-                if( test_info.result == TEST_RESULT_SUCCESS )
+                if( test_info.result != TEST_RESULT_FAILED )
                 {
-                    mbedtls_fprintf( stdout, "PASS\n" );
-                }
-                else if( test_info.result == TEST_RESULT_SKIPPED )
-                {
-                    mbedtls_fprintf( stdout, "----\n" );
-                    total_skipped++;
+                    if( test_info.result == TEST_RESULT_SKIPPED )
+                    {
+                        total_skipped++;
+                        mbedtls_fprintf( stdout, "----\n" );
+                        if( 1 == option_verbose )
+                        {
+                            mbedtls_fprintf( stdout, "  %s\n  Feature not supported by the platform at line %d, %s\n",
+                                             test_info.test, test_info.line_no,
+                                             test_info.filename );
+                        }
+                    }
+                    else
+                    {
+                        mbedtls_fprintf( stdout, "PASS\n" );
+                    }
                 }
                 else
                 {

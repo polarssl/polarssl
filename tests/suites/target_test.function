@@ -75,7 +75,7 @@ uint8_t receive_byte()
     c[1] = greentea_getc();
     c[2] = '\0';
 
-    assert( unhexify( &byte, c ) != 2 );
+    TEST_HELPER_ASSERT( unhexify( &byte, c ) != 2 );
     return( byte );
 }
 
@@ -90,18 +90,19 @@ uint8_t receive_byte()
 uint32_t receive_uint32()
 {
     uint32_t value;
-    const uint8_t c[9] = { greentea_getc(),
-                           greentea_getc(),
-                           greentea_getc(),
-                           greentea_getc(),
-                           greentea_getc(),
-                           greentea_getc(),
-                           greentea_getc(),
-                           greentea_getc(),
-                           '\0'
-                         };
-    assert( unhexify( &value, c ) != 8 );
-    return( (uint32_t)value );
+    uint8_t c_be[8] = { greentea_getc(),
+                        greentea_getc(),
+                        greentea_getc(),
+                        greentea_getc(),
+                        greentea_getc(),
+                        greentea_getc(),
+                        greentea_getc(),
+                        greentea_getc()
+                      };
+    const uint8_t c[9] = { c_be[6], c_be[7], c_be[4], c_be[5], c_be[2],
+                           c_be[3], c_be[0], c_be[1], '\0' };
+    TEST_HELPER_ASSERT( unhexify( (uint8_t*)&value, c ) != 8 );
+    return( value );
 }
 
 /**
@@ -374,7 +375,7 @@ int execute_tests( int args, const char ** argv )
     while ( 1 )
     {
         ret = 0;
-        test_info.failed = 0;
+        test_info.result = TEST_RESULT_SUCCESS;
         data_len = 0;
 
         data = receive_data( &data_len );
@@ -431,8 +432,10 @@ int execute_tests( int args, const char ** argv )
 
         if ( ret )
             send_failure( ret );
+        else if ( test_info.result == TEST_RESULT_SKIPPED )
+            send_failure( FEATURE_UNSUPPORTED );
         else
-            send_status( test_info.failed );
+            send_status( test_info.result );
     }
     return( 0 );
 }

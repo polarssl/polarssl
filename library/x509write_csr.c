@@ -213,7 +213,11 @@ int mbedtls_x509write_csr_der( mbedtls_x509write_csr *ctx, unsigned char *buf, s
         return( MBEDTLS_ERR_X509_FATAL_ERROR );
     }
 #else /* MBEDTLS_USE_PSA_CRYPTO */
-    mbedtls_md( mbedtls_md_info_from_type( ctx->md_alg ), c, len, hash );
+    if( ( ret = mbedtls_md( mbedtls_md_info_from_type( ctx->md_alg ),
+                            c, len, hash ) ) != 0 )
+    {
+        return( ret );
+    }
 #endif
     if( ( ret = mbedtls_pk_sign( ctx->key, ctx->md_alg, hash, 0, sig, &sig_len,
                                  f_rng, p_rng ) ) != 0 )
