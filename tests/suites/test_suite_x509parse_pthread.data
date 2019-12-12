@@ -1,0 +1,19 @@
+X509 CRT concurrent verification #1 (RSA cert, RSA CA)
+depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_ECDSA_C:MBEDTLS_ECP_DP_SECP192R1_ENABLED:MBEDTLS_RSA_C:MBEDTLS_PKCS1_V15:MBEDTLS_SHA1_C
+x509_verify_thread:"data_files/server1.crt":"data_files/test-ca.crt":0:0:25:50
+
+X509 CRT concurrent verification #2 (EC cert, RSA CA)
+depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_ECDSA_C:MBEDTLS_ECP_DP_SECP192R1_ENABLED:MBEDTLS_RSA_C:MBEDTLS_PKCS1_V15:MBEDTLS_SHA1_C
+x509_verify_thread:"data_files/server3.crt":"data_files/test-ca.crt":0:0:25:50
+
+X509 CRT concurrent verification #3 (RSA cert, EC CA)
+depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_ECDSA_C:MBEDTLS_SHA256_C:MBEDTLS_ECP_DP_SECP256R1_ENABLED:MBEDTLS_RSA_C:MBEDTLS_PKCS1_V15:MBEDTLS_ECP_DP_SECP384R1_ENABLED
+x509_verify_thread:"data_files/server4.crt":"data_files/test-ca2.crt":0:0:25:50
+
+X509 CRT concurrent verification #4 (EC cert, EC CA)
+depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_ECDSA_C:MBEDTLS_SHA256_C:MBEDTLS_ECP_DP_SECP256R1_ENABLED:MBEDTLS_ECP_DP_SECP384R1_ENABLED
+x509_verify_thread:"data_files/server5.crt":"data_files/test-ca2.crt":0:0:25:50
+
+X509 CRT concurrent verification #5 (RSA cert, RSA CA, RSASSA-PSS)
+depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_X509_RSASSA_PSS_SUPPORT:MBEDTLS_SHA1_C
+x509_verify_thread:"data_files/server9-with-ca.crt":"data_files/test-ca.crt":0:0:25:50

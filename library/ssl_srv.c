@@ -839,14 +839,57 @@ static int ssl_pick_cert( mbedtls_ssl_context *ssl,
 
     for( cur = list; cur != NULL; cur = cur->next )
     {
-        MBEDTLS_SSL_DEBUG_CRT( 3, "candidate certificate chain, certificate",
-                          cur->cert );
+        int match = 1;
+        mbedtls_pk_context *pk;
 
-        if( ! mbedtls_pk_can_do( &cur->cert->pk, pk_alg ) )
+        /* WARNING: With the current X.509 caching architecture, this MUST
+         * happen outside of the PK acquire/release block, because it moves
+         * the cached PK context. In a threading-enabled build, this would
+         * rightfully fail, but lead to a use-after-free otherwise. */
+        MBEDTLS_SSL_DEBUG_CRT( 3, "candidate certificate chain, certificate",
+                               cur->cert );
+
+#if defined(MBEDTLS_SSL_ASYNC_PRIVATE)
+        /* ASYNC_PRIVATE may use a NULL entry for the opaque private key, so
+         * we have to use the public key context to infer the capabilities
+         * of the key. */
+        {
+            int ret;
+            ret = mbedtls_x509_crt_pk_acquire( cur->cert, &pk );
+            if( ret != 0 )
+            {
+                MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_x509_crt_pk_acquire", ret );
+                return( ret );
+            }
+        }
+#else
+        /* Outside of ASYNC_PRIVATE, use private key context directly
+         * instead of querying for the public key context from the
+         * certificate, so save a few bytes of code. */
+        pk = cur->key;
+#endif /* MBEDTLS_SSL_ASYNC_PRIVATE */
+
+        if( ! mbedtls_pk_can_do( pk, pk_alg ) )
         {
             MBEDTLS_SSL_DEBUG_MSG( 3, ( "certificate mismatch: key type" ) );
-            continue;
+            match = 0;
         }
+
+#if defined(MBEDTLS_ECDSA_C)
+        if( pk_alg == MBEDTLS_PK_ECDSA &&
+            ssl_check_key_curve( pk, ssl->handshake->curves ) != 0 )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 3, ( "certificate mismatch: elliptic curve" ) );
+            match = 0;
+        }
+#endif
+
+#if defined(MBEDTLS_SSL_ASYNC_PRIVATE)
+        mbedtls_x509_crt_pk_release( cur->cert );
+#endif /* MBEDTLS_SSL_ASYNC_PRIVATE */
+
+         if( match == 0 )
+            continue;
 
         /*
          * This avoids sending the client a cert it'll reject based on
@@ -864,31 +907,42 @@ static int ssl_pick_cert( mbedtls_ssl_context *ssl,
             continue;
         }
 
-#if defined(MBEDTLS_ECDSA_C)
-        if( pk_alg == MBEDTLS_PK_ECDSA &&
-            ssl_check_key_curve( &cur->cert->pk, ssl->handshake->curves ) != 0 )
-        {
-            MBEDTLS_SSL_DEBUG_MSG( 3, ( "certificate mismatch: elliptic curve" ) );
-            continue;
-        }
-#endif
-
+#if defined(MBEDTLS_SSL_PROTO_SSL3) || defined(MBEDTLS_SSL_PROTO_TLS1) || \
+    defined(MBEDTLS_SSL_PROTO_TLS1_1)
         /*
          * Try to select a SHA-1 certificate for pre-1.2 clients, but still
          * present them a SHA-higher cert rather than failing if it's the only
          * one we got that satisfies the other conditions.
          */
-        if( ssl->minor_ver < MBEDTLS_SSL_MINOR_VERSION_3 &&
-            cur->cert->sig_md != MBEDTLS_MD_SHA1 )
+        if( ssl->minor_ver < MBEDTLS_SSL_MINOR_VERSION_3 )
         {
-            if( fallback == NULL )
-                fallback = cur;
+            mbedtls_md_type_t sig_md;
             {
+                int ret;
+                mbedtls_x509_crt_frame const *frame;
+                ret = mbedtls_x509_crt_frame_acquire( cur->cert, &frame );
+                if( ret != 0 )
+                {
+                    MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_x509_crt_frame_acquire", ret );
+                    return( ret );
+                }
+                sig_md = frame->sig_md;
+                mbedtls_x509_crt_frame_release( cur->cert );
+            }
+
+            if( sig_md != MBEDTLS_MD_SHA1 )
+            {
+                if( fallback == NULL )
+                    fallback = cur;
+
                 MBEDTLS_SSL_DEBUG_MSG( 3, ( "certificate not preferred: "
-                                    "sha-2 with pre-TLS 1.2 client" ) );
-            continue;
+                                            "sha-2 with pre-TLS 1.2 client" ) );
+                continue;
             }
         }
+#endif /* MBEDTLS_SSL_PROTO_TLS1   ||
+          MBEDTLS_SSL_PROTO_TLS1_1 ||
+          MBEDTLS_SSL_PROTO_SSL3 */
 
         /* If we get there, we got a winner */
         break;
@@ -2965,26 +3019,38 @@ static int ssl_write_certificate_request( mbedtls_ssl_context *ssl )
 #endif
             crt = ssl->conf->ca_chain;
 
-        while( crt != NULL && crt->version != 0 )
+        while( crt != NULL && crt->raw.p != NULL )
         {
-            dn_size = crt->subject_raw.len;
+            mbedtls_x509_crt_frame const *frame;
+            ret = mbedtls_x509_crt_frame_acquire( crt, &frame );
+            if( ret != 0 )
+            {
+                MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_x509_crt_frame_acquire", ret );
+                return( ret );
+            }
+
+            dn_size = frame->subject_raw.len;
 
             if( end < p ||
                 (size_t)( end - p ) < dn_size ||
                 (size_t)( end - p ) < 2 + dn_size )
             {
                 MBEDTLS_SSL_DEBUG_MSG( 1, ( "skipping CAs: buffer too short" ) );
+                mbedtls_x509_crt_frame_release( crt );
                 break;
             }
 
             *p++ = (unsigned char)( dn_size >> 8 );
             *p++ = (unsigned char)( dn_size      );
-            memcpy( p, crt->subject_raw.p, dn_size );
+            memcpy( p, frame->subject_raw.p, dn_size );
             p += dn_size;
 
             MBEDTLS_SSL_DEBUG_BUF( 3, "requested DN", p - dn_size, dn_size );
 
             total_dn_size += 2 + dn_size;
+
+            mbedtls_x509_crt_frame_release( crt );
+
             crt = crt->next;
         }
     }
@@ -3626,9 +3692,8 @@ static int ssl_decrypt_encrypted_pms( mbedtls_ssl_context *ssl,
                                       size_t peer_pmssize )
 {
     int ret;
+    size_t len = (size_t)( end - p ); /* Cast is safe because p <= end. */
     mbedtls_pk_context *private_key = mbedtls_ssl_own_key( ssl );
-    mbedtls_pk_context *public_key = &mbedtls_ssl_own_cert( ssl )->pk;
-    size_t len = mbedtls_pk_get_len( public_key );
 
 #if defined(MBEDTLS_SSL_ASYNC_PRIVATE)
     /* If we have already started decoding the message and there is an ongoing
@@ -3646,12 +3711,17 @@ static int ssl_decrypt_encrypted_pms( mbedtls_ssl_context *ssl,
      */
 #if defined(MBEDTLS_SSL_PROTO_TLS1) || defined(MBEDTLS_SSL_PROTO_TLS1_1) || \
     defined(MBEDTLS_SSL_PROTO_TLS1_2)
+#if defined(MBEDTLS_SSL_PROTO_SSL3)
     if( ssl->minor_ver != MBEDTLS_SSL_MINOR_VERSION_0 )
+#endif /* MBEDTLS_SSL_PROTO_SSL3 */
     {
-        if ( p + 2 > end ) {
+        if( len < 2 )
+        {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad client key exchange message" ) );
             return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE );
         }
+        len -= 2;
+
         if( *p++ != ( ( len >> 8 ) & 0xFF ) ||
             *p++ != ( ( len      ) & 0xFF ) )
         {
@@ -3660,12 +3730,6 @@ static int ssl_decrypt_encrypted_pms( mbedtls_ssl_context *ssl,
         }
     }
 #endif
-
-    if( p + len != end )
-    {
-        MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad client key exchange message" ) );
-        return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE );
-    }
 
     /*
      * Decrypt the premaster secret
@@ -4203,7 +4267,7 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
     mbedtls_md_type_t md_alg;
     const mbedtls_ssl_ciphersuite_t *ciphersuite_info =
         ssl->handshake->ciphersuite_info;
-    mbedtls_pk_context * peer_pk;
+    mbedtls_pk_context * peer_pk = NULL;
 
     MBEDTLS_SSL_DEBUG_MSG( 2, ( "=> parse certificate verify" ) );
 
@@ -4214,28 +4278,45 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
         return( 0 );
     }
 
-#if defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
-    if( ssl->session_negotiate->peer_cert == NULL )
+    /* Skip if we haven't received a certificate from the client.
+     * If MBEDTLS_SSL_KEEP_PEER_CERTIFICATE is set, this can be
+     * inferred from the setting of mbedtls_ssl_session::peer_cert.
+     * If MBEDTLS_SSL_KEEP_PEER_CERTIFICATE is not set, it can
+     * be inferred from whether we've held back the peer CRT's
+     * public key in mbedtls_ssl_handshake_params::peer_pubkey. */
+#if !defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
+    /* Because the peer CRT pubkey is embedded into the handshake
+     * params currently, and there's no 'is_init' functions for PK
+     * contexts, we need to break the abstraction and peek into
+     * the PK context to see if it has been initialized. */
+    if( ssl->handshake->peer_pubkey.pk_info != NULL )
+        peer_pk = &ssl->handshake->peer_pubkey;
+#else /* !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
+    if( ssl->session_negotiate->peer_cert != NULL )
+    {
+        ret = mbedtls_x509_crt_pk_acquire( ssl->session_negotiate->peer_cert,
+                                           &peer_pk );
+        if( ret != 0 )
+        {
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_x509_crt_pk_acquire", ret );
+            return( ret );
+        }
+    }
+#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
+
+    if( peer_pk == NULL )
     {
         MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= skip parse certificate verify" ) );
         ssl->state++;
         return( 0 );
     }
-#else /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
-    if( ssl->session_negotiate->peer_cert_digest == NULL )
-    {
-        MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= skip parse certificate verify" ) );
-        ssl->state++;
-        return( 0 );
-    }
-#endif /* !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
 
     /* Read the message without adding it to the checksum */
     ret = mbedtls_ssl_read_record( ssl, 0 /* no checksum update */ );
     if( 0 != ret )
     {
         MBEDTLS_SSL_DEBUG_RET( 1, ( "mbedtls_ssl_read_record" ), ret );
-        return( ret );
+        goto exit;
     }
 
     ssl->state++;
@@ -4245,21 +4326,11 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
         ssl->in_msg[0] != MBEDTLS_SSL_HS_CERTIFICATE_VERIFY )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate verify message" ) );
-        return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY );
+        ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY;
+        goto exit;
     }
 
     i = mbedtls_ssl_hs_hdr_len( ssl );
-
-#if !defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
-    peer_pk = &ssl->handshake->peer_pubkey;
-#else /* !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
-    if( ssl->session_negotiate->peer_cert == NULL )
-    {
-        /* Should never happen */
-        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
-    }
-    peer_pk = &ssl->session_negotiate->peer_cert->pk;
-#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
 
     /*
      *  struct {
@@ -4291,7 +4362,8 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
         if( i + 2 > ssl->in_hslen )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate verify message" ) );
-            return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY );
+            ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY;
+            goto exit;
         }
 
         /*
@@ -4303,7 +4375,8 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "peer not adhering to requested sig_alg"
                                 " for verify message" ) );
-            return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY );
+            ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY;
+            goto exit;
         }
 
 #if !defined(MBEDTLS_MD_SHA1)
@@ -4324,7 +4397,8 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "peer not adhering to requested sig_alg"
                                 " for verify message" ) );
-            return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY );
+            ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY;
+            goto exit;
         }
 
         /*
@@ -4333,7 +4407,8 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
         if( !mbedtls_pk_can_do( peer_pk, pk_alg ) )
         {
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "sig_alg doesn't match cert key" ) );
-            return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY );
+            ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY;
+            goto exit;
         }
 
         i++;
@@ -4348,7 +4423,8 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
     if( i + 2 > ssl->in_hslen )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate verify message" ) );
-        return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY );
+        ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY;
+        goto exit;
     }
 
     sig_len = ( ssl->in_msg[i] << 8 ) | ssl->in_msg[i+1];
@@ -4357,7 +4433,8 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
     if( i + sig_len != ssl->in_hslen )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate verify message" ) );
-        return( MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY );
+        ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY;
+        goto exit;
     }
 
     /* Calculate hash and verify signature */
@@ -4371,12 +4448,18 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl )
                            ssl->in_msg + i, sig_len ) ) != 0 )
     {
         MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_pk_verify", ret );
-        return( ret );
+        goto exit;
     }
 
     mbedtls_ssl_update_handshake_status( ssl );
 
     MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= parse certificate verify" ) );
+
+exit:
+
+#if defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
+    mbedtls_x509_crt_pk_release( ssl->session_negotiate->peer_cert );
+#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
 
     return( ret );
 }

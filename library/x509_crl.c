@@ -38,6 +38,7 @@
 #if defined(MBEDTLS_X509_CRL_PARSE_C)
 
 #include "mbedtls/x509_crl.h"
+#include "mbedtls/x509_internal.h"
 #include "mbedtls/oid.h"
 #include "mbedtls/platform_util.h"
 
@@ -428,14 +429,16 @@ int mbedtls_x509_crl_parse_der( mbedtls_x509_crl *chain,
         mbedtls_x509_crl_free( crl );
         return( MBEDTLS_ERR_X509_INVALID_FORMAT + ret );
     }
+    p += len;
+    crl->issuer_raw.len = p - crl->issuer_raw.p;
 
-    if( ( ret = mbedtls_x509_get_name( &p, p + len, &crl->issuer ) ) != 0 )
+    if( ( ret = mbedtls_x509_get_name( crl->issuer_raw.p,
+                                       crl->issuer_raw.len,
+                                       &crl->issuer ) ) != 0 )
     {
         mbedtls_x509_crl_free( crl );
         return( ret );
     }
-
-    crl->issuer_raw.len = p - crl->issuer_raw.p;
 
     /*
      * thisUpdate          Time
@@ -689,8 +692,8 @@ int mbedtls_x509_crl_info( char *buf, size_t size, const char *prefix,
     ret = mbedtls_snprintf( p, n, "\n%ssigned using  : ", prefix );
     MBEDTLS_X509_SAFE_SNPRINTF;
 
-    ret = mbedtls_x509_sig_alg_gets( p, n, &crl->sig_oid, crl->sig_pk, crl->sig_md,
-                             crl->sig_opts );
+    ret = mbedtls_x509_sig_alg_gets( p, n, crl->sig_pk,
+                                     crl->sig_md, crl->sig_opts );
     MBEDTLS_X509_SAFE_SNPRINTF;
 
     ret = mbedtls_snprintf( p, n, "\n" );

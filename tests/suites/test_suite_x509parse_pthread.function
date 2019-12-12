@@ -1,0 +1,125 @@
+/* BEGIN_HEADER */
+#include "mbedtls/bignum.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/x509_crl.h"
+#include "mbedtls/x509_csr.h"
+#include "mbedtls/x509_internal.h"
+#include "mbedtls/pem.h"
+#include "mbedtls/oid.h"
+#include "mbedtls/base64.h"
+#include "string.h"
+
+/* Profile for backward compatibility. Allows SHA-1, unlike the default
+   profile. */
+const mbedtls_x509_crt_profile compat_profile =
+{
+    MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA1 ) |
+    MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_RIPEMD160 ) |
+    MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA224 ) |
+    MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA256 ) |
+    MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA384 ) |
+    MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA512 ),
+    0xFFFFFFF, /* Any PK alg    */
+    0xFFFFFFF, /* Any curve     */
+    1024,
+};
+
+typedef struct
+{
+    mbedtls_x509_crt *crt;
+    mbedtls_x509_crt *ca;
+    uint32_t expected_flags;
+    unsigned id;
+    int expected_result;
+    int iter_total;
+    int result;
+} x509_verify_thread_ctx;
+
+void* x509_verify_thread_worker( void *p )
+{
+    unsigned iter_cnt;
+    x509_verify_thread_ctx *ctx = (x509_verify_thread_ctx *) p;
+
+    for( iter_cnt=0; iter_cnt < (unsigned) ctx->iter_total; iter_cnt++ )
+    {
+        uint32_t flags;
+        int res;
+
+        res = mbedtls_x509_crt_verify_with_profile( ctx->crt, ctx->ca,
+                                                    NULL, &compat_profile,
+                                                    NULL, &flags, NULL, NULL );
+        if( res   != ctx->expected_result ||
+            flags != ctx->expected_flags )
+        {
+            ctx->result = 1;
+            pthread_exit( NULL );
+        }
+    }
+
+    ctx->result = 0;
+    pthread_exit( NULL );
+    return( NULL );
+}
+/* END_HEADER */
+
+/* BEGIN_DEPENDENCIES
+ * depends_on:MBEDTLS_THREADING_PTHREAD:MBEDTLS_X509_CRT_PARSE_C:!MBEDTLS_USE_PSA_CRYPTO
+ * END_DEPENDENCIES
+ */
+
+/* BEGIN_CASE depends_on:MBEDTLS_FS_IO */
+void x509_verify_thread( char *crt_file, char *ca_file,
+                         int result, int flags_result,
+                         int thread_total,
+                         int iterations_per_thread )
+{
+    x509_verify_thread_ctx *thread_ctx;
+    pthread_t *threads;
+    int cur_thread;
+
+    mbedtls_x509_crt crt;
+    mbedtls_x509_crt ca;
+
+    mbedtls_x509_crt_init( &crt );
+    mbedtls_x509_crt_init( &ca );
+    threads = mbedtls_calloc( thread_total, sizeof( pthread_t ) );
+    thread_ctx = mbedtls_calloc( thread_total, sizeof( x509_verify_thread_ctx ) );
+
+#if defined(MBEDTLS_USE_PSA_CRYPTO)
+    TEST_ASSERT( psa_crypto_init() == 0 );
+#endif
+
+    TEST_ASSERT( mbedtls_x509_crt_parse_file( &crt, crt_file ) == 0 );
+    TEST_ASSERT( mbedtls_x509_crt_parse_file( &ca, ca_file ) == 0 );
+    TEST_ASSERT( threads != NULL );
+
+    /* Start all verify threads */
+    for( cur_thread = 0; cur_thread < thread_total; cur_thread++ )
+    {
+        thread_ctx[ cur_thread ].id = (unsigned) cur_thread;
+        thread_ctx[ cur_thread ].ca  = &ca;
+        thread_ctx[ cur_thread ].crt = &crt;
+        thread_ctx[ cur_thread ].expected_result = result;
+        thread_ctx[ cur_thread ].expected_flags = flags_result;
+        thread_ctx[ cur_thread ].iter_total = iterations_per_thread;
+        TEST_ASSERT( pthread_create( &threads[ cur_thread ], NULL,
+                                     &x509_verify_thread_worker,
+                                     &thread_ctx[ cur_thread ] ) == 0 );
+    }
+
+    /* Wait for all threads to complete */
+    for( cur_thread = 0; cur_thread < thread_total; cur_thread++ )
+        TEST_ASSERT( pthread_join( threads[ cur_thread ], NULL ) == 0 );
+
+    /* Check their results */
+    for( cur_thread = 0; cur_thread < thread_total; cur_thread++ )
+        TEST_ASSERT( thread_ctx[ cur_thread ].result == 0 );
+
+exit:
+    mbedtls_free( threads );
+    mbedtls_free( thread_ctx );
+    mbedtls_x509_crt_free( &crt );
+    mbedtls_x509_crt_free( &ca );
+}
+/* END_CASE */

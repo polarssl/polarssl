@@ -684,7 +684,7 @@ component_test_default_cmake_gcc_asan () {
 component_test_full_cmake_gcc_asan () {
     msg "build: full config, cmake, gcc, ASan"
     scripts/config.py full
-    CC=gcc cmake -D CMAKE_BUILD_TYPE:String=Asan .
+    CC=gcc cmake -D LINK_WITH_PTHREAD=1 -D CMAKE_BUILD_TYPE:String=Asan .
     make
 
     msg "test: main suites (inc. selftests) (full config, ASan build)"
@@ -826,7 +826,7 @@ component_test_small_mbedtls_ssl_dtls_max_buffering () {
 component_test_full_cmake_clang () {
     msg "build: cmake, full config, clang" # ~ 50s
     scripts/config.py full
-    CC=clang cmake -D CMAKE_BUILD_TYPE:String=Check -D ENABLE_TESTING=On .
+    CC=clang cmake -D LINK_WITH_PTHREAD=1 -D CMAKE_BUILD_TYPE:String=Check -D ENABLE_TESTING=On .
     make
 
     msg "test: main suites (full config)" # ~ 5s
@@ -848,7 +848,7 @@ component_build_deprecated () {
     scripts/config.py set MBEDTLS_DEPRECATED_WARNING
     # Build with -O -Wextra to catch a maximum of issues.
     make CC=gcc CFLAGS='-O -Werror -Wall -Wextra' lib programs
-    make CC=gcc CFLAGS='-O -Werror -Wall -Wextra -Wno-unused-function' tests
+    make CC=gcc PTHREAD=1 CFLAGS='-O -Werror -Wall -Wextra -Wno-unused-function' tests
 
     msg "build: make, full config + DEPRECATED_REMOVED, clang -O" # ~ 30s
     # No cleanup, just tweak the configuration and rebuild
@@ -857,7 +857,7 @@ component_build_deprecated () {
     scripts/config.py set MBEDTLS_DEPRECATED_REMOVED
     # Build with -O -Wextra to catch a maximum of issues.
     make CC=clang CFLAGS='-O -Werror -Wall -Wextra' lib programs
-    make CC=clang CFLAGS='-O -Werror -Wall -Wextra -Wno-unused-function' tests
+    make CC=clang PTHREAD=1 CFLAGS='-O -Werror -Wall -Wextra -Wno-unused-function' tests
 }
 
 component_test_depends_curves () {
@@ -900,7 +900,7 @@ component_test_no_use_psa_crypto_full_cmake_asan() {
     scripts/config.py unset MBEDTLS_USE_PSA_CRYPTO
     scripts/config.py unset MBEDTLS_PSA_ITS_FILE_C
     scripts/config.py unset MBEDTLS_PSA_CRYPTO_STORAGE_C
-    CC=gcc cmake -D CMAKE_BUILD_TYPE:String=Asan .
+    CC=gcc cmake -D LINK_WITH_PTHREAD=1 -D CMAKE_BUILD_TYPE:String=Asan .
     make
 
     msg "test: main suites (full minus MBEDTLS_USE_PSA_CRYPTO)"
@@ -929,7 +929,7 @@ component_test_check_params_functionality () {
     scripts/config.py unset MBEDTLS_CHECK_PARAMS_ASSERT
     # Only build and run tests. Do not build sample programs, because
     # they don't have a mbedtls_param_failed() function.
-    make CC=gcc CFLAGS='-Werror -O1' lib test
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -O1' lib test
 }
 
 component_test_check_params_without_platform () {
@@ -944,7 +944,7 @@ component_test_check_params_without_platform () {
     scripts/config.py unset MBEDTLS_PLATFORM_SNPRINTF_ALT
     scripts/config.py unset MBEDTLS_ENTROPY_NV_SEED
     scripts/config.py unset MBEDTLS_PLATFORM_C
-    make CC=gcc CFLAGS='-Werror -O1' all test
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -O1' all test
 }
 
 component_test_check_params_silent () {
@@ -952,7 +952,7 @@ component_test_check_params_silent () {
     scripts/config.py full # includes CHECK_PARAMS
     # Set MBEDTLS_PARAM_FAILED to nothing.
     sed -i 's/.*\(#define MBEDTLS_PARAM_FAILED( cond )\).*/\1/' "$CONFIG_H"
-    make CC=gcc CFLAGS='-Werror -O1' all test
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -O1' all test
 }
 
 component_test_no_platform () {
@@ -975,8 +975,8 @@ component_test_no_platform () {
     scripts/config.py unset MBEDTLS_PSA_ITS_FILE_C
     # Note, _DEFAULT_SOURCE needs to be defined for platforms using glibc version >2.19,
     # to re-enable platform integration features otherwise disabled in C99 builds
-    make CC=gcc CFLAGS='-Werror -Wall -Wextra -std=c99 -pedantic -O0 -D_DEFAULT_SOURCE' lib programs
-    make CC=gcc CFLAGS='-Werror -Wall -Wextra -O0' test
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -Wall -Wextra -std=c99 -pedantic -O0 -D_DEFAULT_SOURCE' lib programs
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -Wall -Wextra -O0' test
 }
 
 component_build_no_std_function () {
@@ -985,21 +985,21 @@ component_build_no_std_function () {
     scripts/config.py full
     scripts/config.py set MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
     scripts/config.py unset MBEDTLS_ENTROPY_NV_SEED
-    make CC=gcc CFLAGS='-Werror -Wall -Wextra -O0'
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -Wall -Wextra -O0'
 }
 
 component_build_no_ssl_srv () {
     msg "build: full config except ssl_srv.c, make, gcc" # ~ 30s
     scripts/config.py full
     scripts/config.py unset MBEDTLS_SSL_SRV_C
-    make CC=gcc CFLAGS='-Werror -Wall -Wextra -O0'
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -Wall -Wextra -O0'
 }
 
 component_build_no_ssl_cli () {
     msg "build: full config except ssl_cli.c, make, gcc" # ~ 30s
     scripts/config.py full
     scripts/config.py unset MBEDTLS_SSL_CLI_C
-    make CC=gcc CFLAGS='-Werror -Wall -Wextra -O0'
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -Wall -Wextra -O0'
 }
 
 component_build_no_sockets () {
@@ -1009,7 +1009,7 @@ component_build_no_sockets () {
     scripts/config.py full
     scripts/config.py unset MBEDTLS_NET_C # getaddrinfo() undeclared, etc.
     scripts/config.py set MBEDTLS_NO_PLATFORM_ENTROPY # uses syscall() on GNU/Linux
-    make CC=gcc CFLAGS='-Werror -Wall -Wextra -O0 -std=c99 -pedantic' lib
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -Wall -Wextra -O0 -std=c99 -pedantic' lib
 }
 
 component_test_memory_buffer_allocator_backtrace () {
@@ -1065,6 +1065,22 @@ component_test_asan_remove_peer_certificate () {
 
     msg "test: compat.sh, !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE"
     if_build_succeeded tests/compat.sh
+}
+
+component_test_asan_on_demand_parsing_remove_peer_cert () {
+    msg "build: default config, no peer CRT, on-demand CRT parsing (ASan build)"
+    scripts/config.pl unset MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
+    scripts/config.pl set MBEDTLS_X509_ON_DEMAND_PARSING
+    scripts/config.pl set MBEDTLS_THREADING_C
+    scripts/config.pl set MBEDTLS_THREADING_PTHREAD
+    CC=gcc cmake -D CMAKE_BUILD_TYPE:String=Asan -D LINK_WITH_PTHREAD=1 .
+    make
+
+    msg "test: !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE, MBEDTLS_X509_ON_DEMAND_PARSING"
+    make test
+
+    msg "test: ssl-opt.sh, !MBEDTLS_SSL_KEEP_PEER_CERTIFICATE, MBEDTLS_X509_ON_DEMAND_PARSING"
+    if_build_succeeded tests/ssl-opt.sh
 }
 
 component_test_no_max_fragment_length_small_ssl_out_content_len () {
@@ -1149,7 +1165,7 @@ component_test_m32_o0 () {
     # Build once with -O0, to compile out the i386 specific inline assembly
     msg "build: i386, make, gcc -O0 (ASan build)" # ~ 30s
     scripts/config.py full
-    make CC=gcc CFLAGS="$ASAN_CFLAGS -m32 -O0" LDFLAGS="-m32 $ASAN_CFLAGS"
+    make CC=gcc PTHREAD=1 CFLAGS="$ASAN_CFLAGS -m32 -O0" LDFLAGS="-m32 $ASAN_CFLAGS"
 
     msg "test: i386, make, gcc -O0 (ASan build)"
     make test
@@ -1165,7 +1181,7 @@ component_test_m32_o1 () {
     # Build again with -O1, to compile in the i386 specific inline assembly
     msg "build: i386, make, gcc -O1 (ASan build)" # ~ 30s
     scripts/config.py full
-    make CC=gcc CFLAGS="$ASAN_CFLAGS -m32 -O1" LDFLAGS="-m32 $ASAN_CFLAGS"
+    make CC=gcc PTHREAD=1 CFLAGS="$ASAN_CFLAGS -m32 -O1" LDFLAGS="-m32 $ASAN_CFLAGS"
 
     msg "test: i386, make, gcc -O1 (ASan build)"
     make test
@@ -1200,7 +1216,7 @@ support_test_m32_everest () {
 component_test_mx32 () {
     msg "build: 64-bit ILP32, make, gcc" # ~ 30s
     scripts/config.py full
-    make CC=gcc CFLAGS='-Werror -Wall -Wextra -mx32' LDFLAGS='-mx32'
+    make CC=gcc PTHREAD=1 CFLAGS='-Werror -Wall -Wextra -mx32' LDFLAGS='-mx32'
 
     msg "test: 64-bit ILP32, make, gcc"
     make test

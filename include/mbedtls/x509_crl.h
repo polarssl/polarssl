@@ -75,7 +75,7 @@ typedef struct mbedtls_x509_crl
     int version;            /**< CRL version (1=v1, 2=v2) */
     mbedtls_x509_buf sig_oid;       /**< CRL signature type identifier */
 
-    mbedtls_x509_buf issuer_raw;    /**< The raw issuer data (DER). */
+    mbedtls_x509_buf_raw issuer_raw;           /**< The raw issuer data (DER). */
 
     mbedtls_x509_name issuer;       /**< The parsed issuer data (named information object). */
 

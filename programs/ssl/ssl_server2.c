@@ -1471,6 +1471,7 @@ static int ssl_async_start( mbedtls_ssl_context *ssl,
                             const unsigned char *input,
                             size_t input_len )
 {
+    int ret;
     ssl_async_key_context_t *config_data =
         mbedtls_ssl_conf_get_async_config_data( ssl->conf );
     unsigned slot;
@@ -1479,9 +1480,17 @@ static int ssl_async_start( mbedtls_ssl_context *ssl,
 
     {
         char dn[100];
-        if( mbedtls_x509_dn_gets( dn, sizeof( dn ), &cert->subject ) > 0 )
+        mbedtls_x509_name *subject;
+
+        ret = mbedtls_x509_crt_get_subject( cert, &subject );
+        if( ret != 0 )
+            return( ret );
+
+        if( mbedtls_x509_dn_gets( dn, sizeof( dn ), subject ) > 0 )
             mbedtls_printf( "Async %s callback: looking for DN=%s\n",
                             op_name, dn );
+
+        mbedtls_x509_name_free( subject );
     }
 
     /* Look for a private key that matches the public key in cert.
@@ -1490,8 +1499,14 @@ static int ssl_async_start( mbedtls_ssl_context *ssl,
      * public key. */
     for( slot = 0; slot < config_data->slots_used; slot++ )
     {
-        if( mbedtls_pk_check_pair( &cert->pk,
-                                   config_data->slots[slot].pk ) == 0 )
+        mbedtls_pk_context *pk;
+        int match;
+        ret = mbedtls_x509_crt_pk_acquire( cert, &pk );
+        if( ret != 0 )
+            return( ret );
+        match = mbedtls_pk_check_pair( pk, config_data->slots[slot].pk );
+        mbedtls_x509_crt_pk_release( cert );
+        if( match == 0 )
             break;
     }
     if( slot == config_data->slots_used )

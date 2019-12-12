@@ -61,6 +61,11 @@ ifdef ZLIB
 LOCAL_LDFLAGS += -lz
 endif
 
+# Pthread shared library extension
+ifdef PTHREAD
+LOCAL_LDFLAGS += -lpthread
+endif
+
 # A test application is built for each suites/test_suite_*.data file.
 # Application name is same as .data file's base name and can be
 # constructed by stripping path 'suites/' and extension .data.
@@ -110,6 +115,10 @@ APPS := $(filter-out \
 		test_suite_timing \
 		test_suite_xtea \
 		,$(APPS))
+
+ifndef PTHREAD
+APPS := $(filter-out test_suite_x509parse_pthread, $(APPS))
+endif
 
 # Construct executable name by adding OS specific suffix $(EXEXT).
 BINARIES := $(addsuffix $(EXEXT),$(APPS))

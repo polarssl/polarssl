@@ -1514,6 +1514,22 @@ int query_config( const char *config )
     }
 #endif /* MBEDTLS_VERSION_FEATURES */
 
+#if defined(MBEDTLS_X509_ON_DEMAND_PARSING)
+    if( strcmp( "MBEDTLS_X509_ON_DEMAND_PARSING", config ) == 0 )
+    {
+        MACRO_EXPANSION_TO_STR( MBEDTLS_X509_ON_DEMAND_PARSING );
+        return( 0 );
+    }
+#endif /* MBEDTLS_X509_ON_DEMAND_PARSING */
+
+#if defined(MBEDTLS_X509_ALWAYS_FLUSH)
+    if( strcmp( "MBEDTLS_X509_ALWAYS_FLUSH", config ) == 0 )
+    {
+        MACRO_EXPANSION_TO_STR( MBEDTLS_X509_ALWAYS_FLUSH );
+        return( 0 );
+    }
+#endif /* MBEDTLS_X509_ALWAYS_FLUSH */
+
 #if defined(MBEDTLS_X509_ALLOW_EXTENSIONS_NON_V3)
     if( strcmp( "MBEDTLS_X509_ALLOW_EXTENSIONS_NON_V3", config ) == 0 )
     {

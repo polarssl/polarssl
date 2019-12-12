@@ -38,6 +38,7 @@
 #if defined(MBEDTLS_X509_CSR_PARSE_C)
 
 #include "mbedtls/x509_csr.h"
+#include "mbedtls/x509_internal.h"
 #include "mbedtls/oid.h"
 #include "mbedtls/platform_util.h"
 
@@ -183,14 +184,16 @@ int mbedtls_x509_csr_parse_der( mbedtls_x509_csr *csr,
         mbedtls_x509_csr_free( csr );
         return( MBEDTLS_ERR_X509_INVALID_FORMAT + ret );
     }
+    p += len;
+    csr->subject_raw.len = p - csr->subject_raw.p;
 
-    if( ( ret = mbedtls_x509_get_name( &p, p + len, &csr->subject ) ) != 0 )
+    if( ( ret = mbedtls_x509_get_name( csr->subject_raw.p,
+                                       csr->subject_raw.len,
+                                       &csr->subject ) ) != 0 )
     {
         mbedtls_x509_csr_free( csr );
         return( ret );
     }
-
-    csr->subject_raw.len = p - csr->subject_raw.p;
 
     /*
      *  subjectPKInfo SubjectPublicKeyInfo
@@ -356,8 +359,8 @@ int mbedtls_x509_csr_info( char *buf, size_t size, const char *prefix,
     ret = mbedtls_snprintf( p, n, "\n%ssigned using  : ", prefix );
     MBEDTLS_X509_SAFE_SNPRINTF;
 
-    ret = mbedtls_x509_sig_alg_gets( p, n, &csr->sig_oid, csr->sig_pk, csr->sig_md,
-                             csr->sig_opts );
+    ret = mbedtls_x509_sig_alg_gets( p, n, csr->sig_pk,
+                                     csr->sig_md, csr->sig_opts );
     MBEDTLS_X509_SAFE_SNPRINTF;
 
     if( ( ret = mbedtls_x509_key_size_helper( key_size_str, BEFORE_COLON,

@@ -1857,6 +1857,54 @@
 #define MBEDTLS_VERSION_FEATURES
 
 /**
+ * \def MBEDTLS_X509_ON_DEMAND_PARSING
+ *
+ * Save RAM by reducing mbedtls_x509_crt to a pointer
+ * to the raw CRT data and parsing CRTs on demand only.
+ *
+ * \warning This option changes the API by removing most of
+ *          the structure fields of mbedtls_x509_crt.
+ *
+ * \warning This option and its corresponding X.509 API are currently
+ *          under development and may change at any time.
+ *
+ * Regardless of whether this option is enabled or not, direct access of
+ * structure fields of `mbedtls_x509_crt` should be replaced by calls to
+ * one of the following functions:
+ * - mbedtls_x509_crt_get_frame(), to obtain a CRT frame giving
+ *   access to several basic CRT fields (such as the CRT version),
+ *   as well as pointers to the raw ASN.1 data of more complex fields
+ *   (such as the issuer).
+ * - mbedtls_x509_crt_get_pk(), to obtain a public key context
+ *   for the public key contained in the certificate.
+ * - mbedtls_x509_crt_get_issuer(), to obtain the issuer name.
+ * - mbedtls_x509_crt_get_subject(), to obtain the subject name.
+ * - mbedtls_x509_crt_get_subject_alt_names(), to obtain the
+ *   alternative names from the subject alternative names extension.
+ * - mbedtls_x509_crt_get_ext_key_usage(), to obtain the state of
+ *   the extended key usage extension.
+ *
+ * Uncomment this to enable on-demand CRT parsing to save RAM.
+ */
+//#define MBEDTLS_X509_ON_DEMAND_PARSING
+
+/**
+ * \def MBEDTLS_X509_ALWAYS_FLUSH
+ *
+ * Save RAM by having Mbed TLS always flush caches for parsed X.509
+ * structures after use: This means, firstly, that caches of X.509
+ * structures used by an API call are flushed when the call returns,
+ * but it also encompasses immediate flushing of caches when Mbed TLS uses
+ * multiple structures in succession, thereby reducing the peak RAM usage.
+ * Setting this option leads to minimal RAM usage of the X.509 module at
+ * the cost of performance penalties when using X.509 structures multiple
+ * times (such as trusted CRTs on systems serving many connections).
+ *
+ * Uncomment this to always flush caches for unused X.509 structures.
+ */
+#define MBEDTLS_X509_ALWAYS_FLUSH
+
+/**
  * \def MBEDTLS_X509_ALLOW_EXTENSIONS_NON_V3
  *
  * If set, the X509 parser will not break-off when parsing an X509 certificate

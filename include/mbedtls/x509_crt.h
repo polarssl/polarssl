@@ -32,6 +32,7 @@
 
 #include "mbedtls/x509.h"
 #include "mbedtls/x509_crl.h"
+#include "mbedtls/x509_internal.h"
 #include "mbedtls/bignum.h"
 
 /**
@@ -48,14 +49,70 @@ extern "C" {
  * \{
  */
 
+typedef struct mbedtls_x509_crt_frame
+{
+    /* Keep these 8-bit fields at the front of the structure to allow them to
+     * be fetched in a single instruction on Thumb2; putting them at the back
+     * requires an intermediate address calculation. */
+
+    uint8_t version;                        /**< The X.509 version. (1=v1, 2=v2, 3=v3)                          */
+    uint8_t ca_istrue;                      /**< Optional Basic Constraint extension value:
+                                             *   1 if this certificate belongs to a CA, 0 otherwise.            */
+    uint8_t max_pathlen;                    /**< Optional Basic Constraint extension value:
+                                             *   The maximum path length to the root certificate.
+                                             *   Path length is 1 higher than RFC 5280 'meaning', so 1+         */
+    uint8_t ns_cert_type;                   /**< Optional Netscape certificate type extension value:
+                                             *   See the values in x509.h                                       */
+
+    mbedtls_md_type_t sig_md;               /**< The hash algorithm used to hash CRT before signing.            */
+    mbedtls_pk_type_t sig_pk;               /**< The signature algorithm used to sign the CRT hash.             */
+
+    uint16_t key_usage;                     /**< Optional key usage extension value: See the values in x509.h   */
+    uint32_t ext_types;                     /**< Bitfield indicating which extensions are present.
+                                             *   See the values in x509.h.                                      */
+
+    mbedtls_x509_time valid_from;           /**< The start time of certificate validity.                        */
+    mbedtls_x509_time valid_to;             /**< The end time of certificate validity.                          */
+
+    mbedtls_x509_buf_raw raw;               /**< The raw certificate data in DER.                               */
+    mbedtls_x509_buf_raw tbs;               /**< The part of the CRT that is [T]o [B]e [S]igned.                */
+
+    mbedtls_x509_buf_raw serial;            /**< The unique ID for certificate issued by a specific CA.         */
+
+    mbedtls_x509_buf_raw pubkey_raw;        /**< The raw public key data (DER).                                 */
+
+    mbedtls_x509_buf_raw issuer_id;         /**< Optional X.509 v2/v3 issuer unique identifier.                 */
+    mbedtls_x509_buf_raw issuer_raw;        /**< The raw issuer data (DER). Used for quick comparison.          */
+
+    mbedtls_x509_buf_raw subject_id;        /**< Optional X.509 v2/v3 subject unique identifier.                */
+    mbedtls_x509_buf_raw subject_raw;       /**< The raw subject data (DER). Used for quick comparison.         */
+
+    mbedtls_x509_buf_raw sig;               /**< Signature: hash of the tbs part signed with the private key.   */
+    mbedtls_x509_buf_raw sig_alg;           /**< The signature algorithm used for \p sig.                       */
+
+    mbedtls_x509_buf_raw v3_ext;            /**< The raw data for the extension list in the certificate.
+                                             *   Might be useful for manual inspection of extensions that
+                                             *   Mbed TLS doesn't yet support.                                  */
+    mbedtls_x509_buf_raw subject_alt_raw;   /**< The raw data for the SubjectAlternativeNames extension.        */
+    mbedtls_x509_buf_raw ext_key_usage_raw; /**< The raw data for the ExtendedKeyUsage extension.               */
+    mbedtls_x509_buf_raw crt_policies_raw;  /**< The raw data for the CertificatePolicies extension.            */
+
+} mbedtls_x509_crt_frame;
+
 /**
  * Container for an X.509 certificate. The certificate may be chained.
  */
 typedef struct mbedtls_x509_crt
 {
     int own_buffer;                     /**< Indicates if \c raw is owned
-                                         *   by the structure or not.        */
-    mbedtls_x509_buf raw;               /**< The raw certificate data (DER). */
+                                         *   by the structure or not.         */
+    mbedtls_x509_buf raw;               /**< The raw certificate data (DER).  */
+    mbedtls_x509_crt_cache *cache;      /**< Internal parsing cache.      */
+
+    struct mbedtls_x509_crt *next;     /**< Next certificate in the CA-chain. */
+
+    /* Legacy fields */
+#if !defined(MBEDTLS_X509_ON_DEMAND_PARSING)
     mbedtls_x509_buf tbs;               /**< The raw certificate body (DER). The part that is To Be Signed. */
 
     int version;                /**< The X.509 version. (1=v1, 2=v2, 3=v3) */
@@ -77,6 +134,7 @@ typedef struct mbedtls_x509_crt
     mbedtls_x509_buf issuer_id;         /**< Optional X.509 v2/v3 issuer unique identifier. */
     mbedtls_x509_buf subject_id;        /**< Optional X.509 v2/v3 subject unique identifier. */
     mbedtls_x509_buf v3_ext;            /**< Optional X.509 v3 extensions.  */
+
     mbedtls_x509_sequence subject_alt_names;    /**< Optional list of raw entries of Subject Alternative Names extension (currently only dNSName and OtherName are listed). */
 
     mbedtls_x509_sequence certificate_policies; /**< Optional list of certificate policies (Only anyPolicy is printed and enforced, however the rest of the policies are still listed). */
@@ -87,7 +145,7 @@ typedef struct mbedtls_x509_crt
 
     unsigned int key_usage;     /**< Optional key usage extension value: See the values in x509.h */
 
-    mbedtls_x509_sequence ext_key_usage; /**< Optional list of extended key usage OIDs. */
+    mbedtls_x509_sequence ext_key_usage;    /**< Optional list of extended key usage OIDs. */
 
     unsigned char ns_cert_type; /**< Optional Netscape certificate type extension value: See the values in x509.h */
 
@@ -95,8 +153,7 @@ typedef struct mbedtls_x509_crt
     mbedtls_md_type_t sig_md;           /**< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256 */
     mbedtls_pk_type_t sig_pk;           /**< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA */
     void *sig_opts;             /**< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS */
-
-    struct mbedtls_x509_crt *next;     /**< Next certificate in the CA-chain. */
+#endif /* !MBEDTLS_X509_ON_DEMAND_PARSING */
 }
 mbedtls_x509_crt;
 
@@ -754,6 +811,391 @@ void mbedtls_x509_crt_restart_init( mbedtls_x509_crt_restart_ctx *ctx );
  */
 void mbedtls_x509_crt_restart_free( mbedtls_x509_crt_restart_ctx *ctx );
 #endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
+/**
+ * \brief           Request CRT frame giving access to basic CRT fields
+ *                  and raw ASN.1 data of complex fields.
+ *
+ * \param crt       The CRT to use. This must be initialized and set up.
+ * \param dst       The address of the destination frame structure.
+ *                  This need not be initialized.
+ *
+ * \note            ::mbedtls_x509_crt_frame does not contain pointers to
+ *                  dynamically allocated memory, and hence need not be freed.
+ *                  Users may e.g. allocate an instance of
+ *                  ::mbedtls_x509_crt_frame on the stack and call this function
+ *                  on it, in which case no allocation/freeing has to be done.
+ *
+ * \note            You may also use mbedtls_x509_crt_frame_acquire() and
+ *                  mbedtls_x509_crt_frame_release() for copy-less variants
+ *                  of this function.
+ *
+ * \return          \c 0 on success. In this case, \p dst is updated
+ *                  to hold the frame for the given CRT.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_x509_crt_get_frame( mbedtls_x509_crt const *crt,
+                                mbedtls_x509_crt_frame *dst );
+
+/**
+ * \brief           Set up a PK context with the public key in a certificate.
+ *
+ * \param crt       The certificate to use. This must be initialized and set up.
+ * \param pk        The address of the destination PK context to fill.
+ *                  This must be initialized via mbedtls_pk_init().
+ *
+ * \note            You may also use mbedtls_x509_crt_pk_acquire() and
+ *                  mbedtls_x509_crt_pk_release() for copy-less variants
+ *                  of this function.
+ *
+ * \return          \c 0 on success. In this case, the user takes ownership
+ *                  of the destination PK context, and is responsible for
+ *                  calling mbedtls_pk_free() on it once it's no longer needed.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_x509_crt_get_pk( mbedtls_x509_crt const *crt,
+                             mbedtls_pk_context *pk );
+
+/**
+ * \brief           Request the subject name of a CRT, presented
+ *                  as a dynamically allocated linked list.
+ *
+ * \param crt       The CRT to use. This must be initialized and set up.
+ * \param subject   The address at which to store the address of the
+ *                  first entry of the generated linked list holding
+ *                  the subject name.
+ *
+ * \note            Depending on your use case, consider using the raw ASN.1
+ *                  describing the subject name instead of the heap-allocated
+ *                  linked list generated by this call. The pointers to the
+ *                  raw ASN.1 data are part of the CRT frame that can be queried
+ *                  via mbedtls_x509_crt_get_frame(), and they can be traversed
+ *                  via mbedtls_asn1_traverse_sequence_of().
+ *
+ * \return          \c 0 on success. In this case, the user takes ownership
+ *                  of the name context, and is responsible for freeing it
+ *                  through a call to mbedtls_x509_name_free() once it's no
+ *                  longer needed.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_x509_crt_get_subject( mbedtls_x509_crt const *crt,
+                                  mbedtls_x509_name **subject );
+
+/**
+ * \brief           Request the subject name of a CRT, presented
+ *                  as a dynamically allocated linked list.
+ *
+ * \param crt       The CRT to use. This must be initialized and set up.
+ * \param issuer    The address at which to store the address of the
+ *                  first entry of the generated linked list holding
+ *                  the subject name.
+ *
+ * \note            Depending on your use case, consider using the raw ASN.1
+ *                  describing the issuer name instead of the heap-allocated
+ *                  linked list generated by this call. The pointers to the
+ *                  raw ASN.1 data are part of the CRT frame that can be queried
+ *                  via mbedtls_x509_crt_get_frame(), and they can be traversed
+ *                  via mbedtls_asn1_traverse_sequence_of().
+ *
+ * \return          \c 0 on success. In this case, the user takes ownership
+ *                  of the name context, and is responsible for freeing it
+ *                  through a call to mbedtls_x509_name_free() once it's no
+ *                  longer needed.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_x509_crt_get_issuer( mbedtls_x509_crt const *crt,
+                                 mbedtls_x509_name **issuer );
+
+/**
+ * \brief           Request the subject alternative name of a CRT, presented
+ *                  as a dynamically allocated linked list.
+ *
+ * \param crt       The CRT to use. This must be initialized and set up.
+ * \param subj_alt  The address at which to store the address of the
+ *                  first component of the subject alternative names list.
+ *
+ * \note            Depending in your use case, consider using the raw ASN.1
+ *                  describing the subject alternative names extension
+ *                  instead of the heap-allocated linked list generated by this
+ *                  call. The pointers to the raw ASN.1 data are part of the CRT
+ *                  frame that can be queried via mbedtls_x509_crt_get_frame(),
+ *                  and mbedtls_asn1_traverse_sequence_of() can be used to
+ *                  traverse the list of subject alternative names.
+ *
+ * \return          \c 0 on success. In this case, the user takes ownership
+ *                  of the name context, and is responsible for freeing it
+ *                  through a call to mbedtls_x509_sequence_free() once it's
+ *                  no longer needed.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_x509_crt_get_subject_alt_names( mbedtls_x509_crt const *crt,
+                                            mbedtls_x509_sequence **subj_alt );
+
+/**
+ * \brief           Request the ExtendedKeyUsage extension of a CRT,
+ *                  presented as a dynamically allocated linked list.
+ *
+ * \param crt       The CRT to use. This must be initialized and set up.
+ * \param ext_key_usage The address at which to store the address of the
+ *                  first entry of the ExtendedKeyUsage extension.
+ *
+ * \note            Depending in your use case, consider using the raw ASN.1
+ *                  describing the extended key usage extension instead of
+ *                  the heap-allocated linked list generated by this call.
+ *                  The pointers to the raw ASN.1 data are part of the CRT
+ *                  frame that can be queried via mbedtls_x509_crt_get_frame(),
+ *                  and mbedtls_asn1_traverse_sequence_of() can be used to
+ *                  traverse the entries in the extended key usage extension.
+ *
+ * \return          \c 0 on success. In this case, the user takes ownership
+ *                  of the name context, and is responsible for freeing it
+ *                  through a call to mbedtls_x509_sequence_free() once it's
+ *                  no longer needed.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_x509_crt_get_ext_key_usage( mbedtls_x509_crt const *crt,
+                                        mbedtls_x509_sequence **ext_key_usage );
+
+/**
+ * \brief           Request the policies extension of a CRT, presented
+ *                  as a dynamically allocated linked list.
+ *
+ * \param crt       The CRT to use. This must be initialized and set up.
+ * \param policies  The address at which to store the address of the
+ *                  first component of the policies list.
+ *
+ * \note            Depending in your use case, consider using the raw ASN.1
+ *                  describing the certificate policies extension instead of
+ *                  the heap-allocated linked list generated by this call.
+ *                  The pointers to the raw ASN.1 data are part of the CRT
+ *                  frame that can be queried via mbedtls_x509_crt_get_frame(),
+ *                  and mbedtls_asn1_traverse_sequence_of() can be used to
+ *                  traverse the list of subject alternative names.
+ *
+ * \return          \c 0 on success. In this case, the user takes ownership
+ *                  of the name context, and is responsible for freeing it
+ *                  through a call to mbedtls_x509_sequence_free() once it's
+ *                  no longer needed.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_x509_crt_get_certificate_policies( mbedtls_x509_crt const *crt,
+                                               mbedtls_x509_sequence **policies );
+
+/**
+ * \brief           Flush internal X.509 CRT parsing cache, if present.
+ *
+ * \param crt       The CRT structure whose cache to flush.
+ *
+ * \note            Calling this function frequently reduces RAM usage
+ *                  at the cost of performance.
+ *
+ * \return          \c 0 on success.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_x509_crt_flush_cache( mbedtls_x509_crt const *crt );
+
+/**
+ * \brief        Request temporary read-access to a certificate frame
+ *               for a given certificate.
+ *
+ *               Once no longer needed, the frame must be released
+ *               through a call to mbedtls_x509_crt_frame_release().
+ *
+ *               This is a copy-less version of mbedtls_x509_crt_get_frame().
+ *               See there for more information.
+ *
+ * \param crt    The certificate to use. This must be initialized and set up.
+ * \param dst    The address at which to store the address of a readable
+ *               certificate frame for the input certificate \p crt which the
+ *               caller can use until calling mbedtls_x509_crt_frame_release().
+ *
+ * \note         The certificate frame `**frame_ptr` returned by this function
+ *               is owned by the X.509 module and must not be freed or modified
+ *               by the caller. The X.509 module guarantees its validity as long
+ *               as \p crt is valid and mbedtls_x509_crt_frame_release() hasn't
+ *               been issued.
+ *
+ * \note         In a single-threaded application using
+ *               MBEDTLS_X509_ALWAYS_FLUSH, nested calls to this function
+ *               are not allowed and will fail gracefully with
+ *               MBEDTLS_ERR_X509_FATAL_ERROR.
+ *
+ * \return       \c 0 on success. In this case, `*frame_ptr` is updated
+ *               to hold the address of a frame for the given CRT.
+ * \return       A negative error code on failure.
+ */
+static inline int mbedtls_x509_crt_frame_acquire( mbedtls_x509_crt const *crt,
+                                          mbedtls_x509_crt_frame const **dst )
+{
+    int ret = 0;
+#if defined(MBEDTLS_THREADING_C)
+    if( mbedtls_mutex_lock( &crt->cache->frame_mutex ) != 0 )
+        return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
+#endif /* MBEDTLS_THREADING_C */
+
+#if !defined(MBEDTLS_X509_ALWAYS_FLUSH) ||      \
+    defined(MBEDTLS_THREADING_C)
+    if( crt->cache->frame_readers == 0 )
+#endif
+        ret = mbedtls_x509_crt_cache_provide_frame( crt );
+
+#if !defined(MBEDTLS_X509_ALWAYS_FLUSH) ||      \
+    defined(MBEDTLS_THREADING_C)
+    if( crt->cache->frame_readers == MBEDTLS_X509_CACHE_FRAME_READERS_MAX )
+        return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
+
+    crt->cache->frame_readers++;
+#endif
+
+#if defined(MBEDTLS_THREADING_C)
+    if( mbedtls_mutex_unlock( &crt->cache->frame_mutex ) != 0 )
+        return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
+#endif /* MBEDTLS_THREADING_C */
+
+    *dst = crt->cache->frame;
+    return( ret );
+}
+
+/**
+ * \brief        Release access to a certificate frame acquired
+ *               through a prior call to mbedtls_x509_crt_frame_acquire().
+ *
+ * \param crt    The certificate for which a certificate frame has
+ *               previously been acquired.
+ */
+static inline int mbedtls_x509_crt_frame_release( mbedtls_x509_crt const *crt )
+{
+#if defined(MBEDTLS_THREADING_C)
+    if( mbedtls_mutex_lock( &crt->cache->frame_mutex ) != 0 )
+        return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
+#endif /* MBEDTLS_THREADING_C */
+
+#if !defined(MBEDTLS_X509_ALWAYS_FLUSH) ||      \
+    defined(MBEDTLS_THREADING_C)
+    if( crt->cache->frame_readers == 0 )
+        return( MBEDTLS_ERR_X509_FATAL_ERROR );
+
+    crt->cache->frame_readers--;
+#endif
+
+#if defined(MBEDTLS_THREADING_C)
+    mbedtls_mutex_unlock( &crt->cache->frame_mutex );
+#endif /* MBEDTLS_THREADING_C */
+
+#if defined(MBEDTLS_X509_ALWAYS_FLUSH)
+    (void) mbedtls_x509_crt_flush_cache_frame( crt );
+#endif /* MBEDTLS_X509_ALWAYS_FLUSH */
+
+#if !defined(MBEDTLS_X509_ALWAYS_FLUSH) && \
+    !defined(MBEDTLS_THREADING_C)
+    ((void) crt);
+#endif
+
+    return( 0 );
+}
+
+/**
+ * \brief        Request temporary access to a public key context
+ *               for a given certificate.
+ *
+ *               Once no longer needed, the frame must be released
+ *               through a call to mbedtls_x509_crt_pk_release().
+ *
+ *               This is a copy-less version of mbedtls_x509_crt_get_pk().
+ *               See there for more information.
+ *
+ * \param crt    The certificate to use. This must be initialized and set up.
+ * \param dst    The address at which to store the address of a public key
+ *               context for the public key in the input certificate \p crt.
+ *
+ * \warning      The public key context `**pk_ptr` returned by this function
+ *               is owned by the X.509 module and must be used by the caller
+ *               in a thread-safe way. In particular, the caller must only
+ *               use the context with functions which are `const` on the input
+ *               context, or those which are known to be thread-safe. The latter
+ *               for example includes mbedtls_pk_verify() for ECC or RSA public
+ *               key contexts.
+ *
+ * \note         In a single-threaded application using
+ *               MBEDTLS_X509_ALWAYS_FLUSH, nested calls to this function
+ *               are not allowed and will fail gracefully with
+ *               MBEDTLS_ERR_X509_FATAL_ERROR.
+ *
+ * \return       \c 0 on success. In this case, `*pk_ptr` is updated
+ *               to hold the address of a public key context for the given
+ *               certificate.
+ * \return       A negative error code on failure.
+ */
+static inline int mbedtls_x509_crt_pk_acquire( mbedtls_x509_crt const *crt,
+                                               mbedtls_pk_context **dst )
+{
+    int ret = 0;
+#if defined(MBEDTLS_THREADING_C)
+    if( mbedtls_mutex_lock( &crt->cache->pk_mutex ) != 0 )
+        return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
+#endif /* MBEDTLS_THREADING_C */
+
+#if !defined(MBEDTLS_X509_ALWAYS_FLUSH) ||      \
+    defined(MBEDTLS_THREADING_C)
+    if( crt->cache->pk_readers == 0 )
+#endif
+        ret = mbedtls_x509_crt_cache_provide_pk( crt );
+
+#if !defined(MBEDTLS_X509_ALWAYS_FLUSH) ||      \
+    defined(MBEDTLS_THREADING_C)
+    if( crt->cache->pk_readers == MBEDTLS_X509_CACHE_PK_READERS_MAX )
+        return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
+
+    crt->cache->pk_readers++;
+#endif
+
+#if defined(MBEDTLS_THREADING_C)
+    if( mbedtls_mutex_unlock( &crt->cache->pk_mutex ) != 0 )
+        return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
+#endif /* MBEDTLS_THREADING_C */
+
+    *dst = crt->cache->pk;
+    return( ret );
+}
+
+/**
+ * \brief        Release access to a public key context acquired
+ *               through a prior call to mbedtls_x509_crt_frame_acquire().
+ *
+ * \param crt    The certificate for which a certificate frame has
+ *               previously been acquired.
+ */
+static inline int mbedtls_x509_crt_pk_release( mbedtls_x509_crt const *crt )
+{
+#if defined(MBEDTLS_THREADING_C)
+    if( mbedtls_mutex_lock( &crt->cache->pk_mutex ) != 0 )
+        return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
+#endif /* MBEDTLS_THREADING_C */
+
+#if !defined(MBEDTLS_X509_ALWAYS_FLUSH) ||      \
+    defined(MBEDTLS_THREADING_C)
+    if( crt->cache->pk_readers == 0 )
+        return( MBEDTLS_ERR_X509_FATAL_ERROR );
+
+    crt->cache->pk_readers--;
+#endif
+
+#if defined(MBEDTLS_THREADING_C)
+    mbedtls_mutex_unlock( &crt->cache->pk_mutex );
+#endif /* MBEDTLS_THREADING_C */
+
+#if defined(MBEDTLS_X509_ALWAYS_FLUSH)
+    (void) mbedtls_x509_crt_flush_cache_pk( crt );
+#endif /* MBEDTLS_X509_ALWAYS_FLUSH */
+
+#if !defined(MBEDTLS_X509_ALWAYS_FLUSH) && \
+    !defined(MBEDTLS_THREADING_C)
+    ((void) crt);
+#endif
+
+    return( 0 );
+}
+
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 /* \} name */

@@ -1,3 +1,5 @@
+option(LINK_WITH_PTHREAD "Explicitly link mbed TLS library to pthread." OFF)
+
 set(libs
     mbedtls
 )
@@ -9,6 +11,10 @@ endif(USE_PKCS11_HELPER_LIBRARY)
 if(ENABLE_ZLIB_SUPPORT)
     set(libs ${libs} ${ZLIB_LIBRARIES})
 endif(ENABLE_ZLIB_SUPPORT)
+
+if(LINK_WITH_PTHREAD)
+    set(libs ${libs} pthread)
+endif(LINK_WITH_PTHREAD)
 
 find_package(PythonInterp)
 if(NOT PYTHONINTERP_FOUND)
@@ -65,6 +71,9 @@ add_test_suite(ssl)
 add_test_suite(version)
 add_test_suite(x509parse)
 add_test_suite(x509write)
+if(LINK_WITH_PTHREAD)
+        add_test_suite(x509parse_pthread)
+endif(LINK_WITH_PTHREAD)
 
 # Make scripts and data files needed for testing available in an
 # out-of-source build.

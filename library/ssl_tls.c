@@ -7105,6 +7105,7 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl,
                                          void *rs_ctx )
 {
     int ret = 0;
+    int verify_ret;
     const mbedtls_ssl_ciphersuite_t *ciphersuite_info =
         ssl->handshake->ciphersuite_info;
     int have_ca_chain = 0;
@@ -7138,7 +7139,7 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl,
         have_ca_chain = 1;
 
         MBEDTLS_SSL_DEBUG_MSG( 3, ( "use CA callback for X.509 CRT verification" ) );
-        ret = mbedtls_x509_crt_verify_with_ca_cb(
+        verify_ret = mbedtls_x509_crt_verify_with_ca_cb(
             chain,
             ssl->conf->f_ca_cb,
             ssl->conf->p_ca_cb,
@@ -7169,7 +7170,7 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl,
         if( ca_chain != NULL )
             have_ca_chain = 1;
 
-        ret = mbedtls_x509_crt_verify_restartable(
+        verify_ret = mbedtls_x509_crt_verify_restartable(
             chain,
             ca_chain, ca_crl,
             ssl->conf->cert_profile,
@@ -7178,13 +7179,13 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl,
             f_vrfy, p_vrfy, rs_ctx );
     }
 
-    if( ret != 0 )
+    if( verify_ret != 0 )
     {
-        MBEDTLS_SSL_DEBUG_RET( 1, "x509_verify_cert", ret );
+        MBEDTLS_SSL_DEBUG_RET( 1, "x509_verify_cert", verify_ret );
     }
 
 #if defined(MBEDTLS_SSL__ECP_RESTARTABLE)
-    if( ret == MBEDTLS_ERR_ECP_IN_PROGRESS )
+    if( verify_ret == MBEDTLS_ERR_ECP_IN_PROGRESS )
         return( MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS );
 #endif
 
@@ -7194,29 +7195,40 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl,
 
 #if defined(MBEDTLS_ECP_C)
     {
-        const mbedtls_pk_context *pk = &chain->pk;
+        mbedtls_pk_context *pk;
+        ret = mbedtls_x509_crt_pk_acquire( chain, &pk );
+        if( ret != 0 )
+        {
+            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_x509_crt_pk_acquire", ret );
+            return( ret );
+        }
 
         /* If certificate uses an EC key, make sure the curve is OK */
-        if( mbedtls_pk_can_do( pk, MBEDTLS_PK_ECKEY ) &&
-            mbedtls_ssl_check_curve( ssl, mbedtls_pk_ec( *pk )->grp.id ) != 0 )
+        if( mbedtls_pk_can_do( pk, MBEDTLS_PK_ECKEY ) )
+            ret = mbedtls_ssl_check_curve( ssl, mbedtls_pk_ec( *pk )->grp.id );
+
+        mbedtls_x509_crt_pk_release( chain );
+
+        if( ret != 0 )
         {
             ssl->session_negotiate->verify_result |= MBEDTLS_X509_BADCERT_BAD_KEY;
 
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate (EC key curve)" ) );
-            if( ret == 0 )
-                ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE;
+            if( verify_ret == 0 )
+                verify_ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE;
         }
     }
 #endif /* MBEDTLS_ECP_C */
 
-    if( mbedtls_ssl_check_cert_usage( chain,
-                                      ciphersuite_info,
-                                      ! ssl->conf->endpoint,
-                                      &ssl->session_negotiate->verify_result ) != 0 )
+    ret = mbedtls_ssl_check_cert_usage( chain,
+                                     ciphersuite_info,
+                                     ! ssl->conf->endpoint,
+                                     &ssl->session_negotiate->verify_result );
+    if( ret != 0 )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad certificate (usage extensions)" ) );
-        if( ret == 0 )
-            ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE;
+        if( verify_ret == 0 )
+            verify_ret = MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE;
     }
 
     /* mbedtls_x509_crt_verify_with_profile is supposed to report a
@@ -7226,19 +7238,19 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl,
      * functions, are treated as fatal and lead to a failure of
      * ssl_parse_certificate even if verification was optional. */
     if( authmode == MBEDTLS_SSL_VERIFY_OPTIONAL &&
-        ( ret == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED ||
-          ret == MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE ) )
+        ( verify_ret == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED ||
+          verify_ret == MBEDTLS_ERR_SSL_BAD_HS_CERTIFICATE ) )
     {
-        ret = 0;
+        verify_ret = 0;
     }
 
     if( have_ca_chain == 0 && authmode == MBEDTLS_SSL_VERIFY_REQUIRED )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "got no CA chain" ) );
-        ret = MBEDTLS_ERR_SSL_CA_CHAIN_REQUIRED;
+        verify_ret = MBEDTLS_ERR_SSL_CA_CHAIN_REQUIRED;
     }
 
-    if( ret != 0 )
+    if( verify_ret != 0 )
     {
         uint8_t alert;
 
@@ -7283,7 +7295,7 @@ static int ssl_parse_certificate_verify( mbedtls_ssl_context *ssl,
     }
 #endif /* MBEDTLS_DEBUG_C */
 
-    return( ret );
+    return( verify_ret );
 }
 
 #if !defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
@@ -7442,8 +7454,8 @@ crt_verify:
         crt_start = chain->raw.p;
         crt_len   = chain->raw.len;
 
-        pk_start = chain->pk_raw.p;
-        pk_len   = chain->pk_raw.len;
+        pk_start = chain->cache->pk_raw.p;
+        pk_len   = chain->cache->pk_raw.len;
 
         /* Free the CRT structures before computing
          * digest and copying the peer's public key. */

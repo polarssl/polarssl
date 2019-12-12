@@ -2,6 +2,15 @@ mbed TLS ChangeLog (Sorted per branch, date)
 
 = mbed TLS 2.20.0 branch released xxxx-xx-xx
 
+API Changes
+   * Add a new compile-time option `MBEDTLS_X509_ON_DEMAND_PARSING`,
+     disabled by default, which allows to parse and cache X.509 CRTs
+     on demand only, at the benefit of lower RAM usage. Enabling
+     this option breaks the structure API of X.509 in that most
+     fields of `mbedtls_x509_crt` are removed, but it keeps the
+     X.509 function API. See the API changes section as well as
+     the documentation in `config.h` for more information.
+
 Bugfix
    * Fix an incorrect size in a debugging message. Reported and fix
      submitted by irwir. Fixes #2717.
@@ -9,6 +18,10 @@ Bugfix
      Reported and fix submitted by irwir. Fixes #2800.
    * Remove a useless assignment. Reported and fix submitted by irwir.
      Fixes #2801.
+   * Fix parsing of X.509 SubjectAlternativeName extension. Previously,
+     malformed alternative name components were not caught during initial
+     certificate parsing, but only on subsequent calls to
+     mbedtls_x509_parse_subject_alt_name(). Fixes #2838.
 
 = mbed TLS 2.19.1 branch released 2019-09-16
 

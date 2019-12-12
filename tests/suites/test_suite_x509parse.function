@@ -4,6 +4,7 @@
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/x509_crl.h"
 #include "mbedtls/x509_csr.h"
+#include "mbedtls/x509_internal.h"
 #include "mbedtls/pem.h"
 #include "mbedtls/oid.h"
 #include "mbedtls/base64.h"
@@ -207,24 +208,47 @@ int verify_print( void *data, mbedtls_x509_crt *crt, int certificate_depth, uint
     verify_print_context *ctx = (verify_print_context *) data;
     char *p = ctx->p;
     size_t n = ctx->buf + sizeof( ctx->buf ) - ctx->p;
+    mbedtls_x509_crt_frame const *frame;
+    mbedtls_x509_name *subject;
     ((void) flags);
 
-    ret = mbedtls_snprintf( p, n, "depth %d - serial ", certificate_depth );
-    MBEDTLS_X509_SAFE_SNPRINTF;
+    ret = mbedtls_x509_crt_get_subject( crt, &subject );
+    if( ret != 0 )
+        return( ret );
 
-    ret = mbedtls_x509_serial_gets( p, n, &crt->serial );
-    MBEDTLS_X509_SAFE_SNPRINTF;
+    ret = mbedtls_x509_crt_frame_acquire( crt, &frame );
+    if( ret != 0 )
+        return( ret );
+
+    ret = mbedtls_snprintf( p, n, "depth %d - serial ", certificate_depth );
+    MBEDTLS_X509_SAFE_SNPRINTF_WITH_CLEANUP;
+
+    {
+        mbedtls_x509_buf serial;
+        serial.p   = frame->serial.p;
+        serial.len = frame->serial.len;
+        ret = mbedtls_x509_serial_gets( p, n, &serial );
+        MBEDTLS_X509_SAFE_SNPRINTF_WITH_CLEANUP;
+    }
 
     ret = mbedtls_snprintf( p, n, " - subject " );
-    MBEDTLS_X509_SAFE_SNPRINTF;
+    MBEDTLS_X509_SAFE_SNPRINTF_WITH_CLEANUP;
 
-    ret = mbedtls_x509_dn_gets( p, n, &crt->subject );
-    MBEDTLS_X509_SAFE_SNPRINTF;
+    ret = mbedtls_x509_dn_gets( p, n, subject );
+    MBEDTLS_X509_SAFE_SNPRINTF_WITH_CLEANUP;
 
     ret = mbedtls_snprintf( p, n, " - flags 0x%08x\n", *flags );
-    MBEDTLS_X509_SAFE_SNPRINTF;
+    MBEDTLS_X509_SAFE_SNPRINTF_WITH_CLEANUP;
 
     ctx->p = p;
+
+cleanup:
+
+    mbedtls_x509_name_free( subject );
+    mbedtls_x509_crt_frame_release( crt );
+
+    if( ret < 0 )
+        return( ret );
 
     return( 0 );
 }
@@ -314,8 +338,8 @@ void x509_parse_san( char * crt_file, char * result_str )
 {
     int ret;
     mbedtls_x509_crt   crt;
-    mbedtls_x509_subject_alternative_name san;
-    mbedtls_x509_sequence *cur = NULL;
+    mbedtls_x509_sequence *cur;
+    mbedtls_x509_sequence *san_list = NULL;
     char buf[2000];
     char *p = buf;
     size_t n = sizeof( buf );
@@ -324,27 +348,27 @@ void x509_parse_san( char * crt_file, char * result_str )
     memset( buf, 0, 2000 );
 
     TEST_ASSERT( mbedtls_x509_crt_parse_file( &crt, crt_file ) == 0 );
+    TEST_ASSERT( mbedtls_x509_crt_get_subject_alt_names( &crt,
+                                                         &san_list ) == 0 );
 
-    if( crt.ext_types & MBEDTLS_X509_EXT_SUBJECT_ALT_NAME )
+    for( cur = san_list; cur != NULL; cur = cur->next )
     {
-        cur = &crt.subject_alt_names;
-        while( cur != NULL )
-        {
-            ret = mbedtls_x509_parse_subject_alt_name( &cur->buf, &san );
-            TEST_ASSERT( ret == 0 || ret == MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE );
-            /*
-             * If san type not supported, ignore.
-             */
-            if( ret == 0)
-                TEST_ASSERT( verify_parse_san( &san, &p, &n ) == 0 );
-            cur = cur->next;
-        }
+        mbedtls_x509_subject_alternative_name san;
+
+        ret = mbedtls_x509_parse_subject_alt_name( &cur->buf, &san );
+        TEST_ASSERT( ret == 0 || ret == MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE );
+        /*
+         * If san type not supported, ignore.
+         */
+        if( ret == 0)
+            TEST_ASSERT( verify_parse_san( &san, &p, &n ) == 0 );
     }
 
     TEST_ASSERT( strcmp( buf, result_str ) == 0 );
 
 exit:
 
+    mbedtls_x509_sequence_free( san_list );
     mbedtls_x509_crt_free( &crt );
 }
 /* END_CASE */
@@ -657,15 +681,19 @@ void mbedtls_x509_dn_gets( char * crt_file, char * entity, char * result_str )
     mbedtls_x509_crt   crt;
     char buf[2000];
     int res = 0;
+    mbedtls_x509_name *subject = NULL, *issuer = NULL;
 
     mbedtls_x509_crt_init( &crt );
     memset( buf, 0, 2000 );
 
     TEST_ASSERT( mbedtls_x509_crt_parse_file( &crt, crt_file ) == 0 );
+    TEST_ASSERT( mbedtls_x509_crt_get_subject( &crt, &subject ) == 0 );
+    TEST_ASSERT( mbedtls_x509_crt_get_issuer( &crt, &issuer ) == 0 );
+
     if( strcmp( entity, "subject" ) == 0 )
-        res =  mbedtls_x509_dn_gets( buf, 2000, &crt.subject );
+        res =  mbedtls_x509_dn_gets( buf, 2000, subject );
     else if( strcmp( entity, "issuer" ) == 0 )
-        res =  mbedtls_x509_dn_gets( buf, 2000, &crt.issuer );
+        res =  mbedtls_x509_dn_gets( buf, 2000, issuer );
     else
         TEST_ASSERT( "Unknown entity" == 0 );
 
@@ -675,6 +703,8 @@ void mbedtls_x509_dn_gets( char * crt_file, char * entity, char * result_str )
     TEST_ASSERT( strcmp( buf, result_str ) == 0 );
 
 exit:
+    mbedtls_x509_name_free( subject );
+    mbedtls_x509_name_free( issuer );
     mbedtls_x509_crt_free( &crt );
 }
 /* END_CASE */
@@ -682,16 +712,18 @@ exit:
 /* BEGIN_CASE depends_on:MBEDTLS_FS_IO:MBEDTLS_X509_CRT_PARSE_C */
 void mbedtls_x509_time_is_past( char * crt_file, char * entity, int result )
 {
-    mbedtls_x509_crt   crt;
+    mbedtls_x509_crt crt;
+    mbedtls_x509_crt_frame frame;
 
     mbedtls_x509_crt_init( &crt );
 
     TEST_ASSERT( mbedtls_x509_crt_parse_file( &crt, crt_file ) == 0 );
+    TEST_ASSERT( mbedtls_x509_crt_get_frame( &crt, &frame ) == 0 );
 
     if( strcmp( entity, "valid_from" ) == 0 )
-        TEST_ASSERT( mbedtls_x509_time_is_past( &crt.valid_from ) == result );
+        TEST_ASSERT( mbedtls_x509_time_is_past( &frame.valid_from ) == result );
     else if( strcmp( entity, "valid_to" ) == 0 )
-        TEST_ASSERT( mbedtls_x509_time_is_past( &crt.valid_to ) == result );
+        TEST_ASSERT( mbedtls_x509_time_is_past( &frame.valid_to ) == result );
     else
         TEST_ASSERT( "Unknown entity" == 0 );
 
@@ -703,16 +735,18 @@ exit:
 /* BEGIN_CASE depends_on:MBEDTLS_FS_IO:MBEDTLS_X509_CRT_PARSE_C */
 void mbedtls_x509_time_is_future( char * crt_file, char * entity, int result )
 {
-    mbedtls_x509_crt   crt;
+    mbedtls_x509_crt crt;
+    mbedtls_x509_crt_frame frame;
 
     mbedtls_x509_crt_init( &crt );
 
     TEST_ASSERT( mbedtls_x509_crt_parse_file( &crt, crt_file ) == 0 );
+    TEST_ASSERT( mbedtls_x509_crt_get_frame( &crt, &frame ) == 0 );
 
     if( strcmp( entity, "valid_from" ) == 0 )
-        TEST_ASSERT( mbedtls_x509_time_is_future( &crt.valid_from ) == result );
+        TEST_ASSERT( mbedtls_x509_time_is_future( &frame.valid_from ) == result );
     else if( strcmp( entity, "valid_to" ) == 0 )
-        TEST_ASSERT( mbedtls_x509_time_is_future( &crt.valid_to ) == result );
+        TEST_ASSERT( mbedtls_x509_time_is_future( &frame.valid_to ) == result );
     else
         TEST_ASSERT( "Unknown entity" == 0 );
 
@@ -769,6 +803,99 @@ void x509parse_crt( data_t * buf, char * result_str, int result )
         TEST_ASSERT( res != -2 );
 
         TEST_ASSERT( strcmp( (char *) output, result_str ) == 0 );
+    }
+
+exit:
+    mbedtls_x509_crt_free( &crt );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_X509_CRT_PARSE_C */
+void x509_nested_acquire( data_t * buf )
+{
+    /* This tests exercises the behavior of the library when
+     * facing nested calls to mbedtls_x509_crt_xxx_acquire().
+     * This is allowed if !MBEDTLS_X509_ALWAYS_FLUSH or
+     * MBEDTLS_THREADING_C, but forbidden otherwise. */
+
+    mbedtls_x509_crt crt;
+    mbedtls_x509_crt_init( &crt );
+    TEST_ASSERT( mbedtls_x509_crt_parse_der( &crt, buf->x, buf->len ) == 0 );
+
+    /* Nested aquire for CRT frames */
+    {
+        int ret;
+        mbedtls_x509_crt_frame const *frame1;
+        mbedtls_x509_crt_frame const *frame2;
+
+        /* Perform a (hopefully) innocent acquire-release pair first. */
+
+        TEST_ASSERT( mbedtls_x509_crt_frame_acquire( &crt, &frame1 ) == 0 );
+        TEST_ASSERT( mbedtls_x509_crt_frame_release( &crt ) == 0 );
+
+        /* Perform two nested acquire calls. */
+
+        TEST_ASSERT( mbedtls_x509_crt_frame_acquire( &crt, &frame1 ) == 0 );
+
+        ret = mbedtls_x509_crt_frame_acquire( &crt, &frame2 );
+#if defined(MBEDTLS_X509_ALWAYS_FLUSH) &&      \
+    !defined(MBEDTLS_THREADING_C)
+        TEST_ASSERT( ret == MBEDTLS_ERR_X509_FATAL_ERROR );
+#else
+        TEST_ASSERT( ret == 0 );
+        TEST_ASSERT( mbedtls_x509_crt_frame_release( &crt ) == 0 );
+#endif
+
+        TEST_ASSERT( mbedtls_x509_crt_frame_release( &crt ) == 0 );
+
+        ret = mbedtls_x509_crt_frame_release( &crt );
+
+        /* In contexts which use resource counting, we expect an
+         * error on an attempted release() without prior acquire(). */
+#if defined(MBEDTLS_X509_ALWAYS_FLUSH) &&      \
+    !defined(MBEDTLS_THREADING_C)
+        TEST_ASSERT( ret == 0 );
+#else
+        TEST_ASSERT( ret == MBEDTLS_ERR_X509_FATAL_ERROR );
+#endif
+    }
+
+    /* Nested aquire for PK contexts */
+    {
+        int ret;
+        mbedtls_pk_context *pk1;
+        mbedtls_pk_context *pk2;
+
+        /* Perform a (hopefully) innocent acquire-release pair first. */
+
+        TEST_ASSERT( mbedtls_x509_crt_pk_acquire( &crt, &pk1 ) == 0 );
+        TEST_ASSERT( mbedtls_x509_crt_pk_release( &crt ) == 0 );
+
+        /* Perform two nested acquire calls. */
+
+        TEST_ASSERT( mbedtls_x509_crt_pk_acquire( &crt, &pk1 ) == 0 );
+
+        ret = mbedtls_x509_crt_pk_acquire( &crt, &pk2 );
+#if defined(MBEDTLS_X509_ALWAYS_FLUSH) &&      \
+    !defined(MBEDTLS_THREADING_C)
+        TEST_ASSERT( ret == MBEDTLS_ERR_X509_FATAL_ERROR );
+#else
+        TEST_ASSERT( ret == 0 );
+        TEST_ASSERT( mbedtls_x509_crt_pk_release( &crt ) == 0 );
+#endif
+
+        TEST_ASSERT( mbedtls_x509_crt_pk_release( &crt ) == 0 );
+
+        ret = mbedtls_x509_crt_pk_release( &crt );
+
+        /* In contexts which use resource counting, we expect an
+         * error on an attempted release() without prior acquire(). */
+#if defined(MBEDTLS_X509_ALWAYS_FLUSH) &&      \
+    !defined(MBEDTLS_THREADING_C)
+        TEST_ASSERT( ret == 0 );
+#else
+        TEST_ASSERT( ret == MBEDTLS_ERR_X509_FATAL_ERROR );
+#endif
     }
 
 exit:

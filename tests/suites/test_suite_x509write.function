@@ -2,6 +2,7 @@
 #include "mbedtls/bignum.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/x509_csr.h"
+#include "mbedtls/x509_internal.h"
 #include "mbedtls/pem.h"
 #include "mbedtls/oid.h"
 #include "mbedtls/rsa.h"
@@ -307,7 +308,7 @@ void mbedtls_x509_string_to_names( char * name, char * parsed_name, int result
                                    )
 {
     int ret;
-    size_t len = 0;
+    size_t len;
     mbedtls_asn1_named_data *names = NULL;
     mbedtls_x509_name parsed, *parsed_cur, *parsed_prv;
     unsigned char buf[1024], out[1024], *c;
@@ -325,10 +326,9 @@ void mbedtls_x509_string_to_names( char * name, char * parsed_name, int result
 
     ret = mbedtls_x509_write_names( &c, buf, names );
     TEST_ASSERT( ret > 0 );
+    len = (size_t) ret;
 
-    TEST_ASSERT( mbedtls_asn1_get_tag( &c, buf + sizeof( buf ), &len,
-                        MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) == 0 );
-    TEST_ASSERT( mbedtls_x509_get_name( &c, buf + sizeof( buf ), &parsed ) == 0 );
+    TEST_ASSERT( mbedtls_x509_get_name( c, len, &parsed ) == 0 );
 
     ret = mbedtls_x509_dn_gets( (char *) out, sizeof( out ), &parsed );
     TEST_ASSERT( ret > 0 );
