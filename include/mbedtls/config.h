@@ -1777,6 +1777,13 @@
 #define MBEDTLS_SSL_TRUNCATED_HMAC
 
 /**
+ * \def MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
+ *
+ * Enable modifying the maximum I/O buffer size.
+ */
+//#define MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
+
+/**
  * \def MBEDTLS_SSL_TRUNCATED_HMAC_COMPAT
  *
  * Fallback to old (pre-2.7), non-conforming implementation of the truncated
