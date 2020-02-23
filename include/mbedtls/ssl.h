@@ -2810,8 +2810,9 @@ void mbedtls_ssl_conf_psk_cb( mbedtls_ssl_config *conf,
 
 /**
  * \brief          Set the Diffie-Hellman public P and G values,
- *                 read as hexadecimal strings (server-side only)
- *                 (Default values: MBEDTLS_DHM_RFC3526_MODP_2048_[PG])
+ *                 read as hexadecimal strings (server-side only).
+ *                 (Default values: MBEDTLS_DHM_RFC3526_MODP_2048_P
+ *                  and MBEDTLS_DHM_RFC3526_MODP_2048_G)
  *
  * \param conf     SSL configuration
  * \param dhm_P    Diffie-Hellman-Merkle modulus
@@ -2830,7 +2831,8 @@ MBEDTLS_DEPRECATED int mbedtls_ssl_conf_dh_param( mbedtls_ssl_config *conf,
 /**
  * \brief          Set the Diffie-Hellman public P and G values
  *                 from big-endian binary presentations.
- *                 (Default values: MBEDTLS_DHM_RFC3526_MODP_2048_[PG]_BIN)
+ *                 (Default values: MBEDTLS_DHM_RFC3526_MODP_2048_P_BIN
+ *                  and MBEDTLS_DHM_RFC3526_MODP_2048_G_BIN)
  *
  * \param conf     SSL configuration
  * \param dhm_P    Diffie-Hellman-Merkle modulus in big-endian binary form

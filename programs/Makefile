@@ -81,6 +81,7 @@ APPS =	aes/aescrypt2$(EXEXT)		aes/crypt_and_hash$(EXEXT)	\
 	test/zeroize$(EXEXT)						\
 	test/query_compile_time_config$(EXEXT)				\
 	util/pem2der$(EXEXT)		util/strerror$(EXEXT)		\
+	util/rfc_3526_7919_verify$(EXEXT)				\
 	x509/cert_app$(EXEXT)		x509/crl_app$(EXEXT)		\
 	x509/cert_req$(EXEXT)		x509/cert_write$(EXEXT)		\
 	x509/req_app$(EXEXT)
@@ -162,6 +163,10 @@ pkey/key_app_writer$(EXEXT): pkey/key_app_writer.c $(DEP)
 pkey/mpi_demo$(EXEXT): pkey/mpi_demo.c $(DEP)
 	echo "  CC    pkey/mpi_demo.c"
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) pkey/mpi_demo.c    $(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
+
+util/rfc_3526_7919_verify$(EXEXT): util/rfc_3526_7919_verify.c $(DEP)
+	echo "  CC    pkey/rfc_3526_7919_verify.c"
+	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) util/rfc_3526_7919_verify.c    $(LOCAL_LDFLAGS) $(LDFLAGS) -o $@
 
 pkey/pk_decrypt$(EXEXT): pkey/pk_decrypt.c $(DEP)
 	echo "  CC    pkey/pk_decrypt.c"
