@@ -672,7 +672,7 @@ component_test_default_cmake_gcc_asan () {
     make
 
     msg "test: main suites (inc. selftests) (ASan build)" # ~ 50s
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
 
     msg "test: ssl-opt.sh (ASan build)" # ~ 1 min
     if_build_succeeded tests/ssl-opt.sh
@@ -749,7 +749,7 @@ component_test_sslv3 () {
     make
 
     msg "test: SSLv3 - main suites (inc. selftests) (ASan build)" # ~ 50s
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
 
     msg "build: SSLv3 - compat.sh (ASan build)" # ~ 6 min
     if_build_succeeded tests/compat.sh -m 'tls1 tls1_1 tls1_2 dtls1 dtls1_2'
@@ -766,7 +766,7 @@ component_test_no_renegotiation () {
     make
 
     msg "test: !MBEDTLS_SSL_RENEGOTIATION - main suites (inc. selftests) (ASan build)" # ~ 50s
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
 
     msg "test: !MBEDTLS_SSL_RENEGOTIATION - ssl-opt.sh (ASan build)" # ~ 6 min
     if_build_succeeded tests/ssl-opt.sh
@@ -793,7 +793,7 @@ component_test_rsa_no_crt () {
     make
 
     msg "test: RSA_NO_CRT - main suites (inc. selftests) (ASan build)" # ~ 50s
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
 
     msg "test: RSA_NO_CRT - RSA-related part of ssl-opt.sh (ASan build)" # ~ 5s
     if_build_succeeded tests/ssl-opt.sh -f RSA
@@ -869,7 +869,7 @@ component_test_full_cmake_clang () {
     make
 
     msg "test: main suites (full config)" # ~ 5s
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
 
     msg "test: ssl-opt.sh default, ECJPAKE, SSL async (full config)" # ~ 1s
     if_build_succeeded tests/ssl-opt.sh -f 'Default\|ECJPAKE\|SSL async private'
@@ -1237,7 +1237,7 @@ component_test_null_entropy () {
     make
 
     msg "test: MBEDTLS_TEST_NULL_ENTROPY - main suites (inc. selftests) (ASan build)"
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
 }
 
 component_test_platform_calloc_macro () {
@@ -1249,7 +1249,7 @@ component_test_platform_calloc_macro () {
     make
 
     msg "test: MBEDTLS_PLATFORM_{CALLOC/FREE}_MACRO enabled (ASan build)"
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
 }
 
 component_test_malloc_0_null () {
@@ -1491,7 +1491,7 @@ component_test_memsan () {
     make
 
     msg "test: main suites (MSan)" # ~ 10s
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
 
     msg "test: ssl-opt.sh (MSan)" # ~ 1 min
     if_build_succeeded tests/ssl-opt.sh
@@ -1534,7 +1534,7 @@ component_test_cmake_out_of_source () {
     make
 
     msg "test: cmake 'out-of-source' build"
-    make test
+    env CTEST_OUTPUT_ON_FAILURE=1 make test
     # Test an SSL option that requires an auxiliary script in test/scripts/.
     # Also ensure that there are no error messages such as
     # "No such file or directory", which would indicate that some required

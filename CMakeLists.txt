@@ -217,7 +217,7 @@ if(ENABLE_TESTING)
     if(UNIX)
 
         ADD_CUSTOM_TARGET(covtest
-            COMMAND make test
+            COMMAND env CTEST_OUTPUT_ON_FAILURE=1 make test
             COMMAND programs/test/selftest
             COMMAND tests/compat.sh
             COMMAND tests/ssl-opt.sh
@@ -236,7 +236,7 @@ if(ENABLE_TESTING)
 
         ADD_CUSTOM_TARGET(memcheck
             COMMAND sed -i.bak s+/usr/bin/valgrind+`which valgrind`+ DartConfiguration.tcl
-            COMMAND ctest -O memcheck.log -D ExperimentalMemCheck
+            COMMAND ctest --output-on-failure -O memcheck.log -D ExperimentalMemCheck
             COMMAND tail -n1 memcheck.log | grep 'Memory checking results:' > /dev/null
             COMMAND rm -f memcheck.log
             COMMAND mv DartConfiguration.tcl.bak DartConfiguration.tcl
