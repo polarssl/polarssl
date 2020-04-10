@@ -42,6 +42,7 @@ fi
 : ${GNUTLS_SERV:="gnutls-serv"}
 : ${GNUTLS_LEGACY_CLI:="$GNUTLS_CLI"}
 : ${GNUTLS_LEGACY_SERV:="$GNUTLS_SERV"}
+: ${SEED:=1}
 
 # To avoid setting OpenSSL and GnuTLS for each call to compat.sh and ssl-opt.sh
 # we just export the variables they require
@@ -51,6 +52,51 @@ export GNUTLS_SERV="$GNUTLS_SERV"
 
 CONFIG_H='include/mbedtls/config.h'
 CONFIG_BAK="$CONFIG_H.bak"
+
+EXITCODE=0
+
+LINE_COV_THRESHOLD=0
+FN_COV_THRESHOLD=0
+
+print_usage() {
+    echo "Usage: $0 [options]"
+    printf "  -h|--help\tPrint this help.\n"
+    printf "     --line-cov-threshold\tLine coverage test threshold (default 0)\n"
+    printf "     --fn-cov-threshold\tLine coverage test threshold (default 0)\n"
+    printf "     --seed\tInteger seed value to use for this test run (default 1)\n"
+}
+
+get_options() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --line-cov-threshold)
+                shift; LINE_COV_THRESHOLD=$1
+                ;;
+            --fn-cov-threshold)
+                shift; FN_COV_THRESHOLD=$1
+                ;;
+            --seed)
+                shift; SEED="$1"
+                ;;
+            -h|--help)
+                print_usage
+                exit 0
+                ;;
+            *)
+                echo "Unknown argument: '$1'"
+                print_usage
+                exit 1
+                ;;
+        esac
+        shift
+    done
+}
+
+#
+# MAIN
+#
+
+get_options "$@"
 
 # Step 0 - print build environment info
 OPENSSL="$OPENSSL"                           \
@@ -71,7 +117,6 @@ scripts/config.py full
 scripts/config.py unset MBEDTLS_MEMORY_BACKTRACE
 make -j
 
-
 # Step 2 - Execute the tests
 TEST_OUTPUT=out_${PPID}
 cd tests
@@ -84,13 +129,13 @@ perl scripts/run-test-suites.pl -v 2 |tee unit-test-$TEST_OUTPUT
 echo
 
 # Step 2b - System Tests
-sh ssl-opt.sh |tee sys-test-$TEST_OUTPUT
+sh ssl-opt.sh --seed $SEED |tee sys-test-$TEST_OUTPUT
 echo
 
 # Step 2c - Compatibility tests
-sh compat.sh -m 'tls1 tls1_1 tls1_2 dtls1 dtls1_2' | \
+sh compat.sh -m 'tls1 tls1_1 tls1_2 dtls1 dtls1_2' |                \
     tee compat-test-$TEST_OUTPUT
-OPENSSL_CMD="$OPENSSL_LEGACY"                               \
+OPENSSL_CMD="$OPENSSL_LEGACY"                                       \
     sh compat.sh -m 'ssl3' |tee -a compat-test-$TEST_OUTPUT
 OPENSSL_CMD="$OPENSSL_LEGACY"                                       \
     GNUTLS_CLI="$GNUTLS_LEGACY_CLI"                                 \
@@ -192,6 +237,11 @@ echo "Total exec'd tests : $TOTAL_EXED"
 echo "Total avail tests  : $TOTAL_AVAIL"
 echo
 
+# Set exitcode if any tests failed
+if [ $(echo "$TOTAL_FAIL > 0" | bc) = "1" ]; then
+    EXITCODE=1
+fi
+
 
 # Step 4e - Coverage
 echo "Coverage"
@@ -208,9 +258,18 @@ FUNCS_PERCENT=$((1000*$FUNCS_TESTED/$FUNCS_TOTAL))
 FUNCS_PERCENT="$(($FUNCS_PERCENT/10)).$(($FUNCS_PERCENT-($FUNCS_PERCENT/10)*10))"
 
 echo "Lines Tested       : $LINES_TESTED of $LINES_TOTAL $LINES_PERCENT%"
-echo "Functions Tested   : $FUNCS_TESTED of $FUNCS_TOTAL $FUNCS_PERCENT%"
-echo
+if [ $(echo "$LINES_PERCENT < $LINE_COV_THRESHOLD" | bc) = "1" ]; then
+    echo "Test error! Line coverage was below test threshold $LINE_COV_THRESHOLD"
+    EXITCODE=1
+fi
 
+echo "Functions Tested   : $FUNCS_TESTED of $FUNCS_TOTAL $FUNCS_PERCENT%"
+if [ $(echo "$FUNCS_PERCENT < $FN_COV_THRESHOLD" | bc) = "1" ]; then
+    echo "Test error! Function coverage was below test threshold $FN_COV_THRESHOLD"
+    EXITCODE=1
+fi
+
+echo
 
 rm unit-test-$TEST_OUTPUT
 rm sys-test-$TEST_OUTPUT
@@ -224,3 +283,5 @@ make clean
 if [ -f "$CONFIG_BAK" ]; then
     mv "$CONFIG_BAK" "$CONFIG_H"
 fi
+
+exit $EXITCODE
