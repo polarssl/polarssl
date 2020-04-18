@@ -49,6 +49,12 @@
 
 #if !defined(MBEDTLS_DES_ALT)
 
+/* Parameter validation macros */
+#define DES_VALIDATE_RET( cond )                                       \
+    MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_DES_BAD_INPUT_DATA )
+#define DES_VALIDATE( cond )                                           \
+    MBEDTLS_INTERNAL_VALIDATE( cond )
+
 /*
  * 32-bit integer manipulation macros (big endian)
  */
@@ -311,6 +317,7 @@ static const uint32_t RHs[16] =
 
 void mbedtls_des_init( mbedtls_des_context *ctx )
 {
+    DES_VALIDATE( ctx != NULL );
     memset( ctx, 0, sizeof( mbedtls_des_context ) );
 }
 
@@ -324,6 +331,7 @@ void mbedtls_des_free( mbedtls_des_context *ctx )
 
 void mbedtls_des3_init( mbedtls_des3_context *ctx )
 {
+    DES_VALIDATE( ctx != NULL );
     memset( ctx, 0, sizeof( mbedtls_des3_context ) );
 }
 
@@ -349,6 +357,7 @@ static const unsigned char odd_parity_table[128] = { 1,  2,  4,  7,  8,
 void mbedtls_des_key_set_parity( unsigned char key[MBEDTLS_DES_KEY_SIZE] )
 {
     int i;
+    DES_VALIDATE( key != NULL );
 
     for( i = 0; i < MBEDTLS_DES_KEY_SIZE; i++ )
         key[i] = odd_parity_table[key[i] / 2];
@@ -360,6 +369,7 @@ void mbedtls_des_key_set_parity( unsigned char key[MBEDTLS_DES_KEY_SIZE] )
 int mbedtls_des_key_check_key_parity( const unsigned char key[MBEDTLS_DES_KEY_SIZE] )
 {
     int i;
+    DES_VALIDATE_RET( key != NULL );
 
     for( i = 0; i < MBEDTLS_DES_KEY_SIZE; i++ )
         if( key[i] != odd_parity_table[key[i] / 2] )
@@ -415,6 +425,7 @@ static const unsigned char weak_key_table[WEAK_KEY_COUNT][MBEDTLS_DES_KEY_SIZE] 
 int mbedtls_des_key_check_weak( const unsigned char key[MBEDTLS_DES_KEY_SIZE] )
 {
     int i;
+    DES_VALIDATE_RET( key != NULL );
 
     for( i = 0; i < WEAK_KEY_COUNT; i++ )
         if( memcmp( weak_key_table[i], key, MBEDTLS_DES_KEY_SIZE) == 0 )
@@ -428,6 +439,8 @@ void mbedtls_des_setkey( uint32_t SK[32], const unsigned char key[MBEDTLS_DES_KE
 {
     int i;
     uint32_t X, Y, T;
+    DES_VALIDATE( SK  != NULL );
+    DES_VALIDATE( key != NULL );
 
     GET_UINT32_BE( X, key, 0 );
     GET_UINT32_BE( Y, key, 4 );
@@ -497,8 +510,11 @@ void mbedtls_des_setkey( uint32_t SK[32], const unsigned char key[MBEDTLS_DES_KE
 /*
  * DES key schedule (56-bit, encryption)
  */
-int mbedtls_des_setkey_enc( mbedtls_des_context *ctx, const unsigned char key[MBEDTLS_DES_KEY_SIZE] )
+int mbedtls_des_setkey_enc( mbedtls_des_context *ctx,
+                            const unsigned char key[MBEDTLS_DES_KEY_SIZE] )
 {
+    DES_VALIDATE_RET( ctx != NULL );
+    DES_VALIDATE_RET( key != NULL );
     mbedtls_des_setkey( ctx->sk, key );
 
     return( 0 );
@@ -507,9 +523,12 @@ int mbedtls_des_setkey_enc( mbedtls_des_context *ctx, const unsigned char key[MB
 /*
  * DES key schedule (56-bit, decryption)
  */
-int mbedtls_des_setkey_dec( mbedtls_des_context *ctx, const unsigned char key[MBEDTLS_DES_KEY_SIZE] )
+int mbedtls_des_setkey_dec( mbedtls_des_context *ctx,
+                            const unsigned char key[MBEDTLS_DES_KEY_SIZE] )
 {
     int i;
+    DES_VALIDATE_RET( ctx != NULL );
+    DES_VALIDATE_RET( key != NULL );
 
     mbedtls_des_setkey( ctx->sk, key );
 
@@ -527,7 +546,6 @@ static void des3_set2key( uint32_t esk[96],
                           const unsigned char key[MBEDTLS_DES_KEY_SIZE*2] )
 {
     int i;
-
     mbedtls_des_setkey( esk, key );
     mbedtls_des_setkey( dsk + 32, key + 8 );
 
@@ -554,6 +572,8 @@ int mbedtls_des3_set2key_enc( mbedtls_des3_context *ctx,
                       const unsigned char key[MBEDTLS_DES_KEY_SIZE * 2] )
 {
     uint32_t sk[96];
+    DES_VALIDATE_RET( ctx != NULL );
+    DES_VALIDATE_RET( key != NULL );
 
     des3_set2key( ctx->sk, sk, key );
     mbedtls_platform_zeroize( sk,  sizeof( sk ) );
@@ -568,6 +588,8 @@ int mbedtls_des3_set2key_dec( mbedtls_des3_context *ctx,
                       const unsigned char key[MBEDTLS_DES_KEY_SIZE * 2] )
 {
     uint32_t sk[96];
+    DES_VALIDATE_RET( ctx != NULL );
+    DES_VALIDATE_RET( key != NULL );
 
     des3_set2key( sk, ctx->sk, key );
     mbedtls_platform_zeroize( sk,  sizeof( sk ) );
@@ -580,7 +602,6 @@ static void des3_set3key( uint32_t esk[96],
                           const unsigned char key[24] )
 {
     int i;
-
     mbedtls_des_setkey( esk, key );
     mbedtls_des_setkey( dsk + 32, key +  8 );
     mbedtls_des_setkey( esk + 64, key + 16 );
@@ -605,6 +626,8 @@ int mbedtls_des3_set3key_enc( mbedtls_des3_context *ctx,
                       const unsigned char key[MBEDTLS_DES_KEY_SIZE * 3] )
 {
     uint32_t sk[96];
+    DES_VALIDATE_RET( ctx != NULL );
+    DES_VALIDATE_RET( key != NULL );
 
     des3_set3key( ctx->sk, sk, key );
     mbedtls_platform_zeroize( sk,  sizeof( sk ) );
@@ -619,6 +642,8 @@ int mbedtls_des3_set3key_dec( mbedtls_des3_context *ctx,
                       const unsigned char key[MBEDTLS_DES_KEY_SIZE * 3] )
 {
     uint32_t sk[96];
+    DES_VALIDATE_RET( ctx != NULL );
+    DES_VALIDATE_RET( key != NULL );
 
     des3_set3key( sk, ctx->sk, key );
     mbedtls_platform_zeroize( sk,  sizeof( sk ) );
@@ -636,6 +661,9 @@ int mbedtls_des_crypt_ecb( mbedtls_des_context *ctx,
 {
     int i;
     uint32_t X, Y, T, *SK;
+    DES_VALIDATE_RET( ctx    != NULL );
+    DES_VALIDATE_RET( input  != NULL );
+    DES_VALIDATE_RET( output != NULL );
 
     SK = ctx->sk;
 
@@ -672,6 +700,12 @@ int mbedtls_des_crypt_cbc( mbedtls_des_context *ctx,
 {
     int i;
     unsigned char temp[8];
+    DES_VALIDATE_RET( ctx    != NULL );
+    DES_VALIDATE_RET( iv     != NULL );
+    DES_VALIDATE_RET( input  != NULL );
+    DES_VALIDATE_RET( output != NULL );
+    DES_VALIDATE_RET( mode   == MBEDTLS_DES_ENCRYPT ||
+                      mode   == MBEDTLS_DES_DECRYPT );
 
     if( length % 8 )
         return( MBEDTLS_ERR_DES_INVALID_INPUT_LENGTH );
@@ -723,6 +757,9 @@ int mbedtls_des3_crypt_ecb( mbedtls_des3_context *ctx,
 {
     int i;
     uint32_t X, Y, T, *SK;
+    DES_VALIDATE_RET( ctx    != NULL );
+    DES_VALIDATE_RET( input  != NULL );
+    DES_VALIDATE_RET( output != NULL );
 
     SK = ctx->sk;
 
@@ -771,6 +808,12 @@ int mbedtls_des3_crypt_cbc( mbedtls_des3_context *ctx,
 {
     int i;
     unsigned char temp[8];
+    DES_VALIDATE_RET( ctx    != NULL );
+    DES_VALIDATE_RET( iv     != NULL );
+    DES_VALIDATE_RET( input  != NULL );
+    DES_VALIDATE_RET( output != NULL );
+    DES_VALIDATE_RET( mode   == MBEDTLS_DES_ENCRYPT ||
+                      mode   == MBEDTLS_DES_DECRYPT );
 
     if( length % 8 )
         return( MBEDTLS_ERR_DES_INVALID_INPUT_LENGTH );

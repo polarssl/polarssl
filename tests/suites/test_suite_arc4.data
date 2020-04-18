@@ -22,6 +22,9 @@ mbedtls_arc4_crypt:"000000000000000000000000000000000000000000000000000000000000
 TMP
 mbedtls_arc4_crypt:"1400002433c96cfa5c53a65184fcba83d9793f42522f94e49bf25edcb7a23c9eaae5ca84f6ee6da8":"5e58b1ad80":"e9a3d07ea1a3eac9fd73dcb14c409f2d434a72b6aa077e0924bcffc236f55d2d372b289707571531"
 
+ARC4 Parameter validation
+mbedtls_arc4_invalid_param:
+
 ARC4 Selftest
 depends_on:MBEDTLS_SELF_TEST
 arc4_selftest:

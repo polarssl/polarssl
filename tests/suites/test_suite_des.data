@@ -1,3 +1,9 @@
+DES Valid parameters
+des_valid_params:
+
+DES Invalid parameters
+des_invalid_params:
+
 DES check weak key #1
 des_check_weak:"0101010101010101":1
 

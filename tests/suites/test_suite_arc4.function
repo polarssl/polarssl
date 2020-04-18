@@ -7,6 +7,28 @@
  * END_DEPENDENCIES
  */
 
+/* BEGIN_CASE depends_on:MBEDTLS_CHECK_PARAMS:!MBEDTLS_PARAM_FAILED_ALT */
+void mbedtls_arc4_invalid_param( )
+{
+    mbedtls_arc4_context ctx;
+    unsigned char key[128] = { 0 };
+
+    TEST_VALID_PARAM( mbedtls_arc4_free( NULL ) );
+
+    /* Check that parameter validation detect NULL parameters. */
+    TEST_INVALID_PARAM( mbedtls_arc4_init( NULL ) );
+    TEST_INVALID_PARAM( mbedtls_arc4_setup( NULL, key, sizeof( key ) ) );
+    TEST_INVALID_PARAM( mbedtls_arc4_setup( &ctx, NULL, 42 ) );
+
+    /* Check that parameter validation detects keys of invalid length. */
+    TEST_INVALID_PARAM( mbedtls_arc4_setup( &ctx, key, 4 ) );
+    TEST_INVALID_PARAM( mbedtls_arc4_setup( &ctx, key, 257 ) );
+
+exit:
+    return;
+}
+/* END_CASE */
+
 /* BEGIN_CASE */
 void mbedtls_arc4_crypt( data_t * src_str, data_t * key_str,
                          data_t * hex_dst_string )

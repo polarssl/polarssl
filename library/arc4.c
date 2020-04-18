@@ -48,8 +48,15 @@
 
 #if !defined(MBEDTLS_ARC4_ALT)
 
+/* Parameter validation macros */
+#define ARC4_VALIDATE_RET( cond )                                       \
+    MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_ARC4_BAD_INPUT_DATA )
+#define ARC4_VALIDATE( cond )                                           \
+    MBEDTLS_INTERNAL_VALIDATE( cond )
+
 void mbedtls_arc4_init( mbedtls_arc4_context *ctx )
 {
+    ARC4_VALIDATE( ctx != NULL );
     memset( ctx, 0, sizeof( mbedtls_arc4_context ) );
 }
 
@@ -57,7 +64,6 @@ void mbedtls_arc4_free( mbedtls_arc4_context *ctx )
 {
     if( ctx == NULL )
         return;
-
     mbedtls_platform_zeroize( ctx, sizeof( mbedtls_arc4_context ) );
 }
 
@@ -70,6 +76,9 @@ void mbedtls_arc4_setup( mbedtls_arc4_context *ctx, const unsigned char *key,
     int i, j, a;
     unsigned int k;
     unsigned char *m;
+    ARC4_VALIDATE( ctx != NULL );
+    ARC4_VALIDATE( key != NULL );
+    ARC4_VALIDATE( keylen >= 5 && keylen <= 256 );
 
     ctx->x = 0;
     ctx->y = 0;
@@ -100,6 +109,9 @@ int mbedtls_arc4_crypt( mbedtls_arc4_context *ctx, size_t length, const unsigned
     int x, y, a, b;
     size_t i;
     unsigned char *m;
+    ARC4_VALIDATE_RET( ctx    != NULL );
+    ARC4_VALIDATE_RET( input  != NULL );
+    ARC4_VALIDATE_RET( output != NULL );
 
     x = ctx->x;
     y = ctx->y;
