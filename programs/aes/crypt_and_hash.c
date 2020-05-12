@@ -143,11 +143,6 @@ int main( int argc, char *argv[] )
             list++;
         }
 
-#if defined(_WIN32)
-        mbedtls_printf( "\n  Press Enter to exit this program.\n" );
-        fflush( stdout ); getchar();
-#endif
-
         goto exit;
     }
 
@@ -562,6 +557,11 @@ exit:
 
     mbedtls_cipher_free( &cipher_ctx );
     mbedtls_md_free( &md_ctx );
+
+#if defined(_WIN32)
+    mbedtls_printf( "\n  Press Enter to exit this program.\n" );
+    fflush( stdout ); getchar();
+#endif
 
     return( exit_code );
 }

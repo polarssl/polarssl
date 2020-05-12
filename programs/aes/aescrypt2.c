@@ -128,12 +128,6 @@ int main( int argc, char *argv[] )
     if( argc != 5 )
     {
         mbedtls_printf( USAGE );
-
-#if defined(_WIN32)
-        mbedtls_printf( "\n  Press Enter to exit this program.\n" );
-        fflush( stdout ); getchar();
-#endif
-
         goto exit;
     }
 
@@ -464,6 +458,11 @@ exit:
 
     mbedtls_aes_free( &aes_ctx );
     mbedtls_md_free( &sha_ctx );
+
+#if defined(_WIN32)
+    mbedtls_printf( "  + Press Enter to exit this program.\n" );
+    fflush( stdout ); getchar();
+#endif
 
     return( exit_code );
 }

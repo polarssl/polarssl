@@ -104,6 +104,12 @@ int main( int argc, char *argv[] )
 exit:
     mbedtls_havege_free( &hs );
     fclose( f );
+
+#if defined(_WIN32)
+    mbedtls_printf( "  + Press Enter to exit this program.\n" );
+    fflush( stdout ); getchar();
+#endif
+
     return( exit_code );
 }
 #endif /* MBEDTLS_HAVEGE_C */

@@ -132,6 +132,11 @@ cleanup:
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
 
+#if defined(_WIN32)
+    mbedtls_printf( "  + Press Enter to exit this program.\n" );
+    fflush( stdout ); getchar();
+#endif
+
     return( exit_code );
 }
 #endif /* MBEDTLS_CTR_DRBG_C && MBEDTLS_ENTROPY_C */

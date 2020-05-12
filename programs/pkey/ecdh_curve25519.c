@@ -228,15 +228,15 @@ int main( int argc, char *argv[] )
 
 exit:
 
-#if defined(_WIN32)
-    mbedtls_printf( "  + Press Enter to exit this program.\n" );
-    fflush( stdout ); getchar();
-#endif
-
     mbedtls_ecdh_free( &ctx_srv );
     mbedtls_ecdh_free( &ctx_cli );
     mbedtls_ctr_drbg_free( &ctr_drbg );
     mbedtls_entropy_free( &entropy );
+
+#if defined(_WIN32)
+    mbedtls_printf( "  + Press Enter to exit this program.\n" );
+    fflush( stdout ); getchar();
+#endif
 
     return( exit_code );
 }

@@ -237,6 +237,11 @@ int main( int argc, char *argv[] )
 exit:
     mbedtls_md_free( &md_ctx );
 
+#if defined(_WIN32)
+    mbedtls_printf( "\n  Press Enter to exit this program.\n" );
+    fflush( stdout ); getchar();
+#endif
+
     return( exit_code );
 }
 #endif /* MBEDTLS_MD_C && MBEDTLS_FS_IO */
