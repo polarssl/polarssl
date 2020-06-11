@@ -56,12 +56,25 @@ void mbedtls_sha1( data_t * src_str, data_t * hex_hash_string )
 {
     unsigned char output[41];
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    mbedtls_sha1_context ctx;
+#endif
+
     memset(output, 0x00, 41);
 
 
     TEST_ASSERT( mbedtls_sha1_ret( src_str->x, src_str->len, output ) == 0 );
 
     TEST_ASSERT( hexcmp( output, hex_hash_string->x, 20, hex_hash_string->len ) == 0 );
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    memset( output, 0x00, sizeof( output ) );
+    mbedtls_sha1_init( &ctx );
+    mbedtls_sha1_starts( &ctx );
+    mbedtls_sha1_update( &ctx, src_str->x, src_str->len );
+    mbedtls_sha1_finish( &ctx, output );
+    TEST_ASSERT( hexcmp( output, hex_hash_string->x, 20, hex_hash_string->len ) == 0 );
+#endif
 }
 /* END_CASE */
 
@@ -140,12 +153,25 @@ void mbedtls_sha256( data_t * src_str, data_t * hex_hash_string )
 {
     unsigned char output[65];
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    mbedtls_sha256_context ctx;
+#endif
+
     memset(output, 0x00, 65);
 
 
     TEST_ASSERT( mbedtls_sha256_ret( src_str->x, src_str->len, output, 0 ) == 0 );
 
     TEST_ASSERT( hexcmp( output, hex_hash_string->x, 32, hex_hash_string->len ) == 0 );
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    memset( output, 0x00, sizeof( output ) );
+    mbedtls_sha256_init( &ctx );
+    mbedtls_sha256_starts( &ctx, 0 );
+    mbedtls_sha256_update( &ctx, src_str->x, src_str->len );
+    mbedtls_sha256_finish( &ctx, output );
+    TEST_ASSERT( hexcmp( output, hex_hash_string->x, 32, hex_hash_string->len ) == 0 );
+#endif
 }
 /* END_CASE */
 
@@ -224,12 +250,25 @@ void mbedtls_sha512( data_t * src_str, data_t * hex_hash_string )
 {
     unsigned char output[129];
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    mbedtls_sha512_context ctx;
+#endif
+
     memset(output, 0x00, 129);
 
 
     TEST_ASSERT( mbedtls_sha512_ret( src_str->x, src_str->len, output, 0 ) == 0 );
 
     TEST_ASSERT( hexcmp( output, hex_hash_string->x, 64, hex_hash_string->len ) == 0 );
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    memset( output, 0x00, sizeof( output ) );
+    mbedtls_sha512_init( &ctx );
+    mbedtls_sha512_starts( &ctx, 0 );
+    mbedtls_sha512_update( &ctx, src_str->x, src_str->len );
+    mbedtls_sha512_finish( &ctx, output );
+    TEST_ASSERT( hexcmp( output, hex_hash_string->x, 64, hex_hash_string->len ) == 0 );
+#endif
 }
 /* END_CASE */
 

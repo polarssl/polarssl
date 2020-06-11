@@ -12,6 +12,10 @@ void md2_text( char * text_src_string, data_t * hex_hash_string )
     unsigned char src_str[100];
     unsigned char output[16];
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    mbedtls_md2_context ctx;
+#endif
+
     memset( src_str, 0x00, sizeof src_str );
     memset( output, 0x00, sizeof output );
 
@@ -21,6 +25,15 @@ void md2_text( char * text_src_string, data_t * hex_hash_string )
     TEST_ASSERT( ret == 0 ) ;
 
     TEST_ASSERT( hexcmp( output, hex_hash_string->x, sizeof  output, hex_hash_string->len ) == 0 );
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    memset( output, 0x00, sizeof( output ) );
+    mbedtls_md2_init( &ctx );
+    mbedtls_md2_starts( &ctx );
+    mbedtls_md2_update( &ctx, src_str, strlen( (char *) src_str ) );
+    mbedtls_md2_finish( &ctx, output );
+    TEST_ASSERT( hexcmp( output, hex_hash_string->x, sizeof  output, hex_hash_string->len ) == 0 );
+#endif
 }
 /* END_CASE */
 
@@ -31,6 +44,10 @@ void md4_text( char * text_src_string, data_t * hex_hash_string )
     unsigned char src_str[100];
     unsigned char output[16];
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    mbedtls_md4_context ctx;
+#endif
+
     memset( src_str, 0x00, sizeof src_str );
     memset( output, 0x00, sizeof output );
 
@@ -40,6 +57,15 @@ void md4_text( char * text_src_string, data_t * hex_hash_string )
     TEST_ASSERT( ret == 0 );
 
     TEST_ASSERT( hexcmp( output, hex_hash_string->x, sizeof  output, hex_hash_string->len ) == 0 );
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    memset( output, 0x00, sizeof( output ) );
+    mbedtls_md4_init( &ctx );
+    mbedtls_md4_starts( &ctx );
+    mbedtls_md4_update( &ctx, src_str, strlen( (char *) src_str ) );
+    mbedtls_md4_finish( &ctx, output );
+    TEST_ASSERT( hexcmp( output, hex_hash_string->x, sizeof  output, hex_hash_string->len ) == 0 );
+#endif
 }
 /* END_CASE */
 
@@ -50,6 +76,10 @@ void md5_text( char * text_src_string, data_t * hex_hash_string )
     unsigned char src_str[100];
     unsigned char output[16];
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    mbedtls_md5_context ctx;
+#endif
+
     memset( src_str, 0x00, sizeof src_str );
     memset( output, 0x00, sizeof output );
 
@@ -59,6 +89,15 @@ void md5_text( char * text_src_string, data_t * hex_hash_string )
     TEST_ASSERT( ret == 0 );
 
     TEST_ASSERT( hexcmp( output, hex_hash_string->x, sizeof  output, hex_hash_string->len ) == 0 );
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    memset( output, 0x00, sizeof( output ) );
+    mbedtls_md5_init( &ctx );
+    mbedtls_md5_starts( &ctx );
+    mbedtls_md5_update( &ctx, src_str, strlen( (char *) src_str ) );
+    mbedtls_md5_finish( &ctx, output );
+    TEST_ASSERT( hexcmp( output, hex_hash_string->x, sizeof  output, hex_hash_string->len ) == 0 );
+#endif
 }
 /* END_CASE */
 
@@ -69,6 +108,10 @@ void ripemd160_text( char * text_src_string, data_t * hex_hash_string )
     unsigned char src_str[100];
     unsigned char output[20];
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    mbedtls_ripemd160_context ctx;
+#endif
+
     memset(src_str, 0x00, sizeof src_str);
     memset(output, 0x00, sizeof output);
 
@@ -78,6 +121,15 @@ void ripemd160_text( char * text_src_string, data_t * hex_hash_string )
     TEST_ASSERT( ret == 0 );
 
     TEST_ASSERT( hexcmp( output, hex_hash_string->x, sizeof output, hex_hash_string->len ) == 0 );
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    memset( output, 0x00, sizeof( output ) );
+    mbedtls_ripemd160_init( &ctx );
+    mbedtls_ripemd160_starts( &ctx );
+    mbedtls_ripemd160_update( &ctx, src_str, strlen( (char *) src_str ) );
+    mbedtls_ripemd160_finish( &ctx, output );
+    TEST_ASSERT( hexcmp( output, hex_hash_string->x, sizeof output, hex_hash_string->len ) == 0 );
+#endif
 }
 /* END_CASE */
 
