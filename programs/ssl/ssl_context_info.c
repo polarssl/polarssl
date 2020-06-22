@@ -41,7 +41,9 @@ int main( void )
 #include <stdint.h>
 #include <stdarg.h>
 #include <string.h>
+#if defined(MBEDTLS_HAVE_TIME)
 #include <time.h>
+#endif
 #include "mbedtls/ssl.h"
 #include "mbedtls/error.h"
 #include "mbedtls/base64.h"
@@ -300,6 +302,7 @@ void print_hex( const uint8_t *b, size_t len,
 /*
  *  Print the value of time_t in format e.g. 2020-01-23 13:05:59
  */
+#if defined(MBEDTLS_HAVE_TIME)
 void print_time( const time_t *time )
 {
     char buf[20];
@@ -315,6 +318,7 @@ void print_time( const time_t *time )
         printf( "unknown\n" );
     }
 }
+#endif
 
 /*
  * Print the input string if the bit is set in the value
@@ -598,7 +602,12 @@ void print_deserialized_ssl_session( const uint8_t *ssl, uint32_t len,
                 ( (uint64_t) ssl[7] );
         ssl += 8;
         printf( "\tstart time     : " );
+#if defined(MBEDTLS_HAVE_TIME)
         print_time( (time_t*) &start );
+#else
+        (void) start;
+        printf( "not supported\n" );
+#endif
     }
 
     CHECK_SSL_END( 2 );
