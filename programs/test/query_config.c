@@ -978,6 +978,22 @@ int query_config( const char *config )
     }
 #endif /* MBEDTLS_ECP_DP_CURVE448_ENABLED */
 
+#if defined(MBEDTLS_ECP_DP_ED25519_ENABLED)
+    if( strcmp( "MBEDTLS_ECP_DP_ED25519_ENABLED", config ) == 0 )
+    {
+        MACRO_EXPANSION_TO_STR( MBEDTLS_ECP_DP_ED25519_ENABLED );
+        return( 0 );
+    }
+#endif /* MBEDTLS_ECP_DP_ED25519_ENABLED */
+
+#if defined(MBEDTLS_ECP_DP_ED448_ENABLED)
+    if( strcmp( "MBEDTLS_ECP_DP_ED448_ENABLED", config ) == 0 )
+    {
+        MACRO_EXPANSION_TO_STR( MBEDTLS_ECP_DP_ED448_ENABLED );
+        return( 0 );
+    }
+#endif /* MBEDTLS_ECP_DP_ED448_ENABLED */
+
 #if defined(MBEDTLS_ECP_NIST_OPTIM)
     if( strcmp( "MBEDTLS_ECP_NIST_OPTIM", config ) == 0 )
     {

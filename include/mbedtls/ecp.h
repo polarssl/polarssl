@@ -90,6 +90,8 @@ typedef enum
     MBEDTLS_ECP_DP_SECP224K1,      /*!< Domain parameters for 224-bit "Koblitz" curve. */
     MBEDTLS_ECP_DP_SECP256K1,      /*!< Domain parameters for 256-bit "Koblitz" curve. */
     MBEDTLS_ECP_DP_CURVE448,       /*!< Domain parameters for Curve448. */
+    MBEDTLS_ECP_DP_ED25519,        /*!< Domain parameters for Ed25519. */
+    MBEDTLS_ECP_DP_ED448,          /*!< Domain parameters for Ed448. */
 } mbedtls_ecp_group_id;
 
 /**
@@ -107,6 +109,7 @@ typedef enum
     MBEDTLS_ECP_TYPE_NONE = 0,
     MBEDTLS_ECP_TYPE_SHORT_WEIERSTRASS,    /* y^2 = x^3 + a x + b      */
     MBEDTLS_ECP_TYPE_MONTGOMERY,           /* y^2 = x^3 + a x^2 + x    */
+    MBEDTLS_ECP_TYPE_EDWARDS,              /* a x^2 + y^2 = 1 + d x^2 y^2 */
 } mbedtls_ecp_curve_type;
 
 /**
@@ -830,6 +833,28 @@ int mbedtls_ecp_tls_read_group_id( mbedtls_ecp_group_id *grp,
 int mbedtls_ecp_tls_write_group( const mbedtls_ecp_group *grp,
                                  size_t *olen,
                                  unsigned char *buf, size_t blen );
+
+/**
+ * \brief           This function performs a point addition: \p R = \p P + \p Q.
+ *
+ *                  It is not thread-safe to use same group in multiple threads.
+ *
+ * \param grp       The ECP group to use.
+ *                  This must be initialized and have group parameters
+ *                  set, for example through mbedtls_ecp_group_load().
+ * \param R         The point in which to store the result of the calculation.
+ *                  This must be initialized.
+ * \param P         The first point to add. This must be initialized.
+ * \param Q         The second point to add. This must be initialized.
+ *
+ * \return          \c 0 on success.
+ * \return          #MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE if the operation for
+ *                  the group is not implemented.
+ * \return          #MBEDTLS_ERR_MPI_ALLOC_FAILED on memory-allocation failure.
+ * \return          Another negative error code on other kinds of failure.
+ */
+int mbedtls_ecp_add( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
+                     const mbedtls_ecp_point *P, const mbedtls_ecp_point *Q );
 
 /**
  * \brief           This function performs a scalar multiplication of a point

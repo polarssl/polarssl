@@ -520,6 +520,11 @@ int mbedtls_ecp_check_budget( const mbedtls_ecp_group *grp,
 #define ECP_MONTGOMERY
 #endif
 
+#if defined(MBEDTLS_ECP_DP_ED25519_ENABLED) || \
+    defined(MBEDTLS_ECP_DP_ED448_ENABLED)
+#define ECP_EDWARDS
+#endif
+
 /*
  * List of supported curves:
  *  - internal ID
@@ -679,6 +684,9 @@ mbedtls_ecp_curve_type mbedtls_ecp_get_type( const mbedtls_ecp_group *grp )
 
     if( grp->G.Y.p == NULL )
         return( MBEDTLS_ECP_TYPE_MONTGOMERY );
+    /* FIXME: there is probably a cleaner way of doing that. */
+    else if ( grp->id == MBEDTLS_ECP_DP_ED25519 || grp->id == MBEDTLS_ECP_DP_ED448)
+        return ( MBEDTLS_ECP_TYPE_EDWARDS );
     else
         return( MBEDTLS_ECP_TYPE_SHORT_WEIERSTRASS );
 }
@@ -947,10 +955,43 @@ int mbedtls_ecp_point_write_binary( const mbedtls_ecp_group *grp,
         }
     }
 #endif
+#if defined(ECP_EDWARDS)
+    if( mbedtls_ecp_get_type( grp ) == MBEDTLS_ECP_TYPE_EDWARDS )
+    {
+        /* Only the compressed format is defined for Edwards curves. */
+        ECP_VALIDATE_RET( format == MBEDTLS_ECP_PF_COMPRESSED );
+
+        /* We need to add an extra bit to store the least significant bit of X. */
+        plen = ( mbedtls_mpi_bitlen( &grp->P ) + 1 + 7 ) >> 3;
+
+        *olen = plen;
+        if( buflen < *olen )
+            return( MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL );
+
+        if( mbedtls_mpi_cmp_int( &P->Z, 1 ) != 0 )
+            return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+
+        MBEDTLS_MPI_CHK( mbedtls_mpi_write_binary_le( &P->Y, buf, plen ) );
+
+        /* Store the least significant bit of X into the most significant
+         * bit of the final octet. */
+        if( mbedtls_mpi_get_bit( &P->X, 0 ))
+            buf[plen - 1] |= 0x80;
+    }
+#endif
 
 cleanup:
     return( ret );
 }
+
+#if defined(ECP_EDWARDS)
+/* FIXME: The function is defined later in this file as reading a binary
+   point on an Edwards curve needs computation and thus access to the
+   mbedtls_mpi_xxx_mod functions. */
+static int mbedtls_ecp_point_read_binary_ed( const mbedtls_ecp_group *grp,
+                                             mbedtls_ecp_point *pt,
+                                             const unsigned char *buf, size_t ilen );
+#endif
 
 /*
  * Import a point from unsigned binary data (SEC1 2.3.4 and RFC7748)
@@ -1007,6 +1048,12 @@ int mbedtls_ecp_point_read_binary( const mbedtls_ecp_group *grp,
         MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( &pt->Y,
                                                   buf + 1 + plen, plen ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &pt->Z, 1 ) );
+    }
+#endif
+#if defined(ECP_EDWARDS)
+    if( mbedtls_ecp_get_type( grp ) == MBEDTLS_ECP_TYPE_EDWARDS )
+    {
+        MBEDTLS_MPI_CHK( mbedtls_ecp_point_read_binary_ed( grp, pt, buf, ilen ) );
     }
 #endif
 
@@ -1303,6 +1350,131 @@ static inline int mbedtls_mpi_shift_l_mod( const mbedtls_ecp_group *grp,
 cleanup:
     return( ret );
 }
+
+#if defined(ECP_EDWARDS)
+/*
+ * Import and Edward point from binary data (RFC8032)
+ */
+static int mbedtls_ecp_point_read_binary_ed( const mbedtls_ecp_group *grp,
+                                             mbedtls_ecp_point *pt,
+                                             const unsigned char *buf, size_t ilen )
+{
+    int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    mbedtls_mpi u, v, t;
+    mbedtls_mpi_uint r;
+    size_t plen;
+    int x_0;
+
+    /* We need to add an extra bit to store the least significant bit of X. */
+    plen = ( mbedtls_mpi_bitlen( &grp->P ) + 1 + 7 ) >> 3;
+
+    if( plen != ilen )
+        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
+
+    mbedtls_mpi_init( &u ); mbedtls_mpi_init( &v ); mbedtls_mpi_init( &t );
+
+    /* Interpret the string as an integer in little-endian representation. */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary_le( &pt->Y, buf, plen ) );
+
+    /* High bit of last digit is the least significant bit of the
+     * x-coordinate. Save it and clear it. */
+    x_0 = mbedtls_mpi_get_bit ( &pt->Y, (plen * 8) - 1 );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_set_bit( &pt->Y, (plen * 8) - 1, 0 ) );
+
+    /* If the resulting y-coordinate is >= p, decoding fails. */
+    if( mbedtls_mpi_cmp_mpi( &pt->Y, &grp->P ) >= 0 )
+    {
+        ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    /* To recover the x-coordinates, the curve equation implies
+       x^2 = (y^2 - 1) / (d y^2 - a) (mod p). The denominator is always
+       non-zero mod p. Let u = y^2 - 1 and v = d y^2 - a. */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &u, &pt->Y,  &pt->Y  ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &v, &grp->B, &u      ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &v, &v,      &grp->A ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_int( &u, &u, 1 ) ); MOD_SUB( u );
+
+    /* We use different algorithm to compute the square root of (u/v)
+     * depending on p (mod 8). */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mod_int( &r, &grp->P, 8 ) );
+
+    if( r == 3 || r == 7 )
+    {
+        /* This corresponds to p = 3 (mod 4) and for instance Ed448. *
+         * The candidate root is x = sqrt(u/v) = u (u v)^((p-3)/4) */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &pt->X,  &u, &v ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_int( &t, &grp->P, 3 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &t, 2 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &pt->X, &pt->X, &t, &grp->P, NULL ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &pt->X, &pt->X, &u ) );
+
+        /* If v * x^2 = u (mod p), the recovered x-coordinate is x. Otherwise,
+         * no square root exists, and the decoding fails. */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &t,   &pt->X,   &pt->X ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &t,   &t,      &v    ) );
+        if( mbedtls_mpi_cmp_mpi( &t, &u ) != 0 )
+        {
+            ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+            goto cleanup;
+        }
+    }
+    else if( r == 5 )
+    {
+        /* This corresponds for instance to Ed25519. The candidate root is
+         * x = sqrt(u/v) = u (u v)^((p-5)/8) */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &pt->X,  &u, &v ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_int( &t, &grp->P, 5 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &t, 3 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &pt->X, &pt->X, &t, &grp->P, NULL ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &pt->X, &pt->X, &u ) );
+
+        /* If v * x^2 = u (mod p), x is a square root. */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &t,   &pt->X,   &pt->X ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &t,   &t,      &v    ) );
+        if( mbedtls_mpi_cmp_mpi( &t, &u ) != 0 )
+        {
+            /* Otherwise if v x^2 = -u (mod p), x * 2^((p-1)/4) is a square
+             * root. */
+            MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &t, &grp->P, &t ) );
+            if( mbedtls_mpi_cmp_mpi( &t, &u ) != 0 )
+            {
+                /* Otherwise decoding fails. */
+                ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+                goto cleanup;
+            }
+
+            /* x *= 2^((p-1)/4) */
+            MBEDTLS_MPI_CHK( mbedtls_mpi_read_string( &t, 16, "2B8324804FC1DF0B2B4D00993DFBD7A72F431806AD2FE478C4EE1B274A0EA0B0" ) );
+            MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &pt->X, &pt->X, &t ) );
+        }
+    }
+    else
+    {
+        /* Not implemented for p = 1 (mod 8). */
+        ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+        goto cleanup;
+    }
+
+    /* Use the x_0 bit to select the right square root. */
+    if( mbedtls_mpi_cmp_int( &pt->X, 0 ) == 0 && x_0 == 1 )
+    {
+        ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+    if( mbedtls_mpi_get_bit( &pt->X, 0 ) != x_0 )
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &pt->X, &grp->P, &pt->X ) );
+
+    /* Set Z to 1 in projective coordinates. */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &pt->Z, 1 ) );
+
+cleanup:
+    mbedtls_mpi_free( &u ); mbedtls_mpi_free( &v ); mbedtls_mpi_free( &t );
+
+    return( ret );
+}
+#endif
 
 #if defined(ECP_SHORTWEIERSTRASS)
 /*
@@ -2651,6 +2823,306 @@ cleanup:
 
 #endif /* ECP_MONTGOMERY */
 
+#if defined(ECP_EDWARDS)
+/*
+ * For Edwards curves, we do all the internal arithmetic in projective
+ * coordinates. Import/export of points uses only the x and y coordinates,
+ * which are internally represented as X/Z and Y/Z.
+ *
+ * For scalar multiplication, we'll use a Montgomery ladder.
+ */
+
+/*
+ * Normalize Edwards x/y/z coordinates: X = X/Z, Y = Y/Z, Z = 1
+ * Cost: 2M + 1I
+ */
+static int ecp_normalize_edxyz( const mbedtls_ecp_group *grp, mbedtls_ecp_point *P )
+{
+    mbedtls_mpi Zi;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+
+    mbedtls_mpi_init( &Zi );
+
+    MBEDTLS_MPI_CHK( mbedtls_mpi_inv_mod( &Zi, &P->Z, &grp->P) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &P->X, &P->X, &Zi ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &P->Y, &P->Y, &Zi ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &P->Z, 1) ) ;
+
+cleanup:
+    mbedtls_mpi_free( &Zi );
+
+    return( ret );
+}
+
+/*
+ * Randomize projective x/y/z coordinates:
+ * (X, Y, Z) -> (l X, l Y, l Z) for random l
+ * This is sort of the reverse operation of ecp_normalize_edxyz().
+ *
+ * This countermeasure was first suggested in [2].
+ * Cost: 3M
+ */
+static int ecp_randomize_edxyz( const mbedtls_ecp_group *grp, mbedtls_ecp_point *P,
+                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    mbedtls_mpi l;
+    size_t p_size;
+    int count = 0;
+
+    p_size = ( grp->pbits + 7 ) / 8;
+    mbedtls_mpi_init( &l );
+
+    /* Generate l such that 1 < l < p */
+    do
+    {
+        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &l, p_size, f_rng, p_rng ) );
+
+        while( mbedtls_mpi_cmp_mpi( &l, &grp->P ) >= 0 )
+            MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &l, 1 ) );
+
+        if( count++ > 10 )
+            return( MBEDTLS_ERR_ECP_RANDOM_FAILED );
+    }
+    while( mbedtls_mpi_cmp_int( &l, 1 ) <= 0 );
+
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &P->X, &P->X, &l ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &P->Y, &P->Y, &l ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &P->Z, &P->Z, &l ) );
+
+cleanup:
+    mbedtls_mpi_free( &l );
+
+    return( ret );
+}
+
+/*
+ * Add for: R = P + Q for both Edwards and Twisted Edwards curves in projective
+ * coordinates.
+ *
+ * https://hyperelliptic.org/EFD/g1p/auto-code/twisted/projective/addition/add-2008-bbjlp.op3
+ * with
+ * P = (X1, Z1)
+ * Q = (X2, Z2)
+ * R = (X3, Z3)
+ * and eliminating temporary variables t0, t3, ..., t9.
+ *
+ * Cost: 10M + 1S
+ */
+static int ecp_add_edxyz( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
+                          const mbedtls_ecp_point *P, const mbedtls_ecp_point *Q )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    mbedtls_mpi A, B, C, D, E, F, G, t1, t2;
+
+    mbedtls_mpi_init( &A ); mbedtls_mpi_init( &B ); mbedtls_mpi_init( &C );
+    mbedtls_mpi_init( &D ); mbedtls_mpi_init( &E ); mbedtls_mpi_init( &F );
+    mbedtls_mpi_init( &G ); mbedtls_mpi_init( &t1 ); mbedtls_mpi_init( &t2 );
+
+    /* A = Z1*Z2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &A,    &P->Z,   &Q->Z   ) );
+    /* B = A^2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &B,    &A,      &A      ) );
+    /* C = X1*X2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &C,    &P->X,   &Q->X   ) );
+    /* D = Y1*Y2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &D,    &P->Y,   &Q->Y   ) );
+    /* E = d*C*D */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &E,    &C,      &D      ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &E,    &E,      &grp->B ) );
+    /* F = B-E */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &F,    &B,      &E      ) );
+    /* G = B+E */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mod( grp, &G,    &B,      &E      ) );
+    /* X3 = A*F*((X1+Y1)*(X2+Y2)-C-D) */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mod( grp, &t1,   &P->X,   &P->Y   ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mod( grp, &t2,   &Q->X,   &Q->Y   ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->X, &t1,     &t2     ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &R->X, &R->X,   &C      ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &R->X, &R->X,   &D      ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->X, &R->X,   &F      ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->X, &R->X,   &A      ) );
+    /* Y3 = A*G*(D-a*C) */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->Y, &grp->A, &C      ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &R->Y, &D,      &R->Y   ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->Y, &R->Y,   &G      ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->Y, &R->Y,   &A      ) );
+    /* Z3 = F*G */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->Z, &F,      &G      ) );
+
+cleanup:
+    mbedtls_mpi_free( &A ); mbedtls_mpi_free( &B ); mbedtls_mpi_free( &C );
+    mbedtls_mpi_free( &D ); mbedtls_mpi_free( &E ); mbedtls_mpi_free( &F );
+    mbedtls_mpi_free( &G ); mbedtls_mpi_free( &t1 ); mbedtls_mpi_free( &t2 );
+
+    return( ret );
+}
+
+/*
+ * Double for: R = 2 * P for both Edwards and Twisted Edwards curves in projective
+ * coordinates.
+ *
+ * https://hyperelliptic.org/EFD/g1p/auto-code/twisted/projective/doubling/dbl-2008-bbjlp.op3
+ * with
+ * P = (X1, Z1)
+ * R = (X3, Z3)
+ * and eliminating H and temporary variables t0, ..., t4.
+ *
+ * Cost: 3M + 4S
+ */
+static int ecp_double_edxyz( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
+                          const mbedtls_ecp_point *P )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    mbedtls_mpi A, B, C, D, E, F, J;
+
+    mbedtls_mpi_init( &A ); mbedtls_mpi_init( &B ); mbedtls_mpi_init( &C );
+    mbedtls_mpi_init( &D ); mbedtls_mpi_init( &E ); mbedtls_mpi_init( &F );
+    mbedtls_mpi_init( &J );
+
+    /* B = (X1+Y1)^2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mod( grp, &B,    &P->X,   &P->Y ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &B,    &B,      &B    ) );
+    /* C = X1^2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &C,    &P->X,   &P->X ) );
+    /* D = Y1^2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &D,    &P->Y,   &P->Y ) );
+    /* E = a*C */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &E,    &grp->A, &C    ) );
+    /* F = E+D */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mod( grp, &F,    &E,      &D    ) );
+    /* J = F-2*(Z1^2) */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &J,    &P->Z,   &P->Z ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_shift_l_mod( grp, &J, 1             ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &J,    &F,      &J    ) );
+    /* X3 = (B-C-D)*J */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &R->X, &B,      &C    ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &R->X, &R->X,   &D    ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->X, &R->X,   &J    ) );
+    /* Y3 = F*(E-D) */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mod( grp, &R->Y, &E,      &D    ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->Y, &R->Y,   &F    ) );
+    /* Z3 = F*J */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &R->Z, &F,      &J    ) );
+
+cleanup:
+    mbedtls_mpi_free( &A ); mbedtls_mpi_free( &B ); mbedtls_mpi_free( &C );
+    mbedtls_mpi_free( &D ); mbedtls_mpi_free( &E ); mbedtls_mpi_free( &F );
+    mbedtls_mpi_free( &J );
+
+    return( ret );
+}
+
+/*
+ * Multiplication with Montgomery ladder in x/y/z coordinates,
+ * for curves in Edwards form.
+ */
+static int ecp_mul_edxyz( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
+                          const mbedtls_mpi *m, const mbedtls_ecp_point *P,
+                          int (*f_rng)(void *, unsigned char *, size_t),
+                          void *p_rng )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    size_t i;
+    unsigned char b;
+    mbedtls_ecp_point RP;
+
+    mbedtls_ecp_point_init( &RP );
+
+    /* Read from P before writing to R, in case P == R */
+    MBEDTLS_MPI_CHK( mbedtls_ecp_copy( &RP, P ) );
+
+    /* Set R to zero in projective coordinates */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &R->X, 0 ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &R->Y, 1 ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_lset( &R->Z, 1 ) );
+
+    /* RP.X and RP.Y might be slightly larger than P, so reduce them */
+    MOD_ADD( RP.X );
+    MOD_ADD( RP.Y );
+
+    /* Randomize coordinates of the starting point */
+    if( f_rng != NULL )
+        MBEDTLS_MPI_CHK( ecp_randomize_edxyz( grp, &RP, f_rng, p_rng ) );
+
+    /* Loop invariant: R = result so far, RP = R + P */
+    i = mbedtls_mpi_bitlen( m ); /* one past the (zero-based) most significant bit */
+    while( i-- > 0 )
+    {
+        b = mbedtls_mpi_get_bit( m, i );
+        /*
+         *  if (b) R = 2R + P else R = 2R,
+         * which is:
+         *  if (b) add( R, R, RP )
+         *         add( RP, RP, RP )
+         *  else   add( RP, RP, R )
+         *         add( R, R, R )
+         * but using safe conditional swaps to avoid leaks
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap( &R->X, &RP.X, b ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap( &R->Y, &RP.Y, b ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap( &R->Z, &RP.Z, b ) );
+        MBEDTLS_MPI_CHK( ecp_add_edxyz( grp, &RP, &RP, R ) );
+        MBEDTLS_MPI_CHK( ecp_double_edxyz( grp, R,   R ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap( &R->X, &RP.X, b ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap( &R->Y, &RP.Y, b ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap( &R->Z, &RP.Z, b ) );
+    }
+
+    /*
+     * Knowledge of the projective coordinates may leak the last few bits of the
+     * scalar [1], and since our MPI implementation isn't constant-flow,
+     * inversion (used for coordinate normalization) may leak the full value
+     * of its input via side-channels [2].
+     *
+     * [1] https://eprint.iacr.org/2003/191
+     * [2] https://eprint.iacr.org/2020/055
+     *
+     * Avoid the leak by randomizing coordinates before we normalize them.
+     */
+    if( f_rng != NULL )
+        MBEDTLS_MPI_CHK( ecp_randomize_edxyz( grp, R, f_rng, p_rng ) );
+
+    MBEDTLS_MPI_CHK( ecp_normalize_edxyz( grp, R ) );
+
+cleanup:
+    mbedtls_ecp_point_free( &RP );
+
+    return( ret );
+}
+#endif /* ECP_EDWARDS */
+
+/*
+ * Point addition R = P + Q
+ */
+int mbedtls_ecp_add( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
+                     const mbedtls_ecp_point *P, const mbedtls_ecp_point *Q )
+{
+    int ret = MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+
+    ECP_VALIDATE_RET( grp != NULL );
+    ECP_VALIDATE_RET( R   != NULL );
+    ECP_VALIDATE_RET( P   != NULL );
+    ECP_VALIDATE_RET( Q   != NULL );
+
+#if defined(ECP_EDWARDS)
+    if( mbedtls_ecp_get_type( grp ) == MBEDTLS_ECP_TYPE_EDWARDS )
+    {
+        MBEDTLS_MPI_CHK( ecp_add_edxyz( grp, R, P, Q ) );
+        MBEDTLS_MPI_CHK( ecp_normalize_edxyz( grp, R ) );
+    }
+#else
+    (void) grp;
+    (void) R;
+    (void) P;
+    (void) Q;
+    goto cleanup;
+#endif
+
+cleanup:
+    return( ret );
+}
+
 /*
  * Restartable multiplication R = m * P
  */
@@ -2700,6 +3172,10 @@ int mbedtls_ecp_mul_restartable( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
 #if defined(ECP_SHORTWEIERSTRASS)
     if( mbedtls_ecp_get_type( grp ) == MBEDTLS_ECP_TYPE_SHORT_WEIERSTRASS )
         MBEDTLS_MPI_CHK( ecp_mul_comb( grp, R, m, P, f_rng, p_rng, rs_ctx ) );
+#endif
+#if defined(ECP_EDWARDS)
+    if( mbedtls_ecp_get_type( grp ) == MBEDTLS_ECP_TYPE_EDWARDS )
+        MBEDTLS_MPI_CHK( ecp_mul_edxyz( grp, R, m, P, f_rng, p_rng ) );
 #endif
 
 cleanup:
@@ -2943,6 +3419,51 @@ static int ecp_check_pubkey_mx( const mbedtls_ecp_group *grp, const mbedtls_ecp_
 }
 #endif /* ECP_MONTGOMERY */
 
+#if defined(ECP_EDWARDS)
+/*
+ * Check that a point is valid as a public key, i.e. it is actually on
+ * the curve.
+ */
+static int ecp_check_pubkey_ed( const mbedtls_ecp_group *grp, const mbedtls_ecp_point *pt )
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    mbedtls_mpi LHS, RHS, X2, Y2;
+
+    /* pt coordinates must be normalized for our checks */
+    if( mbedtls_mpi_cmp_int( &pt->X, 0 ) < 0 ||
+        mbedtls_mpi_cmp_int( &pt->Y, 0 ) < 0 ||
+        mbedtls_mpi_cmp_mpi( &pt->X, &grp->P ) >= 0 ||
+        mbedtls_mpi_cmp_mpi( &pt->Y, &grp->P ) >= 0 )
+        return( MBEDTLS_ERR_ECP_INVALID_KEY );
+
+    mbedtls_mpi_init( &LHS ); mbedtls_mpi_init( &RHS );
+    mbedtls_mpi_init( &X2 ); mbedtls_mpi_init( &Y2 );
+
+    /* X2 = X^2, Y2 = Y^2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &X2,  &pt->X, &pt->X  ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &Y2,  &pt->Y, &pt->Y  ) );
+
+    /* LHS = a X^2 + Y^2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &LHS, &X2,    &grp->A ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mod( grp, &LHS, &LHS,   &Y2     ) );
+
+    /* RHS = 1 + d X^2 Y^2 */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &RHS, &X2,    &Y2     ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mod( grp, &RHS, &RHS,   &grp->B ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_int( &RHS, &RHS, 1 ) ); MOD_ADD( RHS );
+
+    if( mbedtls_mpi_cmp_mpi( &LHS, &RHS ) != 0 )
+        ret = MBEDTLS_ERR_ECP_INVALID_KEY;
+
+cleanup:
+
+    mbedtls_mpi_free( &LHS ); mbedtls_mpi_free( &RHS );
+    mbedtls_mpi_free( &X2 ); mbedtls_mpi_free( &Y2 );
+
+    return( ret );
+}
+#endif /* ECP_EDWARDS */
+
 /*
  * Check that a point is valid as a public key
  */
@@ -2964,6 +3485,11 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
     if( mbedtls_ecp_get_type( grp ) == MBEDTLS_ECP_TYPE_SHORT_WEIERSTRASS )
         return( ecp_check_pubkey_sw( grp, pt ) );
 #endif
+#if defined(ECP_EDWARDS)
+    if( mbedtls_ecp_get_type( grp ) == MBEDTLS_ECP_TYPE_EDWARDS )
+        return( ecp_check_pubkey_ed( grp, pt ) );
+#endif
+
     return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 }
 
@@ -3003,6 +3529,11 @@ int mbedtls_ecp_check_privkey( const mbedtls_ecp_group *grp,
             return( 0 );
     }
 #endif /* ECP_SHORTWEIERSTRASS */
+#if defined(ECP_EDWARDS)
+    /* FIXME: add a check for Edwards */
+    if( mbedtls_ecp_get_type( grp ) == MBEDTLS_ECP_TYPE_EDWARDS )
+        return( 0 );
+#endif
 
     return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 }
