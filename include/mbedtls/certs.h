@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-/* List of all PEM-encoded CA certificates, terminated by NULL;
+/* List of all CA certificates, terminated by NULL;
  * PEM encoded if MBEDTLS_PEM_PARSE_C is enabled, DER encoded
  * otherwise. */
 extern const char * mbedtls_test_cas[];
