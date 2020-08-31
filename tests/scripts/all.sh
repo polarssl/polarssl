@@ -1172,6 +1172,12 @@ component_build_crypto_baremetal () {
   if_build_succeeded are_empty_libraries library/libmbedx509.* library/libmbedtls.*
 }
 
+component_build_baremetal () {
+  msg "build: make, baremetal config"
+  scripts/config.py baremetal
+  make CFLAGS="-O1 -Werror -I$(pwd)/tests/include/baremetal-override/"
+}
+
 component_test_depends_curves () {
     msg "test/build: curves.pl (gcc)" # ~ 4 min
     record_status tests/scripts/curves.pl
