@@ -166,6 +166,11 @@ string(REGEX MATCH "Clang" CMAKE_COMPILER_IS_CLANG "${CMAKE_C_COMPILER_ID}")
 
 include(CheckCCompilerFlag)
 
+if (NOT CMAKE_VERSION VERSION_LESS 3.1.0)
+    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_EXTENSIONS OFF)
+endif ()
+
 if(CMAKE_COMPILER_IS_GNU)
     # some warnings we want are not available with old GCC versions
     # note: starting with CMake 2.8 we could use CMAKE_C_COMPILER_VERSION
@@ -193,6 +198,9 @@ if(CMAKE_COMPILER_IS_GNU)
     if (GCC_VERSION VERSION_GREATER 7.0 OR GCC_VERSION VERSION_EQUAL 7.0)
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wformat-overflow=2 -Wformat-truncation")
     endif()
+    if (NOT CMAKE_C_STANDARD)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    endif ()
     set(CMAKE_C_FLAGS_RELEASE     "-O2")
     set(CMAKE_C_FLAGS_DEBUG       "-O0 -g3")
     set(CMAKE_C_FLAGS_COVERAGE    "-O0 -g3 --coverage")
@@ -212,6 +220,9 @@ if(CMAKE_COMPILER_IS_CLANG)
     set(CMAKE_C_FLAGS_MEMSAN      "-fsanitize=memory -O3")
     set(CMAKE_C_FLAGS_MEMSANDBG   "-fsanitize=memory -O1 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2")
     set(CMAKE_C_FLAGS_CHECK       "-Os")
+    if (NOT CMAKE_C_STANDARD)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+    endif ()
 endif(CMAKE_COMPILER_IS_CLANG)
 
 if(CMAKE_COMPILER_IS_IAR)
