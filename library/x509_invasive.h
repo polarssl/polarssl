@@ -15,6 +15,6 @@ int x509_parse_ipv4( const char *h, unsigned char *addr );
  * return 0 if success, -1 otherwise
  */
 int x509_parse_ipv6( const char *h, size_t hlen, unsigned char *addr );
-#endif
+#endif /* MBEDTLS_TEST_HOOKS */
 
-#endif //MBED_TLS_X509_INVASIVE_H
+#endif /* MBED_TLS_X509_INVASIVE_H */

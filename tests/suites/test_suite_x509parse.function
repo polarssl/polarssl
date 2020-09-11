@@ -403,36 +403,28 @@ int parse_crt_ext_cb( void *p_ctx, mbedtls_x509_crt const *crt, mbedtls_x509_buf
  */
 
 /* BEGIN_CASE depends_on:MBEDTLS_TEST_HOOKS */
-void x509_ipv4_parse( char* ipv4, char *exp, int ref_ret )
+void x509_ipv4_parse( char * ipv4, data_t * exp, int ref_ret )
 {
     unsigned char addr[4];
-    unsigned char *exp_addr = NULL;
     int ret = x509_parse_ipv4( ipv4, addr  );
-    TEST_ASSERT( ret == ref_ret );
+    TEST_EQUAL( ret, ref_ret );
 
     if( ret == 0 ) {
-        size_t exp_len;
-        exp_addr = mbedtls_test_unhexify_alloc( exp, &exp_len );
-        TEST_ASSERT( memcmp( exp_addr, addr, sizeof( addr )) == 0 );
+        ASSERT_COMPARE( exp->x, exp->len, addr, sizeof( addr ) );
     }
-    mbedtls_free( exp_addr );
 }
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_TEST_HOOKS */
-void x509_ipv6_parse( char* ipv6, char* exp, int ref_ret )
+void x509_ipv6_parse( char * ipv6, data_t * exp, int ref_ret )
 {
     unsigned char addr[16];
-    unsigned char *exp_addr = NULL;
     int ret = x509_parse_ipv6( ipv6, strlen(ipv6), addr  );
-    TEST_ASSERT( ret == ref_ret );
+    TEST_EQUAL( ret, ref_ret );
 
     if( ret == 0 ) {
-        size_t exp_len;
-        exp_addr = mbedtls_test_unhexify_alloc( exp, &exp_len );
-        TEST_ASSERT( memcmp( exp_addr, addr, sizeof( addr )) == 0 );
+        ASSERT_COMPARE( exp->x, exp->len, addr, sizeof( addr ) );
     }
-    mbedtls_free( exp_addr );
 }
 /* END_CASE */
 
