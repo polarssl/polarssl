@@ -954,7 +954,7 @@ x509_ipv6_parse:"1\:2\:3\:4\:5\:6\:7\:8":"00010002000300040005000600070008":0
 IPv6 Parse: valid address shorthand
 x509_ipv6_parse:"6263\:\:1":"62630000000000000000000000000001":0
 
-IPv6 Parse: valid address
+IPv6 Parse: valid address shorthand start
 x509_ipv6_parse:"\:\:1":"00000000000000000000000000000001":0
 
 IPv6 Parse: invalid address - start single colon

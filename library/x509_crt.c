@@ -2959,7 +2959,7 @@ find_parent:
  * parse ipv4 address from canonical string form into bytes.
  * return 0 if success, -1 otherwise
  */
-MBEDTLS_STATIC_TESTABLE int x509_parse_ipv4( const char *h, unsigned char *addr )
+MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv4( const char *h, unsigned char *addr )
 {
     int i;
     const char *strt = h;
@@ -2993,7 +2993,7 @@ MBEDTLS_STATIC_TESTABLE int x509_parse_ipv4( const char *h, unsigned char *addr 
  * parse ipv6 address from canonical string form into bytes.
  * return 0 if success, -1 otherwise
  */
-MBEDTLS_STATIC_TESTABLE int x509_parse_ipv6( const char *h, size_t hlen, unsigned char *addr )
+MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv6( const char *h, size_t hlen, unsigned char *addr )
 {
     const char *hend = h + hlen;
     unsigned char ip[16];
@@ -3102,13 +3102,13 @@ static int x509_crt_check_ip( const mbedtls_x509_buf *name,
     unsigned char ip[16];
 
     if ( name->len == 4 &&
-         x509_parse_ipv4( cn, ip ) == 0 &&
+            mbedtls_x509_parse_ipv4( cn, ip ) == 0 &&
          memcmp( ip, name->p, name->len ) == 0 )
     {
         return( 0 );
     }
     else if ( name->len == 16 &&
-              x509_parse_ipv6( cn, cn_len, ip ) == 0 &&
+            mbedtls_x509_parse_ipv6( cn, cn_len, ip ) == 0 &&
               memcmp( ip, name->p, name->len ) == 0 )
     {
         return( 0 );
