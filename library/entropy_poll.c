@@ -17,15 +17,9 @@
  *  limitations under the License.
  */
 
-#if defined(__linux__)
-#if !defined(_GNU_SOURCE)
+#if defined(__linux__) && !defined(_GNU_SOURCE)
 /* Ensure that syscall() is available even when compiling with -std=c99 */
 #define _GNU_SOURCE
-#endif
-#include <features.h>
-#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25)
-#define HAVE_SYS_RANDOM 1
-#endif
 #endif
 
 #include "common.h"
@@ -91,21 +85,22 @@ int mbedtls_platform_entropy_poll( void *data, unsigned char *output, size_t len
 #else /* _WIN32 && !EFIX64 && !EFI32 */
 
 /*
- * Test for Linux getrandom() support.
- * When the C library is GNU libc and its version is greater than 2.25,
- * include sys/random.h to use getrandom(),
- * otherwise use the generic use the generic syscall wrapper
- * available in GNU libc and compatible libc's (eg uClibc).
+ * Test for Linux getrandom() support. Since many libc implementations on
+ * Linux don't have a wrapper for getrandom(), issue the system call directly.
  */
-#if HAVE_SYS_RANDOM
-#include <sys/random.h>
-#include <errno.h>
-#define HAVE_GETRANDOM
-#elif (defined(__linux__) && defined(__GLIBC__)) || defined(__midipix__)
+#if defined(__linux__) || defined(__midipix__)
 #include <unistd.h>
 #include <sys/syscall.h>
+
 #if defined(SYS_getrandom)
 #define HAVE_GETRANDOM
+#elif defined(__NR_getrandom)
+#define HAVE_GETRANDOM
+#define SYS_getrandom __NR_getrandom
+#endif
+#endif /* __linux__ || __midipix__ */
+
+#if defined(HAVE_GETRANDOM)
 #include <errno.h>
 
 static int getrandom_wrapper( void *buf, size_t buflen, unsigned int flags )
@@ -118,8 +113,7 @@ static int getrandom_wrapper( void *buf, size_t buflen, unsigned int flags )
 #endif
     return( syscall( SYS_getrandom, buf, buflen, flags ) );
 }
-#endif /* SYS_getrandom */
-#endif /* __linux__ || __midipix__ */
+#endif /* HAVE_GETRANDOM */
 
 /*
  * Some BSD systems provide KERN_ARND.
@@ -167,11 +161,7 @@ int mbedtls_platform_entropy_poll( void *data,
     ((void) data);
 
 #if defined(HAVE_GETRANDOM)
-#if HAVE_SYS_RANDOM
-    ret = getrandom(output, len, 0);
-#else
     ret = getrandom_wrapper( output, len, 0 );
-#endif
     if( ret >= 0 )
     {
         *olen = ret;

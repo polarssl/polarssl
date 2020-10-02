@@ -1,2 +1,7 @@
 Changes
-   Use glibc's getrandom() instead of syscall when glibc > 2.25.
+   * On Linux, use the getrandom() system call if available, even when
+     building with a libc that does not define __GLIBC__. This
+     requires the libc to provide <sys/syscall.h> and a syscall()
+     function. As before, getrandom() is only used if SYS_getrandom is
+     defined during the build and there is a runtime fallback to
+     /dev/urandom if the getrandom() system call fails.

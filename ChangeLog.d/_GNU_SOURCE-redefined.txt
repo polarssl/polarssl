@@ -1,0 +1,3 @@
+Bugfix
+   * Fix the build when the macro _GNU_SOURCE is defined to a non-empty value.
+     Fix #3432.
