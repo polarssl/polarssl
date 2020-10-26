@@ -584,6 +584,134 @@ int mbedtls_ecdsa_sign_det_ext( mbedtls_ecp_group *grp, mbedtls_mpi *r,
 }
 #endif /* MBEDTLS_ECDSA_DETERMINISTIC */
 
+/**
+* Compute ECDSA-SM2 signature of a hashed message
+*/
+
+int mbedtls_ecdsa_sm2_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
+                    const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
+                    int(*f_rng)(void *, unsigned char *, size_t), void *p_rng)
+{
+    int ret, key_tries, sign_tries, blind_tries;
+    mbedtls_ecp_point R;
+    mbedtls_mpi  k, e, t, l, m;
+    /* Fail cleanly on curves such as Curve25519 that can't be used for ECDSA */
+    if (grp->N.p == NULL)
+        return(MBEDTLS_ERR_ECP_BAD_INPUT_DATA);
+
+    mbedtls_ecp_point_init(&R);
+    mbedtls_mpi_init(&k); mbedtls_mpi_init(&e); mbedtls_mpi_init(&t); mbedtls_mpi_init(&l);
+    mbedtls_mpi_init(&m);
+
+    sign_tries = 0;
+    do
+    {
+        /*
+        * Step 0: derive MPI from hashed message
+        */
+        MBEDTLS_MPI_CHK(derive_mpi(grp, &e, buf, blen));
+        /*
+        *        Step 1-3:
+        *        set r = (e+x) mod n
+        */
+        key_tries = 0;
+        do
+        {
+            MBEDTLS_MPI_CHK(mbedtls_ecp_gen_keypair(grp, &k, &R, f_rng, p_rng));
+            MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&l, &e, &R.X));
+            MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(r, &l, &grp->N));
+
+            if (key_tries++ > 10)
+            {
+                ret = MBEDTLS_ERR_ECP_RANDOM_FAILED;
+                goto cleanup;
+            }
+            //r+k != n
+            MBEDTLS_MPI_CHK((mbedtls_mpi_add_mpi(&m, r, &k)));
+        } while ((mbedtls_mpi_cmp_int(r, 0) == 0) || (mbedtls_mpi_cmp_mpi(&m, &grp->N) == 0));
+        /*
+        * Generate a random value to blind inv_mod in next step,
+        * avoiding a potential timing leak.
+        */
+        blind_tries = 0;
+        do
+        {
+            size_t n_size = (grp->nbits + 7) / 8;
+            MBEDTLS_MPI_CHK(mbedtls_mpi_fill_random(&t, n_size, f_rng, p_rng));
+            MBEDTLS_MPI_CHK(mbedtls_mpi_shift_r(&t, 8 * n_size - grp->nbits));
+
+            /* See mbedtls_ecp_gen_keypair() */
+            if (++blind_tries > 30)
+                return(MBEDTLS_ERR_ECP_RANDOM_FAILED);
+        } while (mbedtls_mpi_cmp_int(&t, 1) < 0 ||
+            mbedtls_mpi_cmp_mpi(&t, &grp->N) >= 0);
+
+        /*
+        * Step 6: compute  s = ((1+d)^-1)*(k-r*d) mod n
+        *
+        */
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(s, r, d)); //s = r*d
+        MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(s, &k, s));   //s = k - s
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(s, s, &t));//s = s*t
+        MBEDTLS_MPI_CHK(mbedtls_mpi_add_int(&l, d, 1));//l = 1+d
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&l, &l, &t));//l=l*t
+        MBEDTLS_MPI_CHK(mbedtls_mpi_inv_mod(&l, &l, &grp->N));// l = l^-1
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(s, s, &l));//s = s * l
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(s, s, &grp->N));//s mod n
+
+        if (sign_tries++ > 10)
+        {
+            ret = MBEDTLS_ERR_ECP_RANDOM_FAILED;
+            goto cleanup;
+        }
+        //
+    } while (mbedtls_mpi_cmp_int(&t, 1) < 0 ||
+        mbedtls_mpi_cmp_mpi(&t, &grp->N) >= 0);
+cleanup:
+    mbedtls_ecp_point_free(&R);
+    mbedtls_mpi_free(&k); mbedtls_mpi_free(&e); mbedtls_mpi_free(&t);
+    mbedtls_mpi_free(&l); mbedtls_mpi_free(&m);
+    return (ret);
+}
+
+#if defined(MBEDTLS_ECDSA_SM2_DETERMINISTIC)
+/*
+* Deterministic Guomi SM2 signature wrapper
+*/
+int mbedtls_ecdsa_sm2_sign_det(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
+                    const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
+                    mbedtls_md_type_t md_alg)
+{
+    int ret;
+    mbedtls_hmac_drbg_context rng_ctx;
+    unsigned char data[2 * MBEDTLS_ECP_MAX_BYTES];
+    size_t grp_len = (grp->nbits + 7) / 8;
+    const mbedtls_md_info_t *md_info;
+    mbedtls_mpi h;
+
+    if ((md_info = mbedtls_md_info_from_type(md_alg)) == NULL)
+        return(MBEDTLS_ERR_ECP_BAD_INPUT_DATA);
+
+    mbedtls_mpi_init(&h);
+    mbedtls_hmac_drbg_init(&rng_ctx);
+
+    /* Use private key and message hash (reduced) to initialize HMAC_DRBG */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(d, data, grp_len));
+    MBEDTLS_MPI_CHK(derive_mpi(grp, &h, buf, blen));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&h, data + grp_len, grp_len));
+    mbedtls_hmac_drbg_seed_buf(&rng_ctx, md_info, data, 2 * grp_len);
+
+    ret = mbedtls_ecdsa_sm2_sign(grp, r, s, d, buf, blen,
+        mbedtls_hmac_drbg_random, &rng_ctx);
+
+cleanup:
+    mbedtls_hmac_drbg_free(&rng_ctx);
+    mbedtls_mpi_free(&h);
+
+    return(ret);
+}
+#endif /* MBEDTLS_ECDSA_DETERMINISTIC */
+
 #if !defined(MBEDTLS_ECDSA_VERIFY_ALT)
 /*
  * Verify ECDSA signature of hashed message (SEC1 4.1.4)
@@ -714,6 +842,80 @@ int mbedtls_ecdsa_verify( mbedtls_ecp_group *grp,
 #endif /* !MBEDTLS_ECDSA_VERIFY_ALT */
 
 /*
+* Verify ECDSA Guomi SM2 signature of hashed message
+*/
+int mbedtls_ecdsa_sm2_verify(mbedtls_ecp_group *grp,
+                    const unsigned char *buf, size_t blen,
+                    const mbedtls_ecp_point *Q, const mbedtls_mpi *r, const mbedtls_mpi *s)
+{
+    int ret;
+    mbedtls_mpi e, s_inv, u1, u2, t, result;
+    mbedtls_ecp_point R;
+
+    mbedtls_ecp_point_init(&R);
+    mbedtls_mpi_init(&e); mbedtls_mpi_init(&s_inv); mbedtls_mpi_init(&u1); mbedtls_mpi_init(&u2);
+    mbedtls_mpi_init(&t); mbedtls_mpi_init(&result);
+
+    /* Fail cleanly on curves such as Curve25519 that can't be used for ECDSA */
+    if (grp->N.p == NULL)
+        return(MBEDTLS_ERR_ECP_BAD_INPUT_DATA);
+
+    /*
+    * Step 1: make sure r and s are in range 1..n-1
+    */
+    if (mbedtls_mpi_cmp_int(r, 1) < 0 || mbedtls_mpi_cmp_mpi(r, &grp->N) >= 0 ||
+        mbedtls_mpi_cmp_int(s, 1) < 0 || mbedtls_mpi_cmp_mpi(s, &grp->N) >= 0)
+    {
+        ret = MBEDTLS_ERR_ECP_VERIFY_FAILED;
+        goto cleanup;
+    }
+
+    /*
+    * Additional precaution: make sure Q is valid
+    */
+    MBEDTLS_MPI_CHK(mbedtls_ecp_check_pubkey(grp, Q));
+
+    /*
+    * Step 3: derive MPI from hashed message
+    */
+    MBEDTLS_MPI_CHK(derive_mpi(grp, &e, buf, blen));
+
+    /*
+    * Step 4: t = (r+s) mod n
+    */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&t, r, s));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&t, &t, &grp->N));
+    if (mbedtls_mpi_cmp_int(&t, 0) == 0)
+    {
+        ret = MBEDTLS_ERR_ECP_VERIFY_FAILED;
+        goto cleanup;
+    }
+    /*
+    * Step 5: (x,y) = sG + tQ
+    */
+    MBEDTLS_MPI_CHK(mbedtls_ecp_muladd(grp, &R, s, &grp->G, &t, Q));
+    /*
+    * Step 6: result = (e+x) mod n
+    */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(&e, &e, &R.X));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&result, &e, &grp->N));
+    /*
+    * Step 7: check if result.X (that is, result.X) is equal to r
+    **/
+    if (mbedtls_mpi_cmp_mpi(&result, r) != 0)
+    {
+        ret = MBEDTLS_ERR_ECP_VERIFY_FAILED;
+        goto cleanup;
+    }
+    //
+cleanup:
+    mbedtls_ecp_point_free(&R);
+    mbedtls_mpi_free(&e); mbedtls_mpi_free(&s_inv); mbedtls_mpi_free(&u1); mbedtls_mpi_free(&u2);
+    mbedtls_mpi_free(&t); mbedtls_mpi_free(&result);
+    return(ret);
+}
+
+/*
  * Convert a signature (given by context) to ASN.1
  */
 static int ecdsa_signature_to_asn1( const mbedtls_mpi *r, const mbedtls_mpi *s,
@@ -820,6 +1022,52 @@ int mbedtls_ecdsa_write_signature_det( mbedtls_ecdsa_context *ctx,
 #endif
 
 /*
+* Compute and write ecdsa sm2 signature
+*/
+int mbedtls_ecdsa_sm2_write_signature(mbedtls_ecdsa_context *ctx, mbedtls_md_type_t md_alg,
+                               const unsigned char *hash, size_t hlen,
+                               unsigned char *sig, size_t *slen,
+                               int(*f_rng)(void *, unsigned char *, size_t),
+                               void *p_rng)
+{
+    int ret;
+    mbedtls_mpi r, s;
+
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+#if defined(MBEDTLS_ECDSA_DETERMINISTIC)
+    (void)f_rng;
+    (void)p_rng;
+
+    MBEDTLS_MPI_CHK(mbedtls_ecdsa_sm2_sign_det(&ctx->grp, &r, &s, &ctx->d,
+                             hash, hlen, md_alg));
+#else
+    (void)md_alg;
+
+    MBEDTLS_MPI_CHK(mbedtls_ecdsa_sign(&ctx->grp, &r, &s, &ctx->d,
+                             hash, hlen, f_rng, p_rng));
+#endif
+
+    MBEDTLS_MPI_CHK(ecdsa_signature_to_asn1(&r, &s, sig, slen));
+
+cleanup:
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+
+    return(ret);
+}
+
+int mbedtls_ecdsa_sm2_write_signature_det(mbedtls_ecdsa_context *ctx,
+    const unsigned char *hash, size_t hlen,
+    unsigned char *sig, size_t *slen,
+    mbedtls_md_type_t md_alg)
+{
+    return(mbedtls_ecdsa_sm2_write_signature(ctx, md_alg, hash, hlen, sig, slen,
+                             NULL, NULL));
+}
+
+/*
  * Read and check signature
  */
 int mbedtls_ecdsa_read_signature( mbedtls_ecdsa_context *ctx,
@@ -894,6 +1142,60 @@ cleanup:
     mbedtls_mpi_free( &s );
 
     return( ret );
+}
+
+/*
+* Read and check sm2 signature
+*/
+int mbedtls_ecdsa_sm2_read_signature(mbedtls_ecdsa_context *ctx,
+                          const unsigned char *hash, size_t hlen,
+                          const unsigned char *sig, size_t slen)
+{
+    int ret;
+    unsigned char *p = (unsigned char *)sig;
+    const unsigned char *end = sig + slen;
+    size_t len;
+    mbedtls_mpi r, s;
+
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    if ((ret = mbedtls_asn1_get_tag(&p, end, &len,
+        MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE)) != 0)
+    {
+        ret += MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    if (p + len != end)
+    {
+        ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA +
+            MBEDTLS_ERR_ASN1_LENGTH_MISMATCH;
+        goto cleanup;
+    }
+
+    if ((ret = mbedtls_asn1_get_mpi(&p, end, &r)) != 0 ||
+        (ret = mbedtls_asn1_get_mpi(&p, end, &s)) != 0)
+    {
+        ret += MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    if ((ret = mbedtls_ecdsa_sm2_verify(&ctx->grp, hash, hlen,
+        &ctx->Q, &r, &s)) != 0)
+        goto cleanup;
+
+    /* At this point we know that the buffer starts with a valid signature.
+    * Return 0 if the buffer just contains the signature, and a specific
+    * error code if the valid signature is followed by more data. */
+    if (p != end)
+        ret = MBEDTLS_ERR_ECP_SIG_LEN_MISMATCH;
+
+cleanup:
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+
+    return(ret);
 }
 
 #if !defined(MBEDTLS_ECDSA_GENKEY_ALT)

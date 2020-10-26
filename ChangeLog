@@ -1171,6 +1171,10 @@ Features
    * Add support for ARIA cipher (RFC 5794) and associated TLS ciphersuites
      (RFC 6209). Disabled by default, see MBEDTLS_ARIA_C in config.h
 
+Features
+   * Add initial support for Chinese Guomi SM2 Digital Signature Algorithm.
+     Support SM2 256bit curve.Contributed by Zhao Yang.#1620
+
 API Changes
    * Extend the platform module with a util component that contains
      functionality shared by multiple Mbed TLS modules. At this stage
@@ -1181,6 +1185,13 @@ API Changes
      output binary as part of redundant code elimination optimizations.
      Therefore, mbedtls_platform_zeroize() is moved to the platform module to
      facilitate testing and maintenance.
+   * Add function mbedtls_ecdsa_sm2_sign(),mbedtls_ecdsa_sm2_sign_det(),
+     mbedtls_ecdsa_sm2_verify(),mbedtls_ecdsa_sm2_write_signature(),
+     mbedtls_ecdsa_sm2_write_signature_det(),mbedtls_ecdsa_sm2_read_signature()
+      to support Chinese Guomi SM2 digital signature algorithm.
+
+Changes
+   * Add Chinese Guomi SM2 256 bits curve.Contrubuted by Zhao Yang.#1620
 
 Bugfix
    * Fix an issue with MicroBlaze support in bn_mul.h which was causing the
