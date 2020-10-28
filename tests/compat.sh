@@ -70,7 +70,7 @@ fi
 MODES="tls1 tls1_1 tls1_2 dtls1 dtls1_2"
 VERIFIES="NO YES"
 TYPES="ECDSA RSA PSK"
-FILTER=""
+FILTER=".*"
 # exclude:
 # - NULL: excluded from our default config
 # - RC4, single-DES: requires legacy OpenSSL/GnuTLS versions
@@ -90,8 +90,8 @@ PEERS="OpenSSL$PEER_GNUTLS mbedTLS"
 print_usage() {
     echo "Usage: $0"
     printf "  -h|--help\tPrint this help.\n"
-    printf "  -f|--filter\tOnly matching ciphersuites are tested (Default: '$FILTER')\n"
-    printf "  -e|--exclude\tMatching ciphersuites are excluded (Default: '$EXCLUDE')\n"
+    printf "  -f|--filter\tOnly matching ciphersuites are executed (BRE; default: '$FILTER')\n"
+    printf "  -e|--exclude\tMatching ciphersuites are excluded (BRE; default: '$EXCLUDE')\n"
     printf "  -m|--modes\tWhich modes to perform (Default: '$MODES')\n"
     printf "  -t|--types\tWhich key exchange type to perform (Default: '$TYPES')\n"
     printf "  -V|--verify\tWhich verification modes to perform (Default: '$VERIFIES')\n"
@@ -186,17 +186,31 @@ filter()
 {
   LIST="$1"
   NEW_LIST=""
+  EXCLMODE=""
 
   if is_dtls "$MODE"; then
-      EXCLMODE="$EXCLUDE"'\|RC4\|ARCFOUR'
-  else
-      EXCLMODE="$EXCLUDE"
+    EXCLMODE='RC4\|ARCFOUR'
   fi
 
-  for i in $LIST;
-  do
-    NEW_LIST="$NEW_LIST $( echo "$i" | grep "$FILTER" | grep -v "$EXCLMODE" )"
-  done
+  if [ "X" != "X$EXCLUDE" ]; then
+    if [ "X" != "X$EXCLMODE" ]; then
+      EXCLMODE="$EXCLUDE"'\|'"$EXCLMODE"
+    else
+      EXCLMODE="$EXCLUDE"
+    fi
+  fi
+
+  if [ "X" != "X$EXCLMODE" ]; then
+    for i in $LIST;
+    do
+      NEW_LIST="$NEW_LIST $( echo "$i" | grep "$FILTER" | grep -v "$EXCLMODE" )"
+    done
+  else
+    for i in $LIST;
+    do
+      NEW_LIST="$NEW_LIST $( echo "$i" | grep "$FILTER" )"
+    done
+  fi
 
   # normalize whitespace
   echo "$NEW_LIST" | sed -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//'
