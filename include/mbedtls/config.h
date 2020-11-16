@@ -3041,6 +3041,21 @@
 #define MBEDTLS_PKCS5_C
 
 /**
+ * \def MBEDTLS_PKCS7_C
+ *
+ * Enable PKCS7 core for using PKCS7 formatted signatures.
+ * RFC Link - https://tools.ietf.org/html/rfc2315
+ *
+ * Module:  library/pkcs7.c
+ *
+ * Requires: MBEDTLS_ASN1_PARSE_C, MBEDTLS_OID_C, MBEDTLS_PK_PARSE_C,
+ *           MBEDTLS_X509_CRT_PARSE_C MBEDTLS_X509_CRL_PARSE_C, MBEDTLS_ERROR_C
+ *
+ * This module is required for the PKCS7 parsing modules.
+ */
+#define MBEDTLS_PKCS7_C
+
+/**
  * \def MBEDTLS_PKCS11_C
  *
  * Enable wrapper for PKCS#11 smartcard support via the pkcs11-helper library.

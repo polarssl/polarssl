@@ -1,0 +1,53 @@
+PKCS7 Signed Data Parse Pass SHA256 #1
+pkcs7_parse:"data_files/pkcs7_data_cert_signed_sha256.der"
+
+PKCS7 Signed Data Parse Pass SHA1 #2
+depends_on:MBEDTLS_SHA1_C
+pkcs7_parse:"data_files/pkcs7_data_cert_signed_sha1.der"
+
+PKCS7 Signed Data Parse Pass Without CERT #3
+pkcs7_parse_without_cert:"data_files/pkcs7_data_without_cert_signed.der"
+
+PKCS7 Signed Data Parse Fail with multiple signers #4
+pkcs7_parse_multiple_signers:"data_files/pkcs7_data_multiple_signed.der"
+
+PKCS7 Signed Data Parse Fail with multiple certs #4
+pkcs7_parse_multiple_signers:"data_files/pkcs7_data_multiple_certs_signed.der"
+
+PKCS7 Signed Data Parse Fail with corrupted cert #5
+pkcs7_parse_corrupted_cert:"data_files/pkcs7_data_signed_badcert.der"
+
+PKCS7 Signed Data Parse Fail with corrupted signer info #6
+pkcs7_parse_corrupted_signer_info:"data_files/pkcs7_data_signed_badsigner.der"
+
+PKCS7 Signed Data Parse Fail Version other than 1 #7
+pkcs7_parse_version:"data_files/pkcs7_data_cert_signed_v2.der"
+
+PKCS7 Signed Data Parse Fail Encrypted Content #8
+pkcs7_parse_content_oid:"data_files/pkcs7_data_cert_encrypted.der"
+
+PKCS7 Signed Data Verification Pass SHA256 #9
+pkcs7_verify:"data_files/pkcs7_data_cert_signed_sha256.der":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7_data.txt"
+
+PKCS7 Signed Data Verification Pass SHA256 #9.1
+pkcs7_verify_hash:"data_files/pkcs7_data_cert_signed_sha256.der":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7_data.txt"
+
+PKCS7 Signed Data Verification Pass SHA1 #10
+depends_on:MBEDTLS_SHA1_C
+pkcs7_verify:"data_files/pkcs7_data_cert_signed_sha1.der":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7_data.txt"
+
+PKCS7 Signed Data Verification Pass SHA512 #11
+depends_on:MBEDTLS_SHA512_C
+pkcs7_verify:"data_files/pkcs7_data_cert_signed_sha512.der":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7_data.txt"
+
+PKCS7 Signed Data Verification Fail because of different certificate #12
+pkcs7_verify_badcert:"data_files/pkcs7_data_cert_signed_sha256.der":"data_files/pkcs7-rsa-sha256-2.crt":"data_files/pkcs7_data.txt"
+
+PKCS7 Signed Data Verification Fail because of different data hash #13
+pkcs7_verify_tampered_data:"data_files/pkcs7_data_cert_signed_sha256.der":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7_data_1.txt"
+
+PKCS7 Signed Data Parse Failure Corrupt signerInfo.issuer #15.1
+pkcs7_parse_failure:"data_files/pkcs7_signerInfo_issuer_invalid_size.der"
+
+PKCS7 Signed Data Parse Failure Corrupt signerInfo.serial #15.2
+pkcs7_parse_failure:"data_files/pkcs7_signerInfo_serial_invalid_size.der"

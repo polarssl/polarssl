@@ -1,0 +1,420 @@
+/* BEGIN_HEADER */
+#include "mbedtls/bignum.h"
+#include "mbedtls/pkcs7.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/x509_crl.h"
+#include "mbedtls/oid.h"
+#include "sys/types.h"
+#include "sys/stat.h"
+/* END_HEADER */
+
+/* BEGIN_DEPENDENCIES
+ * depends_on:MBEDTLS_PKCS7_C
+ * END_DEPENDENCIES
+ */
+
+/* BEGIN_CASE depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C */
+void pkcs7_parse( char *pkcs7_file )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    int res;
+
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res == 0 );
+
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHA256_C*/
+void pkcs7_parse_without_cert( char *pkcs7_file )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    int res;
+
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res == 0 );
+
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C */
+void pkcs7_parse_multiple_signers( char *pkcs7_file )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    int res;
+
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res < 0 );
+
+    switch ( res ){
+        case MBEDTLS_ERR_PKCS7_INVALID_CERT:
+            TEST_ASSERT( res ==  MBEDTLS_ERR_PKCS7_INVALID_CERT );
+            break;
+
+        case MBEDTLS_ERR_PKCS7_INVALID_SIGNER_INFO:
+            TEST_ASSERT( res == MBEDTLS_ERR_PKCS7_INVALID_SIGNER_INFO );
+            break;
+        default:
+            TEST_ASSERT(0);
+    }
+
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C */
+void pkcs7_parse_corrupted_cert( char *pkcs7_file )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    int res;
+
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res == MBEDTLS_ERR_PKCS7_INVALID_CERT );
+
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C */
+void pkcs7_parse_corrupted_signer_info( char *pkcs7_file )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    int res;
+
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res < 0 );
+
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHA256_C */
+void pkcs7_parse_version( char *pkcs7_file )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    int res;
+
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res == MBEDTLS_ERR_PKCS7_INVALID_VERSION );
+
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SHA256_C */
+void pkcs7_parse_content_oid( char *pkcs7_file )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    int res;
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen);
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res != 0 );
+    TEST_ASSERT( res == MBEDTLS_ERR_PKCS7_FEATURE_UNAVAILABLE );
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_PKCS1_V15:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C */
+void pkcs7_verify( char *pkcs7_file, char *crt, char *filetobesigned )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    unsigned char *data = NULL;
+    struct stat st;
+    size_t datalen;
+    int res;
+    FILE *file;
+
+    mbedtls_pkcs7 pkcs7;
+    mbedtls_x509_crt x509;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+    mbedtls_x509_crt_init( &x509 );
+
+    res = mbedtls_x509_crt_parse_file( &x509, crt );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res == 0 );
+    mbedtls_free( pkcs7_buf );
+
+    res = stat(filetobesigned, &st);
+    TEST_ASSERT( res == 0 );
+
+    file = fopen( filetobesigned, "r" );
+    TEST_ASSERT( file != NULL );
+
+    datalen = st.st_size;
+    data = mbedtls_calloc( datalen, 1 );
+    buflen = fread( ( void * )data , sizeof( unsigned char ), datalen, file );
+    TEST_ASSERT( buflen == datalen);
+
+    fclose(file);
+
+    res = mbedtls_pkcs7_signed_data_verify( &pkcs7, &x509, data, datalen );
+    TEST_ASSERT( res == 0 );
+
+exit:
+    mbedtls_x509_crt_free( &x509 );
+    mbedtls_free( data );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_PKCS1_V15:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C */
+void pkcs7_verify_hash( char *pkcs7_file, char *crt, char *filetobesigned )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    unsigned char *data = NULL;
+    unsigned char hash[32];
+    struct stat st;
+    size_t datalen;
+    int res;
+    FILE *file;
+    const mbedtls_md_info_t *md_info;
+    mbedtls_md_type_t md_alg;
+
+    mbedtls_pkcs7 pkcs7;
+    mbedtls_x509_crt x509;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+    mbedtls_x509_crt_init( &x509 );
+
+    res = mbedtls_x509_crt_parse_file( &x509, crt );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res == 0 );
+
+    res = stat(filetobesigned, &st);
+    TEST_ASSERT( res == 0 );
+
+    file = fopen( filetobesigned, "r" );
+    TEST_ASSERT( file != NULL );
+
+    datalen = st.st_size;
+    data = mbedtls_calloc( datalen, 1 );
+    TEST_ASSERT( data != NULL);
+
+    buflen = fread( (void *)data , sizeof( unsigned char ), datalen, file );
+    TEST_ASSERT( buflen == datalen);
+    fclose( file );
+
+    res = mbedtls_oid_get_md_alg( &(pkcs7.signed_data.digest_alg_identifiers), &md_alg );
+    TEST_ASSERT( res == 0 );
+    TEST_ASSERT( md_alg == MBEDTLS_MD_SHA256 );
+
+    md_info = mbedtls_md_info_from_type( md_alg );
+
+    mbedtls_md( md_info, data, datalen, hash );
+
+    res = mbedtls_pkcs7_signed_hash_verify( &pkcs7, &x509, hash, sizeof(hash));
+    TEST_ASSERT( res == 0 );
+
+exit:
+    mbedtls_x509_crt_free( &x509 );
+    mbedtls_free( data );
+    mbedtls_pkcs7_free( &pkcs7 );
+    mbedtls_free( pkcs7_buf );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_PKCS1_V15:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C */
+void pkcs7_verify_badcert( char *pkcs7_file, char *crt, char *filetobesigned )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    unsigned char *data = NULL;
+    struct stat st;
+    size_t datalen;
+    int res;
+    FILE *file;
+
+    mbedtls_pkcs7 pkcs7;
+    mbedtls_x509_crt x509;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+    mbedtls_x509_crt_init( &x509 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_x509_crt_parse_file( &x509, crt );
+    TEST_ASSERT( res == 0 );
+
+    res = stat(filetobesigned, &st);
+    TEST_ASSERT( res == 0 );
+
+    file = fopen( filetobesigned, "r" );
+    TEST_ASSERT( file != NULL );
+
+    datalen = st.st_size;
+    data = mbedtls_calloc( datalen, 1 );
+    buflen = fread( ( void * )data , sizeof( unsigned char ), datalen, file );
+    TEST_ASSERT( buflen == datalen);
+
+    fclose(file);
+
+    res = mbedtls_pkcs7_signed_data_verify( &pkcs7, &x509, data, datalen );
+    TEST_ASSERT( res != 0 );
+
+exit:
+    mbedtls_x509_crt_free( &x509 );
+    mbedtls_free( data );
+    mbedtls_pkcs7_free( &pkcs7 );
+    mbedtls_free( pkcs7_buf );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_PKCS1_V15:MBEDTLS_PEM_PARSE_C:MBEDTLS_RSA_C:MBEDTLS_SHA256_C */
+void pkcs7_verify_tampered_data( char *pkcs7_file, char *crt, char *filetobesigned )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    unsigned char *data = NULL;
+    struct stat st;
+    size_t datalen;
+    int res;
+    FILE *file;
+
+    mbedtls_pkcs7 pkcs7;
+    mbedtls_x509_crt x509;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+    mbedtls_x509_crt_init( &x509 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_x509_crt_parse_file( &x509, crt );
+    TEST_ASSERT( res == 0 );
+
+    res = stat(filetobesigned, &st);
+    TEST_ASSERT( res == 0 );
+
+    file = fopen( filetobesigned, "r" );
+    TEST_ASSERT( file != NULL );
+
+    datalen = st.st_size;
+    data = mbedtls_calloc( datalen, 1 );
+    buflen = fread( ( void * )data , sizeof( unsigned char ), datalen, file );
+    TEST_ASSERT( buflen == datalen);
+
+    fclose(file);
+
+    res = mbedtls_pkcs7_signed_data_verify( &pkcs7, &x509, data, datalen );
+    TEST_ASSERT( res != 0 );
+
+exit:
+    mbedtls_x509_crt_free( &x509 );
+    mbedtls_pkcs7_free( &pkcs7 );
+    mbedtls_free( data );
+    mbedtls_free( pkcs7_buf );
+}
+/* END_CASE */
+
+/* BEGIN_CASE */
+void pkcs7_parse_failure( char *pkcs7_file )
+{
+    unsigned char *pkcs7_buf = NULL;
+    size_t buflen;
+    int res;
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+
+    res = mbedtls_pkcs7_load_file( pkcs7_file, &pkcs7_buf, &buflen );
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
+    TEST_ASSERT( res != 0 );
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+}
+/* END_CASE */
