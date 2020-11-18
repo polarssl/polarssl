@@ -114,6 +114,17 @@ psa_status_t psa_driver_wrapper_cipher_finish(
 psa_status_t psa_driver_wrapper_cipher_abort(
     psa_operation_driver_context_t *operation );
 
+/*
+ * Key derivation functions
+ */
+psa_status_t psa_driver_wrapper_opaque_key_derivation_oneshot(
+    psa_algorithm_t alg,
+    psa_key_slot_t *secret_key_slot,
+    psa_key_derivation_input_buffer_t *input_array,
+    size_t input_count,
+    const psa_key_attributes_t *output_key_attributes,
+    psa_key_slot_t *output_key_slot );
+
 #endif /* PSA_CRYPTO_DRIVER_WRAPPERS_H */
 
 /* End of automatically generated file. */

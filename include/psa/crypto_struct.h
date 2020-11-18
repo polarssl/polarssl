@@ -262,11 +262,33 @@ typedef struct psa_tls12_prf_key_derivation_s
 } psa_tls12_prf_key_derivation_t;
 #endif /* MBEDTLS_MD_C */
 
+typedef struct psa_key_derivation_input_buffer_s
+{
+    const uint8_t *data;
+    size_t length;
+    psa_key_derivation_step_t step;
+} psa_key_derivation_input_buffer_t;
+
+typedef struct psa_opaque_key_derivation_s
+{
+    psa_key_handle_t key;
+    uint8_t *salt;
+    size_t salt_length;
+    uint8_t *label;
+    size_t label_length;
+    uint8_t *info;
+    size_t info_length;
+    uint8_t *seed;
+    size_t seed_length;
+} psa_opaque_key_derivation_t;
+
 struct psa_key_derivation_s
 {
     psa_algorithm_t alg;
     unsigned int can_output_key : 1;
+    unsigned int storing_references : 1; /* Indicates input is just stored */
     size_t capacity;
+    psa_key_derivation_input_buffer_t stored_input;
     union
     {
         /* Make the union non-empty even with no supported algorithms. */
@@ -275,11 +297,12 @@ struct psa_key_derivation_s
         psa_hkdf_key_derivation_t hkdf;
         psa_tls12_prf_key_derivation_t tls12_prf;
 #endif
+        psa_opaque_key_derivation_t opaque_kdf;
     } ctx;
 };
 
 /* This only zeroes out the first byte in the union, the rest is unspecified. */
-#define PSA_KEY_DERIVATION_OPERATION_INIT {0, 0, 0, {0}}
+#define PSA_KEY_DERIVATION_OPERATION_INIT {0, 0, 0, 0, {0}, {0}}
 static inline struct psa_key_derivation_s psa_key_derivation_operation_init( void )
 {
     const struct psa_key_derivation_s v = PSA_KEY_DERIVATION_OPERATION_INIT;

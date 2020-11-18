@@ -1,0 +1,4 @@
+Features
+   * Add support for key derivation with opaque keys, as described in #3718.
+     A new driver entry point is required for this operation. Note: only
+     HKDF is currently supported.

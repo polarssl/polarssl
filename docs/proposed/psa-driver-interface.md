@@ -304,10 +304,23 @@ This family requires the following type and entry points:
 * `"key_derivation_output_bytes"`: called by `psa_key_derivation_output_bytes()`; also by `psa_key_derivation_output_key()` for transparent drivers.
 * `"key_derivation_output_key"`: called by `psa_key_derivation_output_key()` for transparent drivers when deriving an asymmetric key pair, and also for opaque drivers.
 * `"key_derivation_abort"`: called by all key derivation functions of the PSA Cryptography API.
+* `"key_derivation_oneshot"`: called by `psa_key_derivation_output_bytes()` and `psa_key_derivation_output_key()` when the output is derived from an opaque secret. Note: HKDF is currently the only algorithm that is supported for opaque key derivation.
+
+A `"key_derivation_oneshot"` entry point for a driver with the prefix `"acme_opaque"`must have the following signature (assuming the `"names"` property is not used):
+```
+psa_status_t acme_opaque_key_derivation_oneshot(psa_algorithm_t alg,
+                                                const psa_key_attributes_t *secret_key_attributes,
+                                                const uint8_t *secret_key_buffer,
+                                                size_t secret_key_size,
+                                                const psa_key_derivation_input_buffer_t *input_array,
+                                                size_t input_count,
+                                                const psa_key_attributes_t *output_key_attributes,
+                                                uint8_t *output_key_buffer,
+                                                size_t output_key_size,
+                                                size_t *output_key_length);
+```
 
 TODO: key input and output for opaque drivers; deterministic key generation for transparent drivers
-
-TODO
 
 ### Driver entry points for key management
 

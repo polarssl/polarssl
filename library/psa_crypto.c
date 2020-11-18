@@ -4948,7 +4948,13 @@ psa_status_t psa_key_derivation_abort( psa_key_derivation_operation_t *operation
          * in use. It's ok to call abort on such an object, and there's
          * nothing to do. */
     }
-    else
+    else if( operation->storing_references == 1 )
+    {
+        mbedtls_free( operation->ctx.opaque_kdf.info );
+        mbedtls_free( operation->ctx.opaque_kdf.salt );
+        mbedtls_free( operation->ctx.opaque_kdf.label );
+        mbedtls_free( operation->ctx.opaque_kdf.seed );
+    } else
 #if defined(MBEDTLS_MD_C)
     if( PSA_ALG_IS_HKDF( kdf_alg ) )
     {
@@ -4983,6 +4989,7 @@ psa_status_t psa_key_derivation_abort( psa_key_derivation_operation_t *operation
     {
         status = PSA_ERROR_BAD_STATE;
     }
+    mbedtls_free( (uint8_t *) operation->stored_input.data );
     mbedtls_platform_zeroize( operation, sizeof( *operation ) );
     return( status );
 }
@@ -5261,6 +5268,52 @@ psa_status_t psa_key_derivation_output_bytes(
          * output_length > 0. */
         return( PSA_ERROR_INSUFFICIENT_DATA );
     }
+
+    if( operation->storing_references == 1 )
+    {
+        if( output_length == 0 )
+        {
+            status = PSA_SUCCESS;
+            goto exit;
+        }
+        /* Call the output key function with exportable key and export it */
+        psa_key_attributes_t temporary_attributes = PSA_KEY_ATTRIBUTES_INIT;
+        psa_set_key_usage_flags( &temporary_attributes, PSA_KEY_USAGE_EXPORT );
+        psa_set_key_type( &temporary_attributes, PSA_KEY_TYPE_RAW_DATA );
+        psa_set_key_bits( &temporary_attributes, output_length * 8 );
+        psa_key_handle_t temporary_handle = 0;
+
+        /* The key location must be set to mimic the key that has been input */
+        psa_key_slot_t *secret_key_slot = NULL;
+        status = psa_get_key_from_slot( operation->ctx.opaque_kdf.key,
+                                        &secret_key_slot, PSA_KEY_USAGE_DERIVE,
+                                        operation->alg );
+        if( status != PSA_SUCCESS )
+            goto exit;
+        psa_set_key_lifetime( &temporary_attributes,
+            PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
+                PSA_KEY_PERSISTENCE_VOLATILE,
+                PSA_KEY_LIFETIME_GET_LOCATION(
+                    secret_key_slot->attr.lifetime ) ) );
+
+        status = psa_key_derivation_output_key( &temporary_attributes,
+                                                operation,
+                                                &temporary_handle );
+        if( status != PSA_SUCCESS )
+        {
+            psa_destroy_key( temporary_handle );
+            goto exit;
+        }
+
+        status = psa_export_key( temporary_handle, output, output_length,
+                                 &output_length );
+        /* Always call psa_destroy_key to clean up the temporary key usage */
+        if( psa_destroy_key( temporary_handle ) != PSA_SUCCESS)
+            status = PSA_ERROR_BAD_STATE;
+
+        goto exit;
+    }
+
     operation->capacity -= output_length;
 
 #if defined(MBEDTLS_MD_C)
@@ -5360,6 +5413,55 @@ psa_status_t psa_key_derivation_output_key( const psa_key_attributes_t *attribut
 
     status = psa_start_key_creation( PSA_KEY_CREATION_DERIVE,
                                      attributes, handle, &slot, &driver );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    if( operation->storing_references == 1 )
+    {
+        /* Call the one-shot driver function */
+
+        size_t requested_key_size = PSA_BITS_TO_BYTES( attributes->core.bits );
+        if( requested_key_size > operation->capacity )
+        {
+            operation->capacity = 0;
+            /* Go through the error path to wipe all confidential data now
+            * that the operation object is useless. */
+            psa_key_derivation_abort( operation );
+            status = PSA_ERROR_INSUFFICIENT_DATA;
+            goto exit;
+        }
+
+        if( !PSA_ALG_IS_HKDF( operation->alg ) )
+            return( PSA_ERROR_NOT_SUPPORTED );
+        if( attributes->core.bits % 8 != 0 )
+            return( PSA_ERROR_INVALID_ARGUMENT );
+        psa_key_derivation_input_buffer_t input_array[2] = {
+            {
+                .step = PSA_KEY_DERIVATION_INPUT_SALT,
+                .data = operation->ctx.opaque_kdf.salt,
+                .length = operation->ctx.opaque_kdf.salt_length
+            },
+            {
+                .step = PSA_KEY_DERIVATION_INPUT_INFO,
+                .data = operation->ctx.opaque_kdf.info,
+                .length = operation->ctx.opaque_kdf.info_length,
+            },
+        };
+        psa_key_slot_t *secret_key_slot = NULL;
+        status = psa_get_key_from_slot( operation->ctx.opaque_kdf.key,
+                                        &secret_key_slot, PSA_KEY_USAGE_DERIVE,
+                                        operation->alg );
+        if( status != PSA_SUCCESS )
+            goto exit;
+
+        status = psa_driver_wrapper_opaque_key_derivation_oneshot(
+            operation->alg, secret_key_slot, input_array,
+            sizeof( input_array ) / sizeof( input_array[0] ),
+            attributes, slot );
+        operation->capacity = 0;
+        goto exit;
+    }
+
 #if defined(MBEDTLS_PSA_CRYPTO_SE_C)
     if( driver != NULL )
     {
@@ -5373,6 +5475,8 @@ psa_status_t psa_key_derivation_output_key( const psa_key_attributes_t *attribut
                                                     attributes->core.bits,
                                                     operation );
     }
+
+exit:
     if( status == PSA_SUCCESS )
         status = psa_finish_key_creation( slot, driver );
     if( status != PSA_SUCCESS )
@@ -5733,6 +5837,56 @@ psa_status_t psa_key_derivation_input_bytes(
     const uint8_t *data,
     size_t data_length )
 {
+    /* If the storing_references bit is set, it takes precedence */
+    if( operation->storing_references == 1 )
+    {
+        /* Opaque key derivation currently only supports HKDF */
+        if( !PSA_ALG_IS_HKDF( operation->alg ) )
+            return( PSA_ERROR_NOT_SUPPORTED );
+
+        /* The only way we could reach this point for HKDF is if a key has
+         * already been input. Thus, the only remaining step is info. */
+        switch( step )
+        {
+            case PSA_KEY_DERIVATION_INPUT_INFO:
+                if( !( operation->can_output_key == 1 ) )
+                    return( PSA_ERROR_INVALID_ARGUMENT );
+                if( operation->ctx.opaque_kdf.info != NULL )
+                    return( PSA_ERROR_INVALID_ARGUMENT );
+                operation->ctx.opaque_kdf.info = mbedtls_calloc( 1, data_length );
+                if( operation->ctx.opaque_kdf.info == NULL )
+                    return( PSA_ERROR_INSUFFICIENT_MEMORY );
+                memcpy( operation->ctx.opaque_kdf.info, data, data_length );
+                operation->ctx.opaque_kdf.info_length = data_length;
+                break;
+            default:
+                return( PSA_ERROR_INVALID_ARGUMENT );
+        }
+        /* Return early to avoid the internal computation */
+        return( PSA_SUCCESS );
+    }
+
+    if( PSA_ALG_IS_HKDF( operation->alg )
+        && step == PSA_KEY_DERIVATION_INPUT_SALT
+        && operation->can_output_key == 0 )
+    {
+        /* Copy salt to hmac struct for opaque support */
+        if( data_length > 0 )
+        {
+            uint8_t *salt_ptr = mbedtls_calloc( 1, data_length );
+            if( salt_ptr == NULL )
+                return( PSA_ERROR_INSUFFICIENT_MEMORY );
+            memcpy( salt_ptr, data, data_length );
+            operation->stored_input.data = salt_ptr;
+        }
+        else
+        {
+            operation->stored_input.data = NULL;
+        }
+        operation->stored_input.length = data_length;
+        operation->stored_input.step = PSA_KEY_DERIVATION_INPUT_SALT;
+    }
+
     return( psa_key_derivation_input_internal( operation, step,
                                                PSA_KEY_TYPE_NONE,
                                                data, data_length ) );
@@ -5746,9 +5900,9 @@ psa_status_t psa_key_derivation_input_key(
     psa_key_slot_t *slot;
     psa_status_t status;
 
-    status = psa_get_transparent_key( handle, &slot,
-                                      PSA_KEY_USAGE_DERIVE,
-                                      operation->alg );
+    status = psa_get_key_from_slot( handle, &slot,
+                                    PSA_KEY_USAGE_DERIVE,
+                                    operation->alg );
     if( status != PSA_SUCCESS )
     {
         psa_key_derivation_abort( operation );
@@ -5759,6 +5913,42 @@ psa_status_t psa_key_derivation_input_key(
      * to output to a key object. */
     if( step == PSA_KEY_DERIVATION_INPUT_SECRET )
         operation->can_output_key = 1;
+
+    /* It is unknown if an opaque driver is needed until the key
+     * input is obtained. Therefore, we must check key lifetime now. */
+    if( psa_key_lifetime_is_external( slot->attr.lifetime ) ) {
+        /* HKDF is the only algorithm that is currently supported for opaque
+         * input */
+        if( !PSA_ALG_IS_HKDF( operation->alg ) )
+            return( PSA_ERROR_NOT_SUPPORTED );
+
+        status = psa_key_derivation_check_input_type( step, slot->attr.type );
+        if( status != PSA_SUCCESS )
+        {
+            psa_key_derivation_abort( operation );
+            return( status );
+        }
+        if( operation->stored_input.step != PSA_KEY_DERIVATION_INPUT_SALT
+            && operation->stored_input.data != NULL )
+        {
+            return( PSA_ERROR_BAD_STATE );
+        }
+        /* Copy over the existing data, if it exists. Then zero out the
+         * hkdf context, as it is not needed anymore. */
+        memset( &operation->ctx.hkdf, 0, sizeof( operation->ctx ) );
+        operation->ctx.opaque_kdf.salt = (uint8_t *) operation->stored_input.data;
+        operation->ctx.opaque_kdf.salt_length = operation->stored_input.length;
+        operation->ctx.opaque_kdf.info = NULL;
+        /* Store the key data through the handle*/
+        operation->ctx.opaque_kdf.key = handle;
+
+        /* Set the bit in the struct that indicates that input should be
+         * buffered */
+        operation->storing_references = 1;
+        /* Return early to avoid starting the internal key derivation
+         * operation */
+        return( PSA_SUCCESS );
+    }
 
     return( psa_key_derivation_input_internal( operation,
                                                step, slot->attr.type,

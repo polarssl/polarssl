@@ -937,4 +937,45 @@ psa_status_t psa_driver_wrapper_cipher_abort(
 #endif /* PSA_CRYPTO_DRIVER_PRESENT */
 }
 
+psa_status_t psa_driver_wrapper_opaque_key_derivation_oneshot(
+    psa_algorithm_t alg,
+    psa_key_slot_t *secret_key_slot,
+    psa_key_derivation_input_buffer_t *input_array,
+    size_t input_count,
+    const psa_key_attributes_t *output_key_attributes,
+    psa_key_slot_t *output_key_slot )
+{
+#if defined(PSA_CRYPTO_DRIVER_PRESENT) && defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(
+        secret_key_slot->attr.lifetime );
+
+    switch( location )
+    {
+        case PSA_KEY_LOCATION_LOCAL_STORAGE:
+            /* This is a dedicated opaque wrapper. Should never be called for
+             * transparent keys */
+            return( PSA_ERROR_NOT_SUPPORTED );
+#if defined(PSA_CRYPTO_DRIVER_TEST)
+        /* TODO: Add test driver case here */
+#endif /* PSA_CRYPTO_DRIVER_TEST */
+        default:
+            return( PSA_ERROR_INVALID_ARGUMENT );
+    }
+    (void)alg;
+    (void)input_array;
+    (void)input_count;
+    (void)output_key_attributes;
+    (void)output_key_slot;
+    return( PSA_ERROR_NOT_SUPPORTED );
+#else
+    (void)alg;
+    (void)secret_key_slot;
+    (void)input_array;
+    (void)input_count;
+    (void)output_key_attributes;
+    (void)output_key_slot;
+    return( PSA_ERROR_NOT_SUPPORTED );
+#endif /* PSA_CRYPTO_DRIVER_PRESENT && PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
+}
+
 /* End of automatically generated file. */
