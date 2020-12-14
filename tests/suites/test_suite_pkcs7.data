@@ -51,3 +51,6 @@ pkcs7_parse_failure:"data_files/pkcs7_signerInfo_issuer_invalid_size.der"
 
 PKCS7 Signed Data Parse Failure Corrupt signerInfo.serial #15.2
 pkcs7_parse_failure:"data_files/pkcs7_signerInfo_serial_invalid_size.der"
+
+PKCS7 Only Signed Data Parse Pass #15
+pkcs7_parse:"data_files/pkcs7_data_cert_signeddata_sha256.der"

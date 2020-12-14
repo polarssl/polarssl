@@ -149,6 +149,7 @@ static int pkcs7_get_content_info_type( unsigned char **p, unsigned char *end,
 {
     size_t len = 0;
     int ret;
+    unsigned char *start = *p;
 
     ret = mbedtls_asn1_get_tag( p, end, &len, MBEDTLS_ASN1_CONSTRUCTED
                                             | MBEDTLS_ASN1_SEQUENCE );
@@ -156,8 +157,10 @@ static int pkcs7_get_content_info_type( unsigned char **p, unsigned char *end,
         return( MBEDTLS_ERR_PKCS7_INVALID_CONTENT_INFO + ret );
 
     ret = mbedtls_asn1_get_tag( p, end, &len, MBEDTLS_ASN1_OID );
-    if( ret != 0 )
+    if( ret != 0 ) {
+        *p = start;
         return( MBEDTLS_ERR_PKCS7_INVALID_CONTENT_INFO + ret );
+    }
 
     pkcs7->tag = MBEDTLS_ASN1_OID;
     pkcs7->len = len;
@@ -474,6 +477,7 @@ int mbedtls_pkcs7_parse_der( const unsigned char *buf, const int buflen,
     unsigned char *end;
     size_t len = 0;
     int ret;
+    int isoidset = 0;
 
     if( !pkcs7 )
         return( MBEDTLS_ERR_PKCS7_BAD_INPUT_DATA );
@@ -490,7 +494,10 @@ int mbedtls_pkcs7_parse_der( const unsigned char *buf, const int buflen,
 
     ret = pkcs7_get_content_info_type( &start, end, &pkcs7->content_type_oid );
     if( ret != 0 )
-        goto out;
+    {
+        len = buflen;
+        goto try_data;
+    }
 
     if( ! MBEDTLS_OID_CMP( MBEDTLS_OID_PKCS7_DATA, &pkcs7->content_type_oid )
      || ! MBEDTLS_OID_CMP( MBEDTLS_OID_PKCS7_ENCRYPTED_DATA, &pkcs7->content_type_oid )
@@ -509,17 +516,31 @@ int mbedtls_pkcs7_parse_der( const unsigned char *buf, const int buflen,
         goto out;
     }
 
+    isoidset = 1;
     start = start + pkcs7->content_type_oid.len;
 
     ret = pkcs7_get_next_content_len( &start, end, &len );
     if( ret != 0 )
         goto out;
 
+try_data:
     ret = pkcs7_get_signed_data( start, len, &pkcs7->signed_data );
+    if ( ret != 0 )
+        goto out;
+
+    if ( !isoidset )
+    {
+        pkcs7->content_type_oid.tag = MBEDTLS_ASN1_OID;
+        pkcs7->content_type_oid.len = MBEDTLS_OID_SIZE(MBEDTLS_OID_PKCS7_SIGNED_DATA);
+        pkcs7->content_type_oid.p = (unsigned char *)MBEDTLS_OID_PKCS7_SIGNED_DATA;
+    }
+
+    ret = MBEDTLS_PKCS7_SIGNED_DATA;
 
 out:
-    if ( ret != 0 )
+    if ( ret < 0 )
         mbedtls_pkcs7_free( pkcs7 );
+
     return( ret );
 }
 

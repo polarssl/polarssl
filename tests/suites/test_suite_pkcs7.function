@@ -29,7 +29,7 @@ void pkcs7_parse( char *pkcs7_file )
     TEST_ASSERT( res == 0 );
 
     res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
-    TEST_ASSERT( res == 0 );
+    TEST_ASSERT( res == MBEDTLS_PKCS7_SIGNED_DATA );
 
 exit:
     mbedtls_free( pkcs7_buf );
@@ -52,7 +52,7 @@ void pkcs7_parse_without_cert( char *pkcs7_file )
     TEST_ASSERT( res == 0 );
 
     res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
-    TEST_ASSERT( res == 0 );
+    TEST_ASSERT( res == MBEDTLS_PKCS7_SIGNED_DATA );
 
 exit:
     mbedtls_free( pkcs7_buf );
@@ -210,7 +210,7 @@ void pkcs7_verify( char *pkcs7_file, char *crt, char *filetobesigned )
     TEST_ASSERT( res == 0 );
 
     res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
-    TEST_ASSERT( res == 0 );
+    TEST_ASSERT( res == MBEDTLS_PKCS7_SIGNED_DATA );
     mbedtls_free( pkcs7_buf );
 
     res = stat(filetobesigned, &st);
@@ -263,7 +263,7 @@ void pkcs7_verify_hash( char *pkcs7_file, char *crt, char *filetobesigned )
     TEST_ASSERT( res == 0 );
 
     res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
-    TEST_ASSERT( res == 0 );
+    TEST_ASSERT( res == MBEDTLS_PKCS7_SIGNED_DATA );
 
     res = stat(filetobesigned, &st);
     TEST_ASSERT( res == 0 );
@@ -319,7 +319,7 @@ void pkcs7_verify_badcert( char *pkcs7_file, char *crt, char *filetobesigned )
     TEST_ASSERT( res == 0 );
 
     res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
-    TEST_ASSERT( res == 0 );
+    TEST_ASSERT( res == MBEDTLS_PKCS7_SIGNED_DATA );
 
     res = mbedtls_x509_crt_parse_file( &x509, crt );
     TEST_ASSERT( res == 0 );
@@ -369,7 +369,7 @@ void pkcs7_verify_tampered_data( char *pkcs7_file, char *crt, char *filetobesign
     TEST_ASSERT( res == 0 );
 
     res = mbedtls_pkcs7_parse_der( pkcs7_buf, buflen, &pkcs7 );
-    TEST_ASSERT( res == 0 );
+    TEST_ASSERT( res == MBEDTLS_PKCS7_SIGNED_DATA );
 
     res = mbedtls_x509_crt_parse_file( &x509, crt );
     TEST_ASSERT( res == 0 );

@@ -1215,6 +1215,11 @@ pkcs7_signerInfo_serial_invalid_size.der: pkcs7_data_cert_signed_sha256.der
 	echo -en '\x15' | dd of=$@ seek=973 bs=1 conv=notrunc
 all_final += pkcs7_signerInfo_serial_invalid_size.der
 
+# pkcs7 signature file just with signed data
+pkcs7_data_cert_signeddata_sha256.der: pkcs7_data_cert_signed_sha256.der
+	dd if=pkcs7_data_cert_signed_sha256.der of=$@ skip=19 bs=1
+all_final += pkcs7_data_cert_signeddata_sha256.der
+
 ################################################################
 #### Meta targets
 ################################################################

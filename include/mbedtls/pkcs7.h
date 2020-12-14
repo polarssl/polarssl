@@ -81,6 +81,20 @@ typedef mbedtls_asn1_named_data mbedtls_pkcs7_name;
 typedef mbedtls_asn1_sequence mbedtls_pkcs7_sequence;
 
 /**
+ * PKCS7 types
+ */
+typedef enum {
+    MBEDTLS_PKCS7_NONE=0,
+    MBEDTLS_PKCS7_DATA,
+    MBEDTLS_PKCS7_SIGNED_DATA,
+    MBEDTLS_PKCS7_ENVELOPED_DATA,
+    MBEDTLS_PKCS7_SIGNED_AND_ENVELOPED_DAYA,
+    MBEDTLS_PKCS7_DIGESTED_DATA,
+    MBEDTLS_PKCS7_ENCRYPTED_DATA,
+}
+mbedtls_pkcs7_type;
+
+/**
  * Structure holding PKCS7 signer info
  */
 typedef struct mbedtls_pkcs7_signer_info
