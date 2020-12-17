@@ -1,0 +1,126 @@
+/* BEGIN_HEADER */
+#include "mbedtls/bignum.h"
+#include "mbedtls/pkcs7.h"
+#include "mbedtls/pkcs7_write.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/x509_crl.h"
+#include "mbedtls/oid.h"
+#include "sys/types.h"
+#include "sys/stat.h"
+/* END_HEADER */
+
+/* BEGIN_DEPENDENCIES
+ * depends_on:MBEDTLS_PKCS7_WRITE_C:MBEDTLS_PKCS7_C:MBEDTLS_FS_IO:MBEDTLS_RSA_C:MBEDTLS_SHA256_C:MBEDTLS_SHA512_C:MBEDTLS_SHA1_C:MBEDTLS_MD5_C:MBEDTLS_RIPEMD160_C:MBEDTLS_ASN1_WRITE_C:!MBEDTLS_SHA512_NO_SHA384:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_PKCS1_V15 
+ * END_DEPENDENCIES
+ */
+
+/* BEGIN_CASE */
+void pkcs7_write( char *data_file, char *cert_file, char *key_file, int md)
+{
+    unsigned char *pkcs7_buf = NULL, *new_data = NULL, *keyPEM = NULL, *key = NULL, *crtPEM = NULL, *crt = NULL, **crts = NULL, **keys = NULL;
+    size_t pkcs7_len, new_data_len, key_pem_len, key_len, crt_pem_len, crt_len, *crtSizes, *keySizes;
+    int res, keyPairs;
+
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+    keyPairs = 1;
+    res = mbedtls_pkcs7_load_file( data_file, &new_data, &new_data_len );
+    TEST_ASSERT( res == 0 );
+    res = mbedtls_pkcs7_load_file( key_file, &keyPEM, &key_pem_len );
+    TEST_ASSERT( res == 0 );
+    res = mbedtls_convert_pem_to_der(keyPEM, key_pem_len, &key, &key_len );
+    TEST_ASSERT( res == 0 );
+    res = mbedtls_pkcs7_load_file( cert_file, &crtPEM, &crt_pem_len );
+    TEST_ASSERT( res == 0 );
+    res = mbedtls_convert_pem_to_der(crtPEM, crt_pem_len, &crt, &crt_len);
+    TEST_ASSERT( res == 0 );
+
+
+    keys = malloc( keyPairs * sizeof( &key ) );
+    keys[0] = key;
+    crts = malloc( keyPairs * sizeof( &crt ) );
+    crts[0] = crt;
+    crtSizes = malloc ( keyPairs * sizeof (crt_len));
+    crtSizes[0] = crt_len;
+    keySizes = malloc ( keyPairs * sizeof (key_len));
+    keySizes[0] = key_len;
+
+    res = mbedtls_pkcs7_create(&pkcs7_buf, &pkcs7_len, new_data, new_data_len, (const unsigned char **) crts,(const unsigned char **) keys, crtSizes, keySizes, keyPairs, md);
+    TEST_ASSERT( res == 0 );
+
+    res = mbedtls_pkcs7_parse_der( pkcs7_buf, pkcs7_len, &pkcs7 );
+    TEST_ASSERT( res == MBEDTLS_PKCS7_SIGNED_DATA );
+
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+    for(int i = 0; i < keyPairs; i ++) {
+        free(crts[i]);
+        free(keys[i]);
+    }
+    free(crts);
+    free(keys);
+    free(new_data);
+    free(keyPEM);
+    free(crtPEM);
+    free(keySizes);
+    free(crtSizes);
+
+}
+/* END_CASE */
+
+/* BEGIN_CASE */
+void pkcs7_write_fail( char *data_file, char *cert_file, char *key_file, int md)
+{
+    unsigned char *pkcs7_buf = NULL, *new_data = NULL, *keyPEM = NULL, *key = NULL, *crtPEM = NULL, *crt = NULL, **crts = NULL, **keys = NULL;
+    size_t pkcs7_len, new_data_len, key_pem_len, key_len, crt_pem_len, crt_len, *crtSizes, *keySizes;
+    int res, keyPairs;
+
+    mbedtls_pkcs7 pkcs7;
+
+    mbedtls_pkcs7_init( &pkcs7 );
+    keyPairs = 1;
+    res = mbedtls_pkcs7_load_file( data_file, &new_data, &new_data_len );
+    TEST_ASSERT( res == 0 );
+    res = mbedtls_pkcs7_load_file( key_file, &keyPEM, &key_pem_len );
+    TEST_ASSERT( res == 0 );
+    res = mbedtls_convert_pem_to_der(keyPEM, key_pem_len, &key, &key_len );
+    TEST_ASSERT( res == 0 );
+    res = mbedtls_pkcs7_load_file( cert_file, &crtPEM, &crt_pem_len );
+    TEST_ASSERT( res == 0 );
+    res = mbedtls_convert_pem_to_der(crtPEM, crt_pem_len, &crt, &crt_len);
+    TEST_ASSERT( res == 0 );
+
+
+    keys = malloc( keyPairs * sizeof( &key ) );
+    keys[0] = key;
+    crts = malloc( keyPairs * sizeof( &crt ) );
+    crts[0] = crt;
+    crtSizes = malloc ( keyPairs * sizeof (crt_len));
+    crtSizes[0] = crt_len;
+    keySizes = malloc ( keyPairs * sizeof (key_len));
+    keySizes[0] = key_len;
+
+    res = mbedtls_pkcs7_create(&pkcs7_buf, &pkcs7_len, new_data, new_data_len, (const unsigned char **) crts,(const unsigned char **) keys, crtSizes, keySizes, keyPairs, md);
+    TEST_ASSERT( res != 0 );
+
+exit:
+    mbedtls_free( pkcs7_buf );
+    mbedtls_pkcs7_free( &pkcs7 );
+    for(int i = 0; i < keyPairs; i ++) {
+        free(crts[i]);
+        free(keys[i]);
+    }
+    free(crts);
+    free(keys);
+    free(new_data);
+    free(keyPEM);
+    free(crtPEM);
+    free(keySizes);
+    free(crtSizes);
+
+}
+/* END_CASE */
+

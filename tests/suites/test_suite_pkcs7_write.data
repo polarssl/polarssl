@@ -1,0 +1,34 @@
+PKCS7 Generate Pass MD SHA256 #1
+pkcs7_write:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.key":6
+
+PKCS7 Generate Pass MD MD5 #2
+pkcs7_write:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.key":3
+
+PKCS7 Generate Pass SHA256 MD SHA1 #3
+pkcs7_write:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.key":4
+
+PKCS7 Generate Pass MD SHA224 #4
+pkcs7_write:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.key":5
+
+PKCS7 Generate Pass MD SHA384 #5
+pkcs7_write:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.key":7
+
+PKCS7 Generate Pass MD SHA256 #6
+pkcs7_write:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.key":8
+
+PKCS7 Generate Pass MD RIPEMD160 #7
+pkcs7_write:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.key":9
+
+PKCS7 Generate Fail Invalid MD #8
+pkcs7_write_fail:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.key":11
+
+PKCS7 Generate Fail Signer Unpaired Cert/Key #9
+pkcs7_write_fail:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-2.key":6
+
+PKCS7 Generate Fail Invalid Cert #10
+pkcs7_write_fail:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.key":"data_files/pkcs7-rsa-sha256-1.key":6
+
+PKCS7 Generate Fail Invalid Key #11
+pkcs7_write_fail:"data_files/pkcs7_data.txt":"data_files/pkcs7-rsa-sha256-1.crt":"data_files/pkcs7-rsa-sha256-1.crt":6
+
+
