@@ -887,6 +887,11 @@
 #error  "MBEDTLS_PKCS7_C is defined, but not all prerequisites"
 #endif
 
+#if defined(MBEDTLS_PKCS7_WRITE_C) && ( ( !defined(MBEDTLS_ASN1_WRITE_C) ) || \
+    ( !defined(MBEDTLS_PKCS7_C) ) || ( !defined(MBEDTLS_MD_C) ) )
+#error "MBEDTLS_PKCS7_WRITE is defined, but not all prerequisites"
+#endif
+
 /*
  * Avoid warning from -pedantic. This is a convenient place for this
  * workaround since this is included by every single file before the

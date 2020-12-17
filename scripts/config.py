@@ -282,6 +282,7 @@ def include_in_crypto(name):
             'MBEDTLS_NET_C', # part of libmbedtls
             'MBEDTLS_PKCS11_C', # part of libmbedx509
             'MBEDTLS_PKCS7_C', # part of libmbedx509
+            'MBEDTLS_PKCS7_WRITE_C', # part of libmbedx509
     ]:
         return False
     return True

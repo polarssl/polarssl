@@ -85,6 +85,7 @@ set(src_x509
     certs.c
     pkcs11.c
     pkcs7.c
+    pkcs7_write.c
     x509.c
     x509_create.c
     x509_crl.c
