@@ -1,11 +1,11 @@
 /**
- * \file pkcs7.h
+ * \file pkcs7_write.h
  *
  * \brief PKCS7 generic defines and structures
  *  https://tools.ietf.org/html/rfc2315
  */
 /*
- *  Copyright (C) 2019,  IBM Corp, All Rights Reserved
+ *  Copyright The Mbed TLS Contributors
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -27,6 +27,7 @@
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "config.h"
+#include "md.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
@@ -36,42 +37,49 @@
 extern "C" {
 #endif
 
-/*
- * \brief   generates a PKCS7
- * \param pkcs7, the resulting PKCS7 
- * \param pkcs7_size, the length of pkcs7
- * \param data, data to be added to be used in digest
- * \param data_size , length of data
- * \param crts, array of x509 certificates (DER)
- * \param keys, array of private keys (DER)
- * \param key_pairs, array length of key/crtFiles
- * \param hash_funct, hash function to use in digest, see mbedtls_md_type_t for
- * values in mbedtls/md.h
+/**
+ * \brief                   This function generates a PKCS7 containing SignedData (sect 9.1) 
+ *                          as described by RFC 2315 (https://tools.ietf.org/html/rfc2315). 
+ *                          It uses the given \p crts and \p keys to sign the \p data and 
+ *                          return a valid PKCS7 buffer, \p pkcs7.
  *
- * \note NOTE: REMEMBER TO UNALLOC THIS MEMORY
+ * \param pkcs7             The resulting PKCS7, this is the output data. 
+ * \param pkcs7_size        The length of \p pkcs7.
+ * \param data              The data that is to be the contents of the PKCS7.
+ *                          This is what gets signed.
+ *                          Pass \c NULL if data length is 0.
+ * \param data_size         Length of \p data.
+ *                          Pass 0 if \p data is \c NULL.
+ * \param crts              Array of x509 certificates (DER).
+ * \param keys              Array of private keys (DER).
+ * \param key_pairs         Number or key pairs. Array length of key/crtFiles.
+ * \param hash_funct        Hash function to use in digest, see mbedtls_md_type_t for 
+ *                          values in mbedtls/md.h
+ *
+ * \note                    NOTE: REMEMBER TO UNALLOC \p pkcs7 MEMORY
  *
  * \return 0 or err number
  */
-int mbedtls_pkcs7_create(unsigned char **pkcs7, size_t *pkcs7_size,
+int mbedtls_pkcs7_create( unsigned char **pkcs7, size_t *pkcs7_size,
             const unsigned char *data, size_t data_size, const unsigned char **crts,
             const unsigned char **keys, size_t *crt_sizes, size_t *key_sizes, int key_pairs,
-            int hash_funct);
+            mbedtls_md_type_t hash_funct );
 
-/*
- * \brief function inputs a buffer in PEM format and returns the DER
- * \param input, the input buffer in PEM format
- * \param ilen, the length of the input buffer
- * \param output, pointer to the buffer that will be generated, not allocated yet
- * \param olen, the output length
+/**
+ * \brief                   This function recievces a buffer in PEM format and returns the DER.
+ * 
+ * \param input             The input buffer in PEM format.
+ * \param ilen              The length of the input buffer.
+ * \param output            Pointer to the buffer that will be generated, not allocated yet.
+ * \param olen              The output length.
  *
- * \note Taken from MBEDTLS, mbedtls-mbedtls2.23.0/programs/util/pem2der.c many thanks
- *  to these great folks Some things were changed though, like memory allocation
- * \note THIS ALLOCATES MEMORY, FREE SOMETIME AFTER CALLING
+ * \note                    Taken from MBEDTLS, mbedtls-mbedtls2.23.0/programs/util/pem2der.c 
+ * \note                    THIS ALLOCATES MEMORY, REMEMBER TO FREE \p output
  *
  * \return 0 or err number
  */
-int mbedtls_convert_pem_to_der(const unsigned char *input, size_t ilen,
-                       unsigned char **output, size_t *olen);
+int mbedtls_convert_pem_to_der( const unsigned char *input, size_t ilen,
+                       unsigned char **output, size_t *olen );
 
 
 #ifdef __cplusplus
