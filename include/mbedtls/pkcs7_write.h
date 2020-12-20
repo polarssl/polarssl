@@ -50,8 +50,12 @@ extern "C" {
  *                          Pass \c NULL if data length is 0.
  * \param data_size         Length of \p data.
  *                          Pass 0 if \p data is \c NULL.
- * \param crts              Array of x509 certificates (DER).
+ * \param crts              Array of x509 certificates (DER). 
+ *                          These should have a corresponding private key 
+ *                          with same index in \p keys.
  * \param keys              Array of private keys (DER).
+ * \param crt_sizes         Array of sizes for \p crts . Indexs should match
+ * \param key_sizes         Array of sizes for \p keys.
  * \param key_pairs         Number or key pairs. Array length of key/crtFiles.
  * \param hash_funct        Hash function to use in digest, see mbedtls_md_type_t for 
  *                          values in mbedtls/md.h

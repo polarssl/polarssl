@@ -398,7 +398,7 @@ out:
     mbedtls_free( priv_key );
     mbedtls_free( hash );
     mbedtls_free( signature );
-    
+
     return ( ret );
 }
 
@@ -753,8 +753,8 @@ int mbedtls_pkcs7_create( unsigned char **pkcs7, size_t *pkcs7_size,
         ret = MBEDTLS_ERR_PKCS7_BAD_INPUT_DATA;
         goto out;
     }
-    /* get hash_funct OID */
-    if( hash_funct < MBEDTLS_MD_NONE || hash_funct > MBEDTLS_MD_RIPEMD160 ) 
+    /* get hash_funct OID, no md is currently unsuported */
+    if( hash_funct =< MBEDTLS_MD_NONE || hash_funct > MBEDTLS_MD_RIPEMD160 ) 
     {
         mbedtls_printf( "ERROR: Invalid hash function %d, see mbedtls_md_type_t\n",
                        hash_funct );
