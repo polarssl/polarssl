@@ -754,7 +754,7 @@ int mbedtls_pkcs7_create( unsigned char **pkcs7, size_t *pkcs7_size,
         goto out;
     }
     /* get hash_funct OID, no md is currently unsuported */
-    if( hash_funct =< MBEDTLS_MD_NONE || hash_funct > MBEDTLS_MD_RIPEMD160 ) 
+    if( hash_funct <= MBEDTLS_MD_NONE || hash_funct > MBEDTLS_MD_RIPEMD160 ) 
     {
         mbedtls_printf( "ERROR: Invalid hash function %d, see mbedtls_md_type_t\n",
                        hash_funct );
