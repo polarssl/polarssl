@@ -222,7 +222,7 @@ void pkcs7_verify( char *pkcs7_file, char *crt, char *filetobesigned )
     datalen = st.st_size;
     data = mbedtls_calloc( datalen, 1 );
     buflen = fread( ( void * )data , sizeof( unsigned char ), datalen, file );
-    TEST_ASSERT( buflen == datalen);
+    TEST_ASSERT( buflen <= datalen);
 
     fclose(file);
 
@@ -276,7 +276,7 @@ void pkcs7_verify_hash( char *pkcs7_file, char *crt, char *filetobesigned )
     TEST_ASSERT( data != NULL);
 
     buflen = fread( (void *)data , sizeof( unsigned char ), datalen, file );
-    TEST_ASSERT( buflen == datalen);
+    TEST_ASSERT( buflen <= datalen);
     fclose( file );
 
     res = mbedtls_oid_get_md_alg( &(pkcs7.signed_data.digest_alg_identifiers), &md_alg );
@@ -333,7 +333,7 @@ void pkcs7_verify_badcert( char *pkcs7_file, char *crt, char *filetobesigned )
     datalen = st.st_size;
     data = mbedtls_calloc( datalen, 1 );
     buflen = fread( ( void * )data , sizeof( unsigned char ), datalen, file );
-    TEST_ASSERT( buflen == datalen);
+    TEST_ASSERT( buflen <= datalen);
 
     fclose(file);
 
@@ -383,7 +383,7 @@ void pkcs7_verify_tampered_data( char *pkcs7_file, char *crt, char *filetobesign
     datalen = st.st_size;
     data = mbedtls_calloc( datalen, 1 );
     buflen = fread( ( void * )data , sizeof( unsigned char ), datalen, file );
-    TEST_ASSERT( buflen == datalen);
+    TEST_ASSERT( buflen <= datalen);
 
     fclose(file);
 
