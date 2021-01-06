@@ -40,7 +40,7 @@ typedef struct {
     unsigned long hits;
 } test_driver_signature_hooks_t;
 
-#define TEST_DRIVER_SIGNATURE_INIT { NULL, 0, PSA_ERROR_NOT_SUPPORTED, 0 }
+#define TEST_DRIVER_SIGNATURE_INIT { NULL, 0, PSA_SUCCESS, 0 }
 static inline test_driver_signature_hooks_t test_driver_signature_hooks_init( void )
 {
     const test_driver_signature_hooks_t v = TEST_DRIVER_SIGNATURE_INIT;

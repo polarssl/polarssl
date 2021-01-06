@@ -84,12 +84,69 @@ MBEDTLS_TEST_OBJS=$(patsubst %.c,%.o,$(wildcard src/*.c src/drivers/*.c))
 
 mbedtls_test: $(MBEDTLS_TEST_OBJS)
 
+TEST_HELPERS_DEPS = $(wildcard include/test/*.h)
+TEST_DRIVERS_DEPS = $(TEST_HELPERS_DEPS) $(wildcard include/test/drivers/*.h)
+
+ifdef LOOPBACK_DRIVER
+# The loopback test drivers call a copy of the library code with modified
+# names for macros, types, functions and other identifiers so that the test
+# driver code can reference names both from the library that calls it and
+# from the library that it calls at the same time.
+
+# The copy of the library code is in tests/include/libcopy1/*/*.h
+# and tests/src/libcopy1/*.[hc].
+
+# Perl code that is executed to transform each original line from a library
+# source file into the corresponding line in the copy of the library.
+# Add a libcopy1_/LIBCOPY1_ to mbedtls_xxx and psa_xxx identifiers.
+# Change include directives to point to the copy of the library.
+define libcopy_rewrite :=
+	s!^(\s*#\s*include\s*[\"<])(mbedtls|psa)/!$${1}libcopy1/$${2}/!; \
+	next if /^\s*#\s*include/; \
+	s/\b(?=MBEDTLS_|PSA_)/LIBCOPY1_/g; \
+	s/\b(?=mbedtls_|psa_)/libcopy1_/g;
+endef
+
+libcopy1_headers = $(subst ../include,include/libcopy1,$(wildcard ../include/*/*.h))
+$(filter-out %/mbedtls/config.h,$(libcopy1_headers)): \
+		include/libcopy1/%.h: ../include/%.h
+	mkdir -p $(@D)
+	perl -pe '$(libcopy_rewrite)' <$< >$@
+# mbedtls/config.h gets special treatment: make it the full crypto config,
+# except no saved NV seed so that there's no need to set up a seedfile.
+include/libcopy1/mbedtls/config.h: include/libcopy1/mbedtls/config.original-names.h
+	mkdir -p $(@D)
+	perl -pe '$(libcopy_rewrite)' <$< >$@
+include/libcopy1/mbedtls/config.original-names.h:
+	mkdir -p $(@D)
+	../scripts/config.py -f ../include/mbedtls/config.h -w $@ crypto_full
+	../scripts/config.py -f $@ unset MBEDTLS_ENTROPY_NV_SEED
+	../scripts/config.py -f $@ unset MBEDTLS_PLATFORM_NV_SEED_ALT
+
+libcopy1_sources = \
+	$(subst ..,src/libcopy1, \
+		$(wildcard ../library/*.[ch]))
+$(libcopy1_sources): src/libcopy1/library/%: ../library/%
+	mkdir -p $(@D)
+	perl -pe '$(libcopy_rewrite)' <$< >$@
+
+libcopy1_modules = $(filter %.c,$(libcopy1_sources))
+libcopy1_objects = $(libcopy1_modules:.c=.o)
+$(libcopy1_objects): $(filter %.h,$(libcopy1_sources)) $(libcopy1_headers)
+$(libcopy1_objects): %.o: %.c
+	$(CC) -g3 -D_FILE_OFFSET_BITS=64 -I include $(CFLAGS) -o $@ -c $<
+
+LOCAL_CFLAGS += -DPSA_CRYPTO_DRIVER_TEST_LOOPBACK
+TEST_DRIVERS_DEPS += $(libcopy1_headers)
+MBEDTLS_TEST_OBJS += $(libcopy1_objects)
+endif #ifdef LOOPBACK_DRIVER
+
 # Rule to compile common test C files in src folder
-src/%.o : src/%.c
+src/%.o : src/%.c $(TEST_HELPERS_DEPS)
 	echo "  CC    $<"
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
 
-src/drivers/%.o : src/drivers/%.c
+src/drivers/%.o : src/drivers/%.c $(TEST_DRIVERS_DEPS)
 	echo "  CC    $<"
 	$(CC) $(LOCAL_CFLAGS) $(CFLAGS) -o $@ -c $<
 
@@ -135,6 +192,7 @@ clean:
 ifndef WINDOWS
 	rm -rf $(BINARIES) *.c *.datax TESTS
 	rm -f src/*.o src/drivers/*.o src/libmbed*
+	rm -rf include/libcopy1 src/libcopy1
 else
 	if exist *.c del /Q /F *.c
 	if exist *.exe del /Q /F *.exe

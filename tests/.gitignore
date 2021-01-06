@@ -8,8 +8,10 @@ data_files/hmac_drbg_seed
 data_files/ctr_drbg_seed
 data_files/entropy_seed
 
+include/libcopy*
 include/test/instrument_record_status.h
 
 src/*.o
 src/drivers/*.o
+src/libcopy*
 src/libmbed*

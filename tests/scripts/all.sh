@@ -1334,6 +1334,23 @@ component_test_no_use_psa_crypto_full_cmake_asan() {
     if_build_succeeded env OPENSSL_CMD="$OPENSSL_NEXT" tests/compat.sh -e '^$' -f 'ARIA\|CHACHA'
 }
 
+component_test_loopback_ecdsa () {
+    msg "build: PSA loopback test driver: ECDSA"
+    scripts/config.py set MBEDTLS_PSA_CRYPTO_DRIVERS
+    scripts/config.py set MBEDTLS_PSA_CRYPTO_CONFIG
+    scripts/config.py unset MBEDTLS_ECDSA_C
+    scripts/config.py unset MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+    scripts/config.py unset MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+    make lib CFLAGS="$ASAN_CFLAGS -O -Werror -I../tests/include -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_ECDSA -DMBEDTLS_PSA_ACCEL_ALG_DETERMINISTIC_ECDSA" LDFLAGS="$ASAN_CFLAGS"
+    make -C tests LOOPBACK_DRIVER=1 CFLAGS="$ASAN_CFLAGS -O -Werror -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_ECDSA -DMBEDTLS_PSA_ACCEL_ALG_DETERMINISTIC_ECDSA" LDFLAGS="$ASAN_CFLAGS"
+
+    if_build_succeeded not grep mbedtls_ecdsa_ library/ecdsa.o
+    # But PSA code can do ECDSA
+
+    msg "test: PSA loopback test driver: ECDSA"
+    make test
+}
+
 component_test_psa_crypto_config_basic() {
     # full plus MBEDTLS_PSA_CRYPTO_CONFIG
     msg "build: full + MBEDTLS_PSA_CRYPTO_CONFIG"

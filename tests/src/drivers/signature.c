@@ -28,12 +28,16 @@
 #if defined(MBEDTLS_PSA_CRYPTO_DRIVERS) && defined(PSA_CRYPTO_DRIVER_TEST)
 #include "psa/crypto.h"
 #include "psa_crypto_core.h"
-#include "mbedtls/ecp.h"
 
 #include "test/drivers/signature.h"
 
+#if defined(PSA_CRYPTO_DRIVER_TEST_LOOPBACK)
+#include "libcopy1/psa/crypto.h"
+#else
 #include "mbedtls/md.h"
+#include "mbedtls/ecp.h"
 #include "mbedtls/ecdsa.h"
+#endif
 
 #include "test/random.h"
 
@@ -66,7 +70,32 @@ psa_status_t test_transparent_signature_sign_hash(
 
     psa_status_t status = PSA_ERROR_NOT_SUPPORTED;
 
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECDSA_DETERMINISTIC) && \
+#if defined(PSA_CRYPTO_DRIVER_TEST_LOOPBACK)
+    status = libcopy1_psa_crypto_init( );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    libcopy1_psa_key_attributes_t lo_attributes = libcopy1_psa_key_attributes_init( );
+    libcopy1_psa_key_id_t lo_id = 0;
+    libcopy1_psa_set_key_type( &lo_attributes, psa_get_key_type( attributes ) );
+    libcopy1_psa_set_key_bits( &lo_attributes, psa_get_key_bits( attributes ) );
+    libcopy1_psa_set_key_usage_flags( &lo_attributes, PSA_KEY_USAGE_SIGN_HASH );
+    libcopy1_psa_set_key_algorithm( &lo_attributes, alg );
+    status = libcopy1_psa_import_key( &lo_attributes, key, key_length, &lo_id );
+    if( status != PSA_SUCCESS )
+        goto exit;
+    status = libcopy1_psa_sign_hash( lo_id, alg,
+                                     hash, hash_length,
+                                     signature, signature_size,
+                                     signature_length );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+exit:
+    libcopy1_psa_destroy_key( lo_id );
+    libcopy1_mbedtls_psa_crypto_free( );
+
+#elif defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECDSA_DETERMINISTIC) && \
     defined(MBEDTLS_SHA256_C)
     if( alg != PSA_ALG_DETERMINISTIC_ECDSA( PSA_ALG_SHA_256 ) )
         return( PSA_ERROR_NOT_SUPPORTED );
@@ -178,7 +207,31 @@ psa_status_t test_transparent_signature_verify_hash(
 
     psa_status_t status = PSA_ERROR_NOT_SUPPORTED;
 
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECDSA_DETERMINISTIC) && \
+#if defined(PSA_CRYPTO_DRIVER_TEST_LOOPBACK)
+    status = libcopy1_psa_crypto_init( );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    libcopy1_psa_key_attributes_t lo_attributes = libcopy1_psa_key_attributes_init( );
+    libcopy1_psa_key_id_t lo_id = 0;
+    libcopy1_psa_set_key_type( &lo_attributes, psa_get_key_type( attributes ) );
+    libcopy1_psa_set_key_bits( &lo_attributes, psa_get_key_bits( attributes ) );
+    libcopy1_psa_set_key_usage_flags( &lo_attributes, PSA_KEY_USAGE_VERIFY_HASH );
+    libcopy1_psa_set_key_algorithm( &lo_attributes, alg );
+    status = libcopy1_psa_import_key( &lo_attributes, key, key_length, &lo_id );
+    if( status != PSA_SUCCESS )
+        goto exit;
+    status = libcopy1_psa_verify_hash( lo_id, alg,
+                                       hash, hash_length,
+                                       signature, signature_length );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+exit:
+    libcopy1_psa_destroy_key( lo_id );
+    libcopy1_mbedtls_psa_crypto_free( );
+
+#elif defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECDSA_DETERMINISTIC) && \
     defined(MBEDTLS_SHA256_C)
     if( alg != PSA_ALG_DETERMINISTIC_ECDSA( PSA_ALG_SHA_256 ) )
         return( PSA_ERROR_NOT_SUPPORTED );
