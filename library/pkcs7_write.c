@@ -31,7 +31,6 @@
 #include "mbedtls/pk_internal.h"
 #include "mbedtls/pkcs7.h"
 #include "mbedtls/pkcs7_write.h"
-#include "mbedtls/platform.h"
 #include "mbedtls/x509_crt.h"
 #if defined(MBEDTLS_FS_IO)
 #include <sys/stat.h>
@@ -85,7 +84,7 @@ typedef struct mbedtls_pkcs7_info {
     size_t *key_sizes;
     int key_pairs;
     const unsigned char *data;
-    int data_size;
+    size_t data_size;
     mbedtls_md_type_t hash_funct;
     const char *hash_funct_oid;
 
@@ -247,14 +246,13 @@ enum pkcs7_data_types {
  * \param value_size    The length of the new value, if data_type = tag then it
  *                      is length of data contained in the tag
  *                      (not the length of the tag itself).
- * \param param         Extra argument if adding algorthm identifier (tag =
- *                      MBEDTLS_ASN1_OID | MBEDTLS_ASN1_CONTEXT_SPECIFIC)
- *                      to show the size of the param buffer, 0 for NULL tag.
+ * \param param         Extra argument if adding algorthm identifier (data_type = WRITE_OID)
+ *                      to show the size of the param buffer, ignored for other data types.
  * \return              0 for success, else errno.
  */
 static int pkcs7_write_data( unsigned char **start, size_t *size,
                              unsigned char **ptr, int data_type, const void *value,
-                             size_t value_size, int param )
+                             size_t value_size, size_t param )
 {
     int ret;
     /* pointer for current spot in data, in case it fails but ptr changes */
