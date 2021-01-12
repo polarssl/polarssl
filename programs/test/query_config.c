@@ -79,7 +79,9 @@
 #include "mbedtls/pkcs11.h"
 #include "mbedtls/pkcs12.h"
 #include "mbedtls/pkcs5.h"
+#if defined(MBEDTLS_HAVE_TIME)
 #include "mbedtls/platform_time.h"
+#endif
 #include "mbedtls/platform_util.h"
 #include "mbedtls/poly1305.h"
 #include "mbedtls/ripemd160.h"

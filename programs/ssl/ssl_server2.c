@@ -842,11 +842,13 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
+#if defined(MBEDTLS_HAVE_TIME)
 mbedtls_time_t dummy_constant_time( mbedtls_time_t* time )
 {
     (void) time;
     return 0x5af2a056;
 }
+#endif
 
 int dummy_entropy( void *data, unsigned char *output, size_t len )
 {
@@ -3244,8 +3246,10 @@ int main( int argc, char *argv[] )
     if( opt.cache_max != -1 )
         mbedtls_ssl_cache_set_max_entries( &cache, opt.cache_max );
 
+#if defined(MBEDTLS_HAVE_TIME)
     if( opt.cache_timeout != -1 )
         mbedtls_ssl_cache_set_timeout( &cache, opt.cache_timeout );
+#endif
 
     mbedtls_ssl_conf_session_cache( &conf, &cache,
                                    mbedtls_ssl_cache_get,

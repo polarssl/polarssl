@@ -63,10 +63,12 @@
 #include "mbedtls/threading.h"
 #endif
 
+#if defined(MBEDTLS_HAVE_TIME)
 #if defined(_WIN32) && !defined(EFIX64) && !defined(EFI32)
 #include <windows.h>
 #else
 #include <time.h>
+#endif
 #endif
 
 #if defined(MBEDTLS_FS_IO)
