@@ -51,7 +51,7 @@ my @low_level_modules = qw( AES ARC4 ARIA ASN1 BASE64 BIGNUM BLOWFISH
                             SHA1 SHA256 SHA512 THREADING XTEA );
 my @high_level_modules = qw( CIPHER DHM ECP MD
                              PEM PK PKCS12 PKCS5
-                             RSA SSL X509 );
+                             RSA SSL X509 PKCS7 );
 
 my $line_separator = $/;
 undef $/;
@@ -113,6 +113,7 @@ foreach my $line (@matches)
     $define_name = "ASN1_PARSE" if ($define_name eq "ASN1");
     $define_name = "SSL_TLS" if ($define_name eq "SSL");
     $define_name = "PEM_PARSE,PEM_WRITE" if ($define_name eq "PEM");
+    $define_name = "PKCS7" if ($define_name eq "PKCS7");
 
     my $include_name = $module_name;
     $include_name =~ tr/A-Z/a-z/;

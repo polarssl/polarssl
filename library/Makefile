@@ -150,6 +150,8 @@ OBJS_X509= \
 	   x509_csr.o \
 	   x509write_crt.o \
 	   x509write_csr.o \
+	   pkcs7.o \
+	   pkcs7_write.o \
 	   # This line is intentionally left blank
 
 OBJS_TLS= \
