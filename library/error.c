@@ -166,6 +166,10 @@
 #include "mbedtls/pkcs5.h"
 #endif
 
+#if defined(MBEDTLS_PKCS7_C)
+#include "mbedtls/pkcs7.h"
+#endif
+
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
 #endif
@@ -379,6 +383,33 @@ const char * mbedtls_high_level_strerr( int error_code )
         case -(MBEDTLS_ERR_PKCS5_PASSWORD_MISMATCH):
             return( "PKCS5 - Given private key password does not allow for correct decryption" );
 #endif /* MBEDTLS_PKCS5_C */
+
+#if defined(MBEDTLS_PKCS7_C)
+        case -(MBEDTLS_ERR_PKCS7_INVALID_FORMAT):
+            return( "PKCS7 - The format is invalid, e.g. different type expected" );
+        case -(MBEDTLS_ERR_PKCS7_FEATURE_UNAVAILABLE):
+            return( "PKCS7 - Unavailable feature, e.g. anything other than signed data" );
+        case -(MBEDTLS_ERR_PKCS7_INVALID_VERSION):
+            return( "PKCS7 - The PKCS7 version element is invalid or cannot be parsed" );
+        case -(MBEDTLS_ERR_PKCS7_INVALID_CONTENT_INFO):
+            return( "PKCS7 - The PKCS7 content info invalid or cannot be parsed" );
+        case -(MBEDTLS_ERR_PKCS7_INVALID_ALG):
+            return( "PKCS7 - The algorithm tag or value is invalid or cannot be parsed" );
+        case -(MBEDTLS_ERR_PKCS7_INVALID_CERT):
+            return( "PKCS7 - The certificate tag or value is invalid or cannot be parsed" );
+        case -(MBEDTLS_ERR_PKCS7_INVALID_SIGNATURE):
+            return( "PKCS7 - Error parsing the signature" );
+        case -(MBEDTLS_ERR_PKCS7_INVALID_SIGNER_INFO):
+            return( "PKCS7 - Error parsing the signer's info" );
+        case -(MBEDTLS_ERR_PKCS7_BAD_INPUT_DATA):
+            return( "PKCS7 - Input invalid" );
+        case -(MBEDTLS_ERR_PKCS7_ALLOC_FAILED):
+            return( "PKCS7 - Allocation of memory failed" );
+        case -(MBEDTLS_ERR_PKCS7_FILE_IO_ERROR):
+            return( "PKCS7 - File Read/Write Error" );
+        case -(MBEDTLS_ERR_PKCS7_VERIFY_FAIL):
+            return( "PKCS7 - Verification Failed" );
+#endif /* MBEDTLS_PKCS7_C */
 
 #if defined(MBEDTLS_RSA_C)
         case -(MBEDTLS_ERR_RSA_BAD_INPUT_DATA):

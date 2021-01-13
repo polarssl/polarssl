@@ -196,6 +196,7 @@
     <ClInclude Include="..\..\include\mbedtls\pkcs11.h" />
     <ClInclude Include="..\..\include\mbedtls\pkcs12.h" />
     <ClInclude Include="..\..\include\mbedtls\pkcs5.h" />
+    <ClInclude Include="..\..\include\mbedtls\pkcs7.h" />
     <ClInclude Include="..\..\include\mbedtls\platform.h" />
     <ClInclude Include="..\..\include\mbedtls\platform_time.h" />
     <ClInclude Include="..\..\include\mbedtls\platform_util.h" />
@@ -310,6 +311,7 @@
     <ClCompile Include="..\..\library\pkcs11.c" />
     <ClCompile Include="..\..\library\pkcs12.c" />
     <ClCompile Include="..\..\library\pkcs5.c" />
+    <ClCompile Include="..\..\library\pkcs7.c" />
     <ClCompile Include="..\..\library\pkparse.c" />
     <ClCompile Include="..\..\library\pkwrite.c" />
     <ClCompile Include="..\..\library\platform.c" />
