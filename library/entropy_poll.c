@@ -159,13 +159,31 @@ static int sysctl_arnd_wrapper( unsigned char *buf, size_t buflen )
 #endif /* KERN_ARND */
 #endif /* __FreeBSD__ || __NetBSD__ */
 
+#if defined(__APPLE__)
+#include <sys/random.h>
+#define HAVE_GETENTROPY
+
+static int getentropy_wrapper( void *buf, size_t buflen )
+{
+     size_t len = 0;
+     unsigned char *p = buf;
+     while (buflen > 0)
+     {
+         len = buflen > 256 ? 256 : buflen;
+         if( getentropy( p, len ) != 0 )
+             return ( -1 );
+         buflen -= len;
+         p += len;
+     }
+     return( 0 );
+}
+#endif /* __APPLE__ */
+
 #include <stdio.h>
 
 int mbedtls_platform_entropy_poll( void *data,
                            unsigned char *output, size_t len, size_t *olen )
 {
-    FILE *file;
-    size_t read_len;
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     ((void) data);
 
@@ -178,19 +196,33 @@ int mbedtls_platform_entropy_poll( void *data,
     }
     else if( errno != ENOSYS )
         return( MBEDTLS_ERR_ENTROPY_SOURCE_FAILED );
-    /* Fall through if the system call isn't known. */
-#else
-    ((void) ret);
+    else
+        return( ret );
 #endif /* HAVE_GETRANDOM */
 
+#if defined(HAVE_GETENTROPY)
+    ret = getentropy_wrapper( output, len );
+    if( ret == 0 )
+    {
+        *olen = len;
+        return( 0 );
+    }
+    else /* only a bad buffer address would lead to it */
+        return( MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED );
+#endif /* HAVE_GETENTROPY */
+
 #if defined(HAVE_SYSCTL_ARND)
-    ((void) file);
-    ((void) read_len);
-    if( sysctl_arnd_wrapper( output, len ) == -1 )
+    ret = sysctl_arnd_wrapper( output, len );
+    if ( ret == -1 )
         return( MBEDTLS_ERR_ENTROPY_SOURCE_FAILED );
     *olen = len;
     return( 0 );
-#else
+#endif /* HAVE_SYSCTL_ARND */
+
+/* Fallback */
+#if !defined(HAVE_GETRANDOM) && !defined(HAVE_GETENTROPY) && !defined(HAVE_SYSCTL_ARND)
+    FILE *file;
+    size_t read_len;
 
     *olen = 0;
 
@@ -209,7 +241,7 @@ int mbedtls_platform_entropy_poll( void *data,
     *olen = len;
 
     return( 0 );
-#endif /* HAVE_SYSCTL_ARND */
+#endif /* !HAVE_GETRANDOM && !HAVE_GETENTROPY && !HAVE_SYSCTL_ARND */
 }
 #endif /* _WIN32 && !EFIX64 && !EFI32 */
 #endif /* !MBEDTLS_NO_PLATFORM_ENTROPY */
