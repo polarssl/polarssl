@@ -393,6 +393,9 @@ int mbedtls_ecdsa_can_do( mbedtls_ecp_group_id gid )
 #ifdef MBEDTLS_ECP_DP_CURVE448_ENABLED
         case MBEDTLS_ECP_DP_CURVE448: return 0;
 #endif
+#ifdef MBEDTLS_ECP_DP_SM2P256V1_ENABLED
+        case MBEDTLS_ECP_DP_SM2P256V1: return 0;
+#endif
     default: return 1;
     }
 }

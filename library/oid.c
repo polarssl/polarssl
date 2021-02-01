@@ -558,6 +558,12 @@ static const oid_ecp_grp_t oid_ecp_grp[] =
         MBEDTLS_ECP_DP_BP512R1,
     },
 #endif /* MBEDTLS_ECP_DP_BP512R1_ENABLED */
+#if defined(MBEDTLS_ECP_DP_SM2P256V1_ENABLED)
+    {
+        OID_DESCRIPTOR( MBEDTLS_OID_EC_GRP_SM2P256V1, "sm2p256v1",    "sm2p256v1" ),
+        MBEDTLS_ECP_DP_SM2P256V1,
+    },
+#endif /* MBEDTLS_ECP_DP_SM2P256V1_ENABLED */
     {
         NULL_OID_DESCRIPTOR,
         MBEDTLS_ECP_DP_NONE,

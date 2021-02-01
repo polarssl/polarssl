@@ -56,9 +56,13 @@ static mbedtls_ecp_group_id mbedtls_ecdh_grp_id(
 
 int mbedtls_ecdh_can_do( mbedtls_ecp_group_id gid )
 {
-    /* At this time, all groups support ECDH. */
-    (void) gid;
-    return( 1 );
+    switch( gid )
+    {
+#ifdef MBEDTLS_ECP_DP_SM2P256V1_ENABLED
+        case MBEDTLS_ECP_DP_SM2P256V1: return 0;
+#endif
+    default: return 1;
+    }
 }
 
 #if !defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)
@@ -118,6 +122,10 @@ static int ecdh_compute_shared_restartable( mbedtls_ecp_group *grp,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_ecp_point P;
+
+    /* Fail cleanly on curves that can't be used for ECDH */
+    if( ! mbedtls_ecdh_can_do( grp->id ) || grp->N.p == NULL )
+        return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     mbedtls_ecp_point_init( &P );
 

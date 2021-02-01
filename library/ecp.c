@@ -551,6 +551,10 @@ static const mbedtls_ecp_curve_info ecp_supported_curves[] =
 #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
     { MBEDTLS_ECP_DP_CURVE25519,   29,     256,    "x25519"            },
 #endif
+#if defined(MBEDTLS_ECP_DP_SM2P256V1_ENABLED)
+    /* https://datatracker.ietf.org/doc/html/rfc8998 */
+    { MBEDTLS_ECP_DP_SM2P256V1,    41,     256,    "sm2p256v1"         },
+#endif
 #if defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
     { MBEDTLS_ECP_DP_CURVE448,     30,     448,    "x448"              },
 #endif

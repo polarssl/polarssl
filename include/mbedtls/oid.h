@@ -115,6 +115,8 @@
 
 #define MBEDTLS_OID_NIST_ALG                    MBEDTLS_OID_GOV "\x03\x04" /** { joint-iso-itu-t(2) country(16) us(840) organization(1) gov(101) csor(3) nistAlgorithm(4) */
 
+#define MBEDTLS_OID_GM_ALG                      "\x2A\x81\x1C\xCF\x55\x01" /** iso(1) member-body(2) cn(156) gmStandardCommittee(10197) cryptographicAlgorithm(1) */
+
 /**
  * Private Internet Extensions
  * { iso(1) identified-organization(3) dod(6) internet(1)
@@ -374,6 +376,11 @@
 /* secp256k1 OBJECT IDENTIFIER ::= {
  *   iso(1) identified-organization(3) certicom(132) curve(0) 10 } */
 #define MBEDTLS_OID_EC_GRP_SECP256K1        MBEDTLS_OID_CERTICOM "\x00\x0a"
+
+/* sm2p256v1 OBJECT IDENTIFIER ::= {
+ *   iso(1) member-body(2) cn(156) gmStanddardCommittee(10197)
+ *   cryptographicAlgorithm(1) sm2p256v1(301) } */
+#define MBEDTLS_OID_EC_GRP_SM2P256V1        MBEDTLS_OID_GM_ALG "\x82\x2D"
 
 /* RFC 5639 4.1
  * ecStdCurvesAndGeneration OBJECT IDENTIFIER::= {iso(1)
