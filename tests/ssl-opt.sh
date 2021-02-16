@@ -50,6 +50,22 @@ fi
 : ${GNUTLS_SERV:=gnutls-serv}
 : ${PERL:=perl}
 
+# Supply a configuration file to OpenSSL so that we can control default behaviour
+export OPENSSL_CONF="/tmp/ssl-opt.sh.openssl.conf"
+cat <<EOT > $OPENSSL_CONF
+openssl_conf = default_conf
+
+[ default_conf ]
+ssl_conf = ssl_sect
+
+[ssl_sect]
+system_default = system_default_sect
+
+[system_default_sect]
+# this line stops OpenSSL from requiring a 2048-bit DH key
+CipherString = DEFAULT:@SECLEVEL=1
+EOT
+
 guess_config_name() {
     if git diff --quiet ../include/mbedtls/config.h 2>/dev/null; then
         echo "default"
@@ -63,6 +79,7 @@ guess_config_name() {
 
 O_SRV="$OPENSSL_CMD s_server -www -cert data_files/server5.crt -key data_files/server5.key"
 O_CLI="echo 'GET / HTTP/1.0' | $OPENSSL_CMD s_client"
+G_PRI="--priority=NORMAL"
 G_SRV="$GNUTLS_SERV --x509certfile data_files/server5.crt --x509keyfile data_files/server5.key"
 G_CLI="echo 'GET / HTTP/1.0' | $GNUTLS_CLI --x509cafile data_files/test-ca_cat12.crt"
 TCP_CLIENT="$PERL scripts/tcp_client.pl"
@@ -634,6 +651,21 @@ detect_dtls() {
     fi
 }
 
+# check if the given command uses gnutls and sets global variable CMD_IS_GNUTLS
+is_gnutls() {
+    case "$1" in
+    *gnutls-cli\ *)
+        CMD_IS_GNUTLS=1
+        ;;
+    *gnutls-serv\ *)
+        CMD_IS_GNUTLS=1
+        ;;
+    *)
+        CMD_IS_GNUTLS=0
+        ;;
+    esac
+}
+
 # Compare file content
 # Usage: find_in_both pattern file1 file2
 # extract from file1 the first line matching the pattern
@@ -724,6 +756,28 @@ run_test() {
             *' server_addr=::1 '*)
                 PXY_CMD="$PXY_CMD server_addr=::1 listen_addr=::1";;
         esac
+    fi
+
+    # update CMD_IS_GNUTLS variable
+    is_gnutls "$SRV_CMD"
+
+    # if the server uses gnutls but doesn't set priority, explicitly
+    # set the default priority
+    if [ "$CMD_IS_GNUTLS" -eq 1 ]; then
+        if ! echo "$SRV_CMD" | grep '\-\-priority' >/dev/null; then
+            SRV_CMD="$SRV_CMD $G_PRI"
+        fi
+    fi
+
+    # update CMD_IS_GNUTLS variable
+    is_gnutls "$CLI_CMD"
+
+    # if the client uses gnutls but doesn't set priority, explicitly
+    # set the default priority
+    if [ "$CMD_IS_GNUTLS" -eq 1 ]; then
+        if ! echo "$CLI_CMD" | grep '\-\-priority' >/dev/null; then
+            CLI_CMD="$CLI_CMD $G_PRI"
+        fi
     fi
 
     # fix client port
