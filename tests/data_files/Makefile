@@ -1139,9 +1139,9 @@ pkcs7-rsa-sha256-2.crt:
 	cat pkcs7-rsa-sha256-2.crt pkcs7-rsa-sha256-2.key > pkcs7-rsa-sha256-2.pem
 all_final += pkcs7-rsa-sha256-2.crt
 
-# Generate data file to be signed
+# Generate data file to be signed, (print binary of HELLO, prevents against new line differences in linux and windows)
 pkcs7_data.txt:
-	echo "Hello" > $@
+	echo -n -e '\x48\x65\x6c\x6c\x6f\x0a' > $@
 	echo 2 >> pkcs7_data_1.txt
 all_final += pkcs7_data.txt
 
