@@ -227,6 +227,8 @@ void pkcs7_verify( char *pkcs7_file, char *crt, char *filetobesigned )
     fclose(file);
 
     res = mbedtls_pkcs7_signed_data_verify( &pkcs7, &x509, data, datalen );
+    if (res != 0)
+        fprintf( stderr, "Failing at signature verification %d\n", res);
     TEST_ASSERT( res == 0 );
 
 exit:
