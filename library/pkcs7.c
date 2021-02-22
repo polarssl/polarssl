@@ -561,14 +561,22 @@ int mbedtls_pkcs7_signed_data_verify( mbedtls_pkcs7 *pkcs7,
         return( MBEDTLS_ERR_PKCS7_VERIFY_FAIL );
 
     md_info = mbedtls_md_info_from_type( md_alg );
-
     hash = mbedtls_calloc( mbedtls_md_get_size( md_info ), 1 );
+
     if( hash == NULL ) {
         return( MBEDTLS_ERR_PKCS7_ALLOC_FAILED );
     }
 
     mbedtls_md( md_info, data, datalen, hash );
 
+   fprintf(stderr, "Testing verification with data (%lu bytes):\n", datalen);
+    for( size_t i = 0; i < datalen ; i++)
+        fprintf(stderr, "%02x ", data[i] );
+    fprintf(stderr, "\n generated hash (%lu bytes ):\n",(size_t) mbedtls_md_get_size(md_info) );
+      for( size_t i = 0; i < (size_t) mbedtls_md_get_size(md_info); i++)
+        fprintf(stderr, "%02x ", hash[i] );
+    fprintf(  stderr, "\n");
+    
     ret = mbedtls_pk_verify( &pk_cxt, md_alg, hash, 0,
                                       pkcs7->signed_data.signers.sig.p,
                                       pkcs7->signed_data.signers.sig.len );
