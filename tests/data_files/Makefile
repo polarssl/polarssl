@@ -1140,8 +1140,9 @@ pkcs7-rsa-sha256-2.crt:
 all_final += pkcs7-rsa-sha256-2.crt
 
 # Generate data file to be signed, (print binary of HELLO, prevents against new line differences in linux and windows)
+#point directly to echo to use the filesytem command and not a shell implementation, onlt filesystem has `-e` flag
 pkcs7_data.txt:
-	echo -n -e '\x48\x65\x6c\x6c\x6f\x0a' > $@
+	/bin/echo -n -e '\x48\x65\x6c\x6c\x6f\x0d\x0a' > $@
 	echo 2 >> pkcs7_data_1.txt
 all_final += pkcs7_data.txt
 

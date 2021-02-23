@@ -222,6 +222,11 @@ void pkcs7_verify( char *pkcs7_file, char *crt, char *filetobesigned )
     datalen = st.st_size;
     data = mbedtls_calloc( datalen, 1 );
     buflen = fread( ( void * )data , sizeof( unsigned char ), datalen, file );
+
+    fprintf( stderr, "\nbuffer is %lu bytes (datalen is %lu):\n\t", buflen, datalen);
+    for (size_t i = 0 ; i < buflen ; i ++)
+        fprintf(stderr, "%02x ", data[i]);
+    fprintf(stderr , "\n");
     TEST_ASSERT( buflen == datalen);
 
     fclose(file);
