@@ -216,7 +216,7 @@ void pkcs7_verify( char *pkcs7_file, char *crt, char *filetobesigned )
     res = stat(filetobesigned, &st);
     TEST_ASSERT( res == 0 );
 
-    file = fopen( filetobesigned, "r" );
+    file = fopen( filetobesigned, "rb" );
     TEST_ASSERT( file != NULL );
 
     datalen = st.st_size;
