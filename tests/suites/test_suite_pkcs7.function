@@ -275,7 +275,7 @@ void pkcs7_verify_hash( char *pkcs7_file, char *crt, char *filetobesigned )
     res = stat(filetobesigned, &st);
     TEST_ASSERT( res == 0 );
 
-    file = fopen( filetobesigned, "r" );
+    file = fopen( filetobesigned, "rb" );
     TEST_ASSERT( file != NULL );
 
     datalen = st.st_size;
@@ -334,7 +334,7 @@ void pkcs7_verify_badcert( char *pkcs7_file, char *crt, char *filetobesigned )
     res = stat(filetobesigned, &st);
     TEST_ASSERT( res == 0 );
 
-    file = fopen( filetobesigned, "r" );
+    file = fopen( filetobesigned, "rb" );
     TEST_ASSERT( file != NULL );
 
     datalen = st.st_size;
@@ -384,7 +384,7 @@ void pkcs7_verify_tampered_data( char *pkcs7_file, char *crt, char *filetobesign
     res = stat(filetobesigned, &st);
     TEST_ASSERT( res == 0 );
 
-    file = fopen( filetobesigned, "r" );
+    file = fopen( filetobesigned, "rb" );
     TEST_ASSERT( file != NULL );
 
     datalen = st.st_size;
