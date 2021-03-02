@@ -576,7 +576,7 @@ int mbedtls_pkcs7_signed_data_verify( mbedtls_pkcs7 *pkcs7,
       for( size_t i = 0; i < (size_t) mbedtls_md_get_size(md_info); i++)
         fprintf(stderr, "%02x ", hash[i] );
     fprintf(  stderr, "\n");
-    
+
     ret = mbedtls_pk_verify( &pk_cxt, md_alg, hash, 0,
                                       pkcs7->signed_data.signers.sig.p,
                                       pkcs7->signed_data.signers.sig.len );
