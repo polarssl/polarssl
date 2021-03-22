@@ -24,6 +24,7 @@
 #include "mbedtls/hkdf.h"
 #include "ssl_misc.h"
 #include "ssl_tls13_keys.h"
+#include "mbedtls/debug.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -344,6 +345,114 @@ int mbedtls_ssl_tls1_3_evolve_secret(
     mbedtls_platform_zeroize( tmp_secret, sizeof(tmp_secret) );
     mbedtls_platform_zeroize( tmp_input,  sizeof(tmp_input)  );
     return( ret );
+}
+
+int mbedtls_ssl_tls13_populate_transform( mbedtls_ssl_transform *transform,
+                                          int endpoint,
+                                          int ciphersuite,
+                                          mbedtls_ssl_key_set const *traffic_keys,
+                                          mbedtls_ssl_context *ssl /* DEBUG ONLY */ )
+{
+    int ret;
+    mbedtls_cipher_info_t const *cipher_info;
+    const mbedtls_ssl_ciphersuite_t *ciphersuite_info;
+    unsigned char const *key_enc;
+    unsigned char const *iv_enc;
+    unsigned char const *key_dec;
+    unsigned char const *iv_dec;
+
+#if !defined(MBEDTLS_DEBUG_C)
+    ssl = NULL; /* make sure we don't use it except for those cases */
+    (void) ssl;
+#endif
+
+    ciphersuite_info = mbedtls_ssl_ciphersuite_from_id( ciphersuite );
+
+    cipher_info = mbedtls_cipher_info_from_type( ciphersuite_info->cipher );
+    if( cipher_info == NULL )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
+        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    }
+
+    /*
+     * Setup cipher contexts in target transform
+     */
+
+    if( ( ret = mbedtls_cipher_setup( &transform->cipher_ctx_enc,
+                                      cipher_info ) ) != 0 )
+    {
+        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_cipher_setup", ret );
+        return( ret );
+    }
+
+    if( ( ret = mbedtls_cipher_setup( &transform->cipher_ctx_dec,
+                                      cipher_info ) ) != 0 )
+    {
+        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_cipher_setup", ret );
+        return( ret );
+    }
+
+#if defined(MBEDTLS_SSL_SRV_C)
+    if( endpoint == MBEDTLS_SSL_IS_SERVER )
+    {
+        key_enc = traffic_keys->server_write_key;
+        key_dec = traffic_keys->client_write_key;
+        iv_enc = traffic_keys->server_write_iv;
+        iv_dec = traffic_keys->client_write_iv;
+    }
+    else
+#endif /* MBEDTLS_SSL_SRV_C */
+#if defined(MBEDTLS_SSL_CLI_C)
+    if( endpoint == MBEDTLS_SSL_IS_CLIENT )
+    {
+        key_enc = traffic_keys->client_write_key;
+        key_dec = traffic_keys->server_write_key;
+        iv_enc = traffic_keys->client_write_iv;
+        iv_dec = traffic_keys->server_write_iv;
+    }
+    else
+#endif /* MBEDTLS_SSL_CLI_C */
+    {
+        /* should not happen */
+        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    }
+
+    memcpy( transform->iv_enc, iv_enc, traffic_keys->iv_len );
+    memcpy( transform->iv_dec, iv_dec, traffic_keys->iv_len );
+
+    if( ( ret = mbedtls_cipher_setkey( &transform->cipher_ctx_enc,
+                                       key_enc, cipher_info->key_bitlen,
+                                       MBEDTLS_ENCRYPT ) ) != 0 )
+    {
+        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_cipher_setkey", ret );
+        return( ret );
+    }
+
+    if( ( ret = mbedtls_cipher_setkey( &transform->cipher_ctx_dec,
+                                       key_dec, cipher_info->key_bitlen,
+                                       MBEDTLS_DECRYPT ) ) != 0 )
+    {
+        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_cipher_setkey", ret );
+        return( ret );
+    }
+
+    /*
+     * Setup other fields in SSL transform
+     */
+
+    if( ( ciphersuite_info->flags & MBEDTLS_CIPHERSUITE_SHORT_TAG ) != 0 )
+        transform->taglen  = 8;
+    else
+        transform->taglen  = 16;
+
+    transform->ivlen       = traffic_keys->iv_len;
+    transform->maclen      = 0;
+    transform->fixed_ivlen = transform->ivlen;
+    transform->minlen      = transform->taglen + 1;
+    transform->minor_ver   = MBEDTLS_SSL_MINOR_VERSION_4;
+
+    return( 0 );
 }
 
 #endif /* MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
