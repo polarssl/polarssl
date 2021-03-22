@@ -3794,6 +3794,92 @@ MBEDTLS_SSL_TLS1_3_LABEL_LIST
 /* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
+void ssl_tls1_3_record_protection( int ciphersuite,
+                                   int endpoint,
+                                   int ctr,
+                                   data_t *server_write_key,
+                                   data_t *server_write_iv,
+                                   data_t *client_write_key,
+                                   data_t *client_write_iv,
+                                   data_t *plaintext,
+                                   data_t *ciphertext )
+{
+    mbedtls_ssl_key_set keys;
+    mbedtls_ssl_transform transform_send;
+    mbedtls_ssl_transform transform_recv;
+    mbedtls_record rec;
+    unsigned char *buf = NULL;
+    int other_endpoint;
+
+    TEST_ASSERT( endpoint == MBEDTLS_SSL_IS_CLIENT ||
+                 endpoint == MBEDTLS_SSL_IS_SERVER );
+
+    if( endpoint == MBEDTLS_SSL_IS_SERVER )
+        other_endpoint = MBEDTLS_SSL_IS_CLIENT;
+    if( endpoint == MBEDTLS_SSL_IS_CLIENT )
+        other_endpoint = MBEDTLS_SSL_IS_SERVER;
+
+    TEST_ASSERT( server_write_key->len == client_write_key->len );
+    TEST_ASSERT( server_write_iv->len  == client_write_iv->len  );
+
+    memcpy( keys.client_write_key,
+            client_write_key->x, client_write_key->len );
+    memcpy( keys.client_write_iv,
+            client_write_iv->x, client_write_iv->len );
+    memcpy( keys.server_write_key,
+            server_write_key->x, server_write_key->len );
+    memcpy( keys.server_write_iv,
+            server_write_iv->x, server_write_iv->len );
+
+    keys.key_len = server_write_key->len;
+    keys.iv_len  = server_write_iv->len;
+
+    mbedtls_ssl_transform_init( &transform_recv );
+    mbedtls_ssl_transform_init( &transform_send );
+
+    TEST_ASSERT( mbedtls_ssl_tls13_populate_transform(
+                     &transform_send, endpoint,
+                     ciphersuite, &keys, NULL ) == 0 );
+    TEST_ASSERT( mbedtls_ssl_tls13_populate_transform(
+                     &transform_recv, other_endpoint,
+                     ciphersuite, &keys, NULL ) == 0 );
+
+    ASSERT_ALLOC( buf, ciphertext->len );
+    rec.type   = MBEDTLS_SSL_MSG_APPLICATION_DATA;
+    mbedtls_ssl_write_version( MBEDTLS_SSL_MAJOR_VERSION_3,
+                               MBEDTLS_SSL_MINOR_VERSION_3,
+                               MBEDTLS_SSL_TRANSPORT_STREAM,
+                               rec.ver );
+
+    /* Copy plaintext into record structure */
+    rec.buf = buf;
+    rec.buf_len = ciphertext->len;
+    rec.data_offset = 0;
+    TEST_ASSERT( plaintext->len <= ciphertext->len );
+    memcpy( rec.buf + rec.data_offset, plaintext->x, plaintext->len );
+    rec.data_len = plaintext->len;
+#if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
+    rec.cid_len = 0;
+#endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
+
+    memset( &rec.ctr[0], 0, 8 );
+    rec.ctr[7] = ctr;
+
+    TEST_ASSERT( mbedtls_ssl_encrypt_buf( NULL, &transform_send, &rec,
+                                          NULL, NULL ) == 0 );
+    ASSERT_COMPARE( rec.buf + rec.data_offset, rec.data_len,
+                    ciphertext->x, ciphertext->len );
+
+    TEST_ASSERT( mbedtls_ssl_decrypt_buf( NULL, &transform_recv, &rec ) == 0 );
+    ASSERT_COMPARE( rec.buf + rec.data_offset, rec.data_len,
+                    plaintext->x, plaintext->len );
+
+    mbedtls_ssl_transform_free( &transform_send );
+    mbedtls_ssl_transform_free( &transform_recv );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
 void ssl_tls1_3_key_evolution( int hash_alg,
                                data_t *secret,
                                data_t *input,
