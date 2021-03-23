@@ -3874,6 +3874,7 @@ void ssl_tls1_3_record_protection( int ciphersuite,
     ASSERT_COMPARE( rec.buf + rec.data_offset, rec.data_len,
                     plaintext->x, plaintext->len );
 
+    mbedtls_free( buf );
     mbedtls_ssl_transform_free( &transform_send );
     mbedtls_ssl_transform_free( &transform_recv );
 }
