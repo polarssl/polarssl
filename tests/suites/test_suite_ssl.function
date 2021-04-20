@@ -3846,6 +3846,8 @@ void ssl_tls1_3_record_protection( int ciphersuite,
 
     ASSERT_ALLOC( buf, ciphertext->len );
     rec.type   = MBEDTLS_SSL_MSG_APPLICATION_DATA;
+
+    /* TLS 1.3 uses the version identifier from TLS 1.2 on the wire. */
     mbedtls_ssl_write_version( MBEDTLS_SSL_MAJOR_VERSION_3,
                                MBEDTLS_SSL_MINOR_VERSION_3,
                                MBEDTLS_SSL_TRANSPORT_STREAM,
