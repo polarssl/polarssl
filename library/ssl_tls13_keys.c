@@ -367,12 +367,19 @@ int mbedtls_ssl_tls13_populate_transform( mbedtls_ssl_transform *transform,
 #endif
 
     ciphersuite_info = mbedtls_ssl_ciphersuite_from_id( ciphersuite );
+    if( ciphersuite_info == NULL )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "ciphersuite info for %d not found",
+                                    ciphersuite ) );
+        return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+    }
 
     cipher_info = mbedtls_cipher_info_from_type( ciphersuite_info->cipher );
     if( cipher_info == NULL )
     {
-        MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
-        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "cipher info for %u not found",
+                                    ciphersuite_info->cipher ) );
+        return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA )
     }
 
     /*
