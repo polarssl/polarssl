@@ -379,7 +379,7 @@ int mbedtls_ssl_tls13_populate_transform( mbedtls_ssl_transform *transform,
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "cipher info for %u not found",
                                     ciphersuite_info->cipher ) );
-        return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA )
+        return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
     }
 
     /*
