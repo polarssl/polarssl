@@ -855,6 +855,15 @@ static int ssl_tls12_populate_transform( mbedtls_ssl_transform *transform,
     memcpy( transform->randbytes, randbytes, sizeof( transform->randbytes ) );
 #endif
 
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL)
+    if( minor_ver == MBEDTLS_SSL_MINOR_VERSION_4 )
+    {
+        /* At the moment, we keep TLS <= 1.2 and TLS 1.3 transform
+         * generation separate. This should never happen. */
+        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    }
+#endif /* MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
+
     /*
      * Get various info structures
      */
@@ -947,19 +956,10 @@ static int ssl_tls12_populate_transform( mbedtls_ssl_transform *transform,
          *   sequence number).
          */
         transform->ivlen = 12;
-#if defined(MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL)
-        if( minor_ver == MBEDTLS_SSL_MINOR_VERSION_4 )
-        {
+        if( cipher_info->mode == MBEDTLS_MODE_CHACHAPOLY )
             transform->fixed_ivlen = 12;
-        }
         else
-#endif /* MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
-        {
-            if( cipher_info->mode == MBEDTLS_MODE_CHACHAPOLY )
-                transform->fixed_ivlen = 12;
-            else
-                transform->fixed_ivlen = 4;
-        }
+            transform->fixed_ivlen = 4;
 
         /* Minimum length of encrypted record */
         explicit_ivlen = transform->ivlen - transform->fixed_ivlen;
