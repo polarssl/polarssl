@@ -2,13 +2,21 @@
 """
 Purpose
 
-This script is a small wrapper around the abi-compliance-checker and
-abi-dumper tools, applying them to compare the ABI and API of the library
-files from two different Git revisions within an Mbed TLS repository.
+This script compares the interfaces of two versions of Mbed TLS, looking
+for backward incompatibilities between two different Git revisions within
+an Mbed TLS repository. It must be run from the root of a Git working tree.
+
+For the source (API) and runtime (ABI) interface compatibility, this script
+is a small wrapper around the abi-compliance-checker and abi-dumper tools,
+applying them to compare the header and library files.
+
+For the storage format, this script compares the automatically generated
+storage tests, and complains if there is a reduction in coverage.
+
 The results of the comparison are either formatted as HTML and stored at
 a configurable location, or are given as a brief list of problems.
 Returns 0 on success, 1 on ABI/API non-compliance, and 2 if there is an error
-while running the script. Note: must be run from Mbed TLS root.
+while running the script.
 """
 
 # Copyright The Mbed TLS Contributors
@@ -27,6 +35,7 @@ while running the script. Note: must be run from Mbed TLS root.
 # limitations under the License.
 
 import os
+import re
 import sys
 import traceback
 import shutil
@@ -53,6 +62,7 @@ class AbiChecker:
         configuration.brief: if true, output shorter report to stdout
         configuration.check_api: if true, compare ABIs
         configuration.check_api: if true, compare APIs
+        configuration.check_storage: if true, compare storage format tests
         configuration.skip_file: path to file containing symbols and types to skip
         """
         self.repo_path = "."
@@ -70,6 +80,7 @@ class AbiChecker:
         self.check_api = configuration.check_api
         if self.check_abi != self.check_api:
             raise Exception('Checking API without ABI or vice versa is not supported')
+        self.check_storage_tests = configuration.check_storage
         self.brief = configuration.brief
         self.git_command = "git"
         self.make_command = "make"
@@ -214,6 +225,65 @@ class AbiChecker:
             self.log.debug(abi_dump_output.decode("utf-8"))
             version.abi_dumps[mbed_module] = output_path
 
+    @staticmethod
+    def _normalize_storage_test_case_data(line):
+        """Eliminate cosmetic or irrelevant details in storage format test cases."""
+        line = re.sub(r'\s+', r'', line)
+        return line
+
+    def _read_storage_tests(self, directory, filename, storage_tests):
+        """Record storage tests from the given file.
+
+        Populate the storage_tests dictionary with test cases read from
+        filename under directory.
+        """
+        at_paragraph_start = True
+        description = None
+        full_path = os.path.join(directory, filename)
+        for line_number, line in enumerate(open(full_path), 1):
+            line = line.strip()
+            if not line:
+                at_paragraph_start = True
+                continue
+            if line.startswith('#'):
+                continue
+            if at_paragraph_start:
+                description = line.strip()
+                at_paragraph_start = False
+                continue
+            if line.startswith('depends_on:'):
+                continue
+            # We've reached a test case data line
+            test_case_data = self._normalize_storage_test_case_data(line)
+            metadata = SimpleNamespace(
+                filename=filename,
+                line_number=line_number,
+                description=description
+            )
+            storage_tests[test_case_data] = metadata
+
+    def _get_storage_format_tests(self, version, git_worktree_path):
+        """Generate and record the storage format tests for the specified git version.
+
+        The version must be checked out at git_worktree_path.
+        """
+        full_test_list = subprocess.check_output(
+            ['tests/scripts/generate_psa_tests.py', '--list'],
+            cwd=git_worktree_path,
+        ).decode('ascii')
+        storage_test_list = [test_file
+                             for test_file in full_test_list.split()
+                             # If you change the following condition, update
+                             # generate_psa_tests.py accordingly.
+                             if 'storage_format' in test_file]
+        subprocess.check_call(
+            ['tests/scripts/generate_psa_tests.py'] + storage_test_list,
+            cwd=git_worktree_path,
+        )
+        for test_file in storage_test_list:
+            self._read_storage_tests(git_worktree_path, test_file,
+                                     version.storage_tests)
+
     def _cleanup_worktree(self, git_worktree_path):
         """Remove the specified git worktree."""
         shutil.rmtree(git_worktree_path)
@@ -225,12 +295,14 @@ class AbiChecker:
         self.log.debug(worktree_output.decode("utf-8"))
 
     def _get_abi_dump_for_ref(self, version):
-        """Generate the ABI dumps for the specified git revision."""
+        """Generate the interface information for the specified git revision."""
         git_worktree_path = self._get_clean_worktree_for_git_revision(version)
         self._update_git_submodules(git_worktree_path, version)
         if self.check_abi:
             self._build_shared_libraries(git_worktree_path, version)
             self._get_abi_dumps_from_shared_libraries(version)
+        if self.check_storage_tests:
+            self._get_storage_format_tests(version, git_worktree_path)
         self._cleanup_worktree(git_worktree_path)
 
     def _remove_children_with_tag(self, parent, tag):
@@ -308,6 +380,37 @@ class AbiChecker:
             os.remove(output_path)
         return True
 
+    @staticmethod
+    def _is_storage_format_compatible(old_tests, new_tests,
+                                      compatibility_report):
+        """Check whether all tests present in old_tests are also in new_tests.
+
+        Append a message regarding compatibility to compatibility_report.
+        """
+        missing = frozenset(old_tests.keys()).difference(new_tests.keys())
+        for test_data in sorted(missing):
+            metadata = old_tests[test_data]
+            compatibility_report.append(
+                'Test case from {} line {} "{}" has disappeared: {}'.format(
+                    metadata.filename, metadata.line_number,
+                    metadata.description, test_data
+                )
+            )
+        compatibility_report.append(
+            'FAIL: {}/{} storage format test cases have changed or disappeared.'.format(
+                len(missing), len(old_tests)
+            ) if missing else
+            'PASS: All {} storage format test cases are preserved.'.format(
+                len(old_tests)
+            )
+        )
+        compatibility_report.append(
+            'Info: number of storage format tests cases: {} -> {}.'.format(
+                len(old_tests), len(new_tests)
+            )
+        )
+        return not missing
+
     def get_abi_compatibility_report(self):
         """Generate a report of the differences between the reference ABI
         and the new ABI. ABI dumps from self.old_version and self.new_version
@@ -317,6 +420,7 @@ class AbiChecker:
             self._pretty_revision(self.new_version)
         )]
         compliance_return_code = 0
+
         if self.check_abi:
             shared_modules = list(set(self.old_version.modules.keys()) &
                                   set(self.new_version.modules.keys()))
@@ -325,7 +429,13 @@ class AbiChecker:
                                                    compatibility_report):
                     compliance_return_code = 1
 
+        if self.check_storage_tests:
+            if not self._is_storage_format_compatible(
+                    self.old_version.storage_tests,
+                    self.new_version.storage_tests,
+                    compatibility_report):
                 compliance_return_code = 1
+
         for version in [self.old_version, self.new_version]:
             for mbed_module, mbed_module_dump in version.abi_dumps.items():
                 os.remove(mbed_module_dump)
@@ -420,6 +530,12 @@ def run_main():
         )
         parser.add_argument("--no-check-api", action='store_false', dest='check_api')
         parser.add_argument(
+            "--check-storage",
+            action='store_true', default=True,
+            help="Perform storage tests comparison (default: yes)"
+        )
+        parser.add_argument("--no-check-storage", action='store_false', dest='check_storage')
+        parser.add_argument(
             "-b", "--brief", action="store_true",
             help="output only the list of issues to stdout, instead of a full report",
         )
@@ -435,6 +551,7 @@ def run_main():
             crypto_repository=abi_args.old_crypto_repo,
             crypto_revision=abi_args.old_crypto_rev,
             abi_dumps={},
+            storage_tests={},
             modules={}
         )
         new_version = SimpleNamespace(
@@ -445,6 +562,7 @@ def run_main():
             crypto_repository=abi_args.new_crypto_repo,
             crypto_revision=abi_args.new_crypto_rev,
             abi_dumps={},
+            storage_tests={},
             modules={}
         )
         configuration = SimpleNamespace(
@@ -454,6 +572,7 @@ def run_main():
             brief=abi_args.brief,
             check_abi=abi_args.check_abi,
             check_api=abi_args.check_api,
+            check_storage=abi_args.check_storage,
             skip_file=abi_args.skip_file
         )
         abi_check = AbiChecker(old_version, new_version, configuration)
