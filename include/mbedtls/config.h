@@ -59,6 +59,20 @@
 #define MBEDTLS_HAVE_ASM
 
 /**
+ * \def MBEDTLS_MPI_FORCE_C_CODE
+ *
+ * The compiler should compile C version of MPI code, even when the compiler
+ * supports asm(). This enables the use of C compiler passes, such as automatic
+ * insertion of transient execution attack countermeasures.
+ * 
+ * Used in:
+ *      include/mbedtls/bn_mul.h
+ *
+ * Uncomment to force the use of C code for mpi
+ */
+//#define MBEDTLS_MPI_FORCE_C_CODE
+
+/**
  * \def MBEDTLS_NO_UDBL_DIVISION
  *
  * The platform lacks support for double-width integer division (64-bit
