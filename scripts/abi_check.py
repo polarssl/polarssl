@@ -51,6 +51,8 @@ class AbiChecker:
         configuration.report_dir: directory for output files
         configuration.keep_all_reports: if false, delete old reports
         configuration.brief: if true, output shorter report to stdout
+        configuration.check_api: if true, compare ABIs
+        configuration.check_api: if true, compare APIs
         configuration.skip_file: path to file containing symbols and types to skip
         """
         self.repo_path = "."
@@ -64,6 +66,10 @@ class AbiChecker:
         self.old_version = old_version
         self.new_version = new_version
         self.skip_file = configuration.skip_file
+        self.check_abi = configuration.check_abi
+        self.check_api = configuration.check_api
+        if self.check_abi != self.check_api:
+            raise Exception('Checking API without ABI or vice versa is not supported')
         self.brief = configuration.brief
         self.git_command = "git"
         self.make_command = "make"
@@ -222,8 +228,9 @@ class AbiChecker:
         """Generate the ABI dumps for the specified git revision."""
         git_worktree_path = self._get_clean_worktree_for_git_revision(version)
         self._update_git_submodules(git_worktree_path, version)
-        self._build_shared_libraries(git_worktree_path, version)
-        self._get_abi_dumps_from_shared_libraries(version)
+        if self.check_abi:
+            self._build_shared_libraries(git_worktree_path, version)
+            self._get_abi_dumps_from_shared_libraries(version)
         self._cleanup_worktree(git_worktree_path)
 
     def _remove_children_with_tag(self, parent, tag):
@@ -310,11 +317,14 @@ class AbiChecker:
             self._pretty_revision(self.new_version)
         )]
         compliance_return_code = 0
-        shared_modules = list(set(self.old_version.modules.keys()) &
-                              set(self.new_version.modules.keys()))
-        for mbed_module in shared_modules:
-            if not self._is_library_compatible(mbed_module,
-                                               compatibility_report):
+        if self.check_abi:
+            shared_modules = list(set(self.old_version.modules.keys()) &
+                                  set(self.new_version.modules.keys()))
+            for mbed_module in shared_modules:
+                if not self._is_library_compatible(mbed_module,
+                                                   compatibility_report):
+                    compliance_return_code = 1
+
                 compliance_return_code = 1
         for version in [self.old_version, self.new_version]:
             for mbed_module, mbed_module_dump in version.abi_dumps.items():
@@ -398,6 +408,18 @@ def run_main():
                   "\"tests/scripts/list-identifiers.sh --internal\")")
         )
         parser.add_argument(
+            "--check-abi",
+            action='store_true', default=True,
+            help="Perform ABI comparison (default: yes)"
+        )
+        parser.add_argument("--no-check-abi", action='store_false', dest='check_abi')
+        parser.add_argument(
+            "--check-api",
+            action='store_true', default=True,
+            help="Perform API comparison (default: yes)"
+        )
+        parser.add_argument("--no-check-api", action='store_false', dest='check_api')
+        parser.add_argument(
             "-b", "--brief", action="store_true",
             help="output only the list of issues to stdout, instead of a full report",
         )
@@ -430,6 +452,8 @@ def run_main():
             report_dir=abi_args.report_dir,
             keep_all_reports=abi_args.keep_all_reports,
             brief=abi_args.brief,
+            check_abi=abi_args.check_abi,
+            check_api=abi_args.check_api,
             skip_file=abi_args.skip_file
         )
         abi_check = AbiChecker(old_version, new_version, configuration)
