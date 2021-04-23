@@ -104,13 +104,24 @@ int mbedtls_asn1_get_tag( unsigned char **p,
                   const unsigned char *end,
                   size_t *len, int tag )
 {
-    if( ( end - *p ) < 1 )
-        return( MBEDTLS_ERR_ASN1_OUT_OF_DATA );
+    unsigned char tag_byte;
+    size_t i = sizeof( int );
 
-    if( **p != tag )
-        return( MBEDTLS_ERR_ASN1_UNEXPECTED_TAG );
+    while ( i > 0 ) {
+        i--;
+        tag_byte = ( tag >> ( i * 8 ) ) & 0xFF;
 
-    (*p)++;
+        if ( tag_byte == 0x00 && i != 0 )
+            continue;
+
+        if( ( end - *p ) < 1 )
+            return( MBEDTLS_ERR_ASN1_OUT_OF_DATA );
+
+        if( **p != tag_byte )
+            return( MBEDTLS_ERR_ASN1_UNEXPECTED_TAG );
+
+        (*p)++;
+    }
 
     return( mbedtls_asn1_get_len( p, end, len ) );
 }

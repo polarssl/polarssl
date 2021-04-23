@@ -100,12 +100,23 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start, size_t len 
 
 int mbedtls_asn1_write_tag( unsigned char **p, unsigned char *start, unsigned char tag )
 {
-    if( *p - start < 1 )
-        return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+    return mbedtls_asn1_write_long_tag( p, start, tag );
+}
 
-    *--(*p) = tag;
+int mbedtls_asn1_write_long_tag( unsigned char **p, unsigned char *start, int tag )
+{
+    size_t len = 0;
 
-    return( 1 );
+    while ( tag != 0 ) {
+        if( *p - start < 1 )
+            return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
+
+        *--(*p) = tag & 0xFF;
+        tag >>= 8;
+        len++;
+    }
+
+    return( (int) len );
 }
 
 int mbedtls_asn1_write_raw_buffer( unsigned char **p, unsigned char *start,

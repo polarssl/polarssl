@@ -60,6 +60,14 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start,
 /**
  * \brief           Write an ASN.1 tag in ASN.1 format.
  *
+ * \note            See \c mbedtls_asn1_write_long_tag for description
+ */
+int mbedtls_asn1_write_tag( unsigned char **p, unsigned char *start,
+                            unsigned char tag );
+
+/**
+ * \brief           Write an ASN.1 tag in ASN.1 format.
+ *
  * \note            This function works backwards in data buffer.
  *
  * \param p         The reference to the current position pointer.
@@ -69,8 +77,8 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start,
  * \return          The number of bytes written to \p p on success.
  * \return          A negative \c MBEDTLS_ERR_ASN1_XXX error code on failure.
  */
-int mbedtls_asn1_write_tag( unsigned char **p, unsigned char *start,
-                            unsigned char tag );
+int mbedtls_asn1_write_long_tag( unsigned char **p, unsigned char *start,
+                            int tag );
 
 /**
  * \brief           Write raw buffer data.
