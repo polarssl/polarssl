@@ -785,6 +785,46 @@
 #endif /* MIPS */
 #endif /* GNUC */
 
+#if defined(__ARMCC_VERSION) && (__ARMCC_VERSION < 6000000)
+
+#if defined(__TARGET_FEATURE_DSPMUL)
+/* support umaal */
+
+#define MULADDC_INIT                        \
+    asm(
+
+#define MULADDC_CORE                        \
+            "umaal  *d, c, b, *s    \n\t"   \
+            "adds   s, s, #4        \n\t"   \
+            "adds   d, d, #4        \n\t"
+
+#define MULADDC_STOP                        \
+    );
+
+#elif defined(__TARGET_FEATURE_MULTIPLY)
+/* support umlal */
+
+#define MULADDC_INIT                        \
+{                                           \
+    mbedtls_mpi_uint r;                     \
+    asm(
+
+#define MULADDC_CORE                        \
+            "mov    r, #0           \n\t"   \
+            "umlal  c, r, b, *s     \n\t"   \
+            "adds   *d, *d, c       \n\t"   \
+            "adc    c, r, #0        \n\t"   \
+            "adds   s, s, #4        \n\t"   \
+            "adds   d, d, #4        \n\t"
+
+#define MULADDC_STOP                        \
+    );                                      \
+}
+
+#endif
+
+#endif /* armcc5 */
+
 #if (defined(_MSC_VER) && defined(_M_IX86)) || defined(__WATCOMC__)
 
 #define MULADDC_INIT                            \
