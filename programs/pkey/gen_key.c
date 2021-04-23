@@ -104,6 +104,7 @@ int dev_random_entropy_poll( void *data, unsigned char *output,
 
 #define FORMAT_PEM              0
 #define FORMAT_DER              1
+#define FORMAT_PEM_PKCS8        2
 
 #define DFL_TYPE                MBEDTLS_PK_RSA
 #define DFL_RSA_KEYSIZE         4096
@@ -158,10 +159,18 @@ static int write_private_key( mbedtls_pk_context *key, const char *output_file )
     size_t len = 0;
 
     memset(output_buf, 0, 16000);
-    if( opt.format == FORMAT_PEM )
+    if( opt.format == FORMAT_PEM || opt.format == FORMAT_PEM_PKCS8)
     {
-        if( ( ret = mbedtls_pk_write_key_pem( key, output_buf, 16000 ) ) != 0 )
-            return( ret );
+	if (opt.format == FORMAT_PEM_PKCS8)
+	{
+	    if( ( ret = mbedtls_pkcs8_write_key_pem( key, output_buf, 16000 ) ) != 0 )
+		return( ret );
+	}
+	else
+	{
+	    if( ( ret = mbedtls_pk_write_key_pem( key, output_buf, 16000 ) ) != 0 )
+		return( ret );
+	}
 
         len = strlen( (char *) output_buf );
     }
@@ -259,6 +268,8 @@ int main( int argc, char *argv[] )
                 opt.format = FORMAT_PEM;
             else if( strcmp( q, "der" ) == 0 )
                 opt.format = FORMAT_DER;
+            else if( strcmp( q, "pkcs8" ) == 0 )
+                opt.format = FORMAT_PEM_PKCS8;
             else
                 goto usage;
         }
