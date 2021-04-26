@@ -99,6 +99,16 @@ typedef struct mbedtls_x509_crt
 mbedtls_x509_crt;
 
 /**
+ * Container for x509 certificate verification error strings
+ */
+typedef struct
+{
+    int code;
+    const char *string;
+}
+mbedtls_crt_verify_string;
+
+/**
  * From RFC 5280 section 4.2.1.6:
  * OtherName ::= SEQUENCE {
  *      type-id    OBJECT IDENTIFIER,
@@ -258,6 +268,8 @@ typedef struct
 typedef void mbedtls_x509_crt_restart_ctx;
 
 #endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
+extern const mbedtls_crt_verify_string x509_crt_verify_strings[];
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 /**

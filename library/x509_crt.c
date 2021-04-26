@@ -2194,12 +2194,7 @@ int mbedtls_x509_crt_info( char *buf, size_t size, const char *prefix,
     return( (int) ( size - n ) );
 }
 
-struct x509_crt_verify_string {
-    int code;
-    const char *string;
-};
-
-static const struct x509_crt_verify_string x509_crt_verify_strings[] = {
+const mbedtls_crt_verify_string x509_crt_verify_strings[] = {
     { MBEDTLS_X509_BADCERT_EXPIRED,       "The certificate validity has expired" },
     { MBEDTLS_X509_BADCERT_REVOKED,       "The certificate has been revoked (is on a CRL)" },
     { MBEDTLS_X509_BADCERT_CN_MISMATCH,   "The certificate Common Name (CN) does not match with the expected CN" },
@@ -2227,7 +2222,7 @@ int mbedtls_x509_crt_verify_info( char *buf, size_t size, const char *prefix,
                           uint32_t flags )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    const struct x509_crt_verify_string *cur;
+    const mbedtls_crt_verify_string *cur;
     char *p = buf;
     size_t n = size;
 
