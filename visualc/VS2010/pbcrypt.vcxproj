@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\programs\aes\aescrypt2.c" />
+    <ClCompile Include="..\..\programs\cipher\pbcrypt.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="mbedTLS.vcxproj">
@@ -28,9 +28,9 @@
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7A851DBD-7D57-E8F4-85E5-CCA72AEA7DF8}</ProjectGuid>
+    <ProjectGuid>{5F1A300B-5648-6BF1-A84E-E30024071F06}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>aescrypt2</RootNamespace>
+    <RootNamespace>pbcrypt</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

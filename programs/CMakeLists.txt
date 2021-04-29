@@ -1,4 +1,5 @@
 add_subdirectory(aes)
+add_subdirectory(cipher)
 add_subdirectory(hash)
 add_subdirectory(pkey)
 add_subdirectory(random)

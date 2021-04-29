@@ -1,0 +1,3 @@
+Changes
+   * Replace the AES sample application programs/aes/aescrypt2 by one that
+     shows better cryptography practice: programs/cipher/pbcrypt. Fixes #1906.

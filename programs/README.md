@@ -3,12 +3,12 @@ Mbed TLS sample programs
 
 This subdirectory mostly contains sample programs that illustrate specific features of the library, as well as a few test and support programs.
 
-## Symmetric cryptography (AES) examples
-
-* [`aes/aescrypt2.c`](aes/aescrypt2.c): file encryption and authentication with a key derived from a low-entropy secret, demonstrating the low-level AES interface, the digest interface and HMAC.  
-  Warning: this program illustrates how to use low-level functions in the library. It should not be taken as an example of how to build a secure encryption mechanism. To derive a key from a low-entropy secret such as a password, use a standard key stretching mechanism such as PBKDF2 (provided by the `pkcs5` module). To encrypt and authenticate data, use a standard mode such as GCM or CCM (both available as library module).
+## Symmetric cryptography examples
 
 * [`aes/crypt_and_hash.c`](aes/crypt_and_hash.c): file encryption and authentication, demonstrating the generic cipher interface and the generic hash interface.
+
+* [`cipher/pbcrypt.c`](cipher/pbcrypt.c): file encryption and authentication with a key derived from a password, demonstrating the authenticated cipher interface and password-based key derivation.
+
 
 ## Hash (digest) examples
 
