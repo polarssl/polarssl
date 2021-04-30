@@ -4115,53 +4115,78 @@ psa_status_t psa_key_derivation_output_key( const psa_key_attributes_t *attribut
 /****************************************************************/
 
 #if defined(AT_LEAST_ONE_BUILTIN_KDF)
+static int is_kdf_alg_supported( psa_algorithm_t kdf_alg )
+{
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_HKDF)
+    if( PSA_ALG_IS_HKDF( kdf_alg ) )
+        return( 1 );
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_TLS12_PRF)
+    if( PSA_ALG_IS_TLS12_PRF( kdf_alg ) )
+        return( 1 );
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_TLS12_PSK_TO_MS)
+    if( PSA_ALG_IS_TLS12_PSK_TO_MS( kdf_alg ) )
+        return( 1 );
+#endif
+    return( 0 );
+}
+
+static psa_status_t psa_hash_try_support( psa_algorithm_t alg )
+{
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+    psa_status_t status = psa_hash_setup( &operation, alg );
+    psa_hash_abort( &operation );
+    return( status );
+}
+
 static psa_status_t psa_key_derivation_setup_kdf(
     psa_key_derivation_operation_t *operation,
     psa_algorithm_t kdf_alg )
 {
-    int is_kdf_alg_supported;
-
     /* Make sure that operation->ctx is properly zero-initialised. (Macro
      * initialisers for this union leave some bytes unspecified.) */
     memset( &operation->ctx, 0, sizeof( operation->ctx ) );
 
     /* Make sure that kdf_alg is a supported key derivation algorithm. */
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_HKDF)
-    if( PSA_ALG_IS_HKDF( kdf_alg ) )
-        is_kdf_alg_supported = 1;
-    else
-#endif
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_TLS12_PRF)
-    if( PSA_ALG_IS_TLS12_PRF( kdf_alg ) )
-        is_kdf_alg_supported = 1;
-    else
-#endif
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_TLS12_PSK_TO_MS)
-    if( PSA_ALG_IS_TLS12_PSK_TO_MS( kdf_alg ) )
-        is_kdf_alg_supported = 1;
-    else
-#endif
-    is_kdf_alg_supported = 0;
+    if( ! is_kdf_alg_supported( kdf_alg ) )
+        return( PSA_ERROR_NOT_SUPPORTED );
 
-    if( is_kdf_alg_supported )
+    /* All currently supported key derivation algorithms are based on a
+     * hash algorithm. */
+    psa_algorithm_t hash_alg = PSA_ALG_HKDF_GET_HASH( kdf_alg );
+    size_t hash_size = PSA_HASH_LENGTH( hash_alg );
+    if( hash_size == 0 )
+        return( PSA_ERROR_NOT_SUPPORTED );
+
+    /* Make sure that hash_alg is a supported hash algorithm. Otherwise
+     * we might fail later, which is somewhat unfriendly and potentially
+     * risk-prone. */
+    psa_status_t status = psa_hash_try_support( hash_alg );
+    if( status != PSA_SUCCESS )
+        return( status );
+
+    if( ( PSA_ALG_IS_TLS12_PRF( kdf_alg ) ||
+          PSA_ALG_IS_TLS12_PSK_TO_MS( kdf_alg ) ) &&
+        ! ( hash_alg == PSA_ALG_SHA_256 || hash_alg == PSA_ALG_SHA_384 ) )
     {
-        psa_algorithm_t hash_alg = PSA_ALG_HKDF_GET_HASH( kdf_alg );
-        size_t hash_size = PSA_HASH_LENGTH( hash_alg );
-        if( hash_size == 0 )
-            return( PSA_ERROR_NOT_SUPPORTED );
-        if( ( PSA_ALG_IS_TLS12_PRF( kdf_alg ) ||
-              PSA_ALG_IS_TLS12_PSK_TO_MS( kdf_alg ) ) &&
-            ! ( hash_alg == PSA_ALG_SHA_256 || hash_alg == PSA_ALG_SHA_384 ) )
-        {
-            return( PSA_ERROR_NOT_SUPPORTED );
-        }
-        operation->capacity = 255 * hash_size;
-        return( PSA_SUCCESS );
+        return( PSA_ERROR_NOT_SUPPORTED );
     }
 
-    return( PSA_ERROR_NOT_SUPPORTED );
+    operation->capacity = 255 * hash_size;
+    return( PSA_SUCCESS );
 }
 #endif /* AT_LEAST_ONE_BUILTIN_KDF */
+
+static psa_status_t psa_key_agreement_try_support( psa_algorithm_t alg )
+{
+#if defined(PSA_WANT_ALG_ECDH)
+    if( alg == PSA_ALG_ECDH )
+        return( PSA_SUCCESS );
+#endif
+    (void) alg;
+    return( PSA_ERROR_NOT_SUPPORTED );
+}
 
 psa_status_t psa_key_derivation_setup( psa_key_derivation_operation_t *operation,
                                        psa_algorithm_t alg )
@@ -4177,6 +4202,10 @@ psa_status_t psa_key_derivation_setup( psa_key_derivation_operation_t *operation
     {
 #if defined(AT_LEAST_ONE_BUILTIN_KDF)
         psa_algorithm_t kdf_alg = PSA_ALG_KEY_AGREEMENT_GET_KDF( alg );
+        psa_algorithm_t ka_alg = PSA_ALG_KEY_AGREEMENT_GET_BASE( alg );
+        status = psa_key_agreement_try_support( ka_alg );
+        if( status != PSA_SUCCESS )
+            return( status );
         status = psa_key_derivation_setup_kdf( operation, kdf_alg );
 #else
         return( PSA_ERROR_NOT_SUPPORTED );

@@ -68,6 +68,8 @@ typedef struct
     const char *filename;
     int line_no;
     unsigned long step;
+    char line1[76];
+    char line2[76];
 #if defined(MBEDTLS_TEST_MUTEX_USAGE)
     const char *mutex_usage_error;
 #endif
@@ -125,6 +127,27 @@ void mbedtls_test_set_step( unsigned long step );
  * \brief       Reset mbedtls_test_info to a ready/starting state.
  */
 void mbedtls_test_info_reset( void );
+
+/**
+ * \brief           Record the current test case as a failure if two integers
+ *                  have a different value.
+ *
+ *                  This function is usually called via the macro
+ *                  #TEST_EQUAL.
+ *
+ * \param test      Description of the failure or assertion that failed. This
+ *                  MUST be a string literal. This normally has the form
+ *                  "EXPR1 == EXPR2" where EXPR1 has the value \p value1
+ *                  and EXPR2 has the value \p value2.
+ * \param line_no   Line number where the failure originated.
+ * \param filename  Filename where the failure originated.
+ * \param value1    The first value to compare.
+ * \param value2    The second value to compare.
+ *
+ * \return          \c 1 if the values are equal, otherwise \c 0.
+ */
+int mbedtls_test_equal( const char *test, int line_no, const char* filename,
+                        unsigned long long value1, unsigned long long value2 );
 
 /**
  * \brief          This function decodes the hexadecimal representation of

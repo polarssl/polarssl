@@ -113,6 +113,31 @@ void mbedtls_test_info_reset( void )
     mbedtls_test_info.test = 0;
     mbedtls_test_info.line_no = 0;
     mbedtls_test_info.filename = 0;
+    memset( mbedtls_test_info.line1, 0, sizeof( mbedtls_test_info.line1 ) );
+    memset( mbedtls_test_info.line2, 0, sizeof( mbedtls_test_info.line2 ) );
+}
+
+int mbedtls_test_equal( const char *test, int line_no, const char* filename,
+                        unsigned long long value1, unsigned long long value2 )
+{
+    if( value1 == value2 )
+        return( 1 );
+    if( mbedtls_test_info.result == MBEDTLS_TEST_RESULT_FAILED )
+    {
+        /* We've already recorded the test as having failed. Don't
+         * overwrite any previous information about the failure. */
+        return( 0 );
+    }
+    mbedtls_test_fail( test, line_no, filename );
+    (void) mbedtls_snprintf( mbedtls_test_info.line1,
+                             sizeof( mbedtls_test_info.line1 ),
+                             "lhs = 0x%016llx = %lld",
+                             value1, (long long) value1 );
+    (void) mbedtls_snprintf( mbedtls_test_info.line2,
+                             sizeof( mbedtls_test_info.line2 ),
+                             "rhs = 0x%016llx = %lld",
+                             value2, (long long) value2 );
+    return( 0 );
 }
 
 int mbedtls_test_unhexify( unsigned char *obuf,
