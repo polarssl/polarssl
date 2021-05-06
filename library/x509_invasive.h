@@ -32,7 +32,7 @@
  * parse ipv4 address from canonical string form into bytes.
  * return 0 if success, -1 otherwise
  */
-int mbedtls_x509_parse_ipv4( const char *h, unsigned char *addr );
+int mbedtls_x509_parse_ipv4( const char *h, size_t hlen, unsigned char *addr );
 
 /*
  * parse ipv6 address from canonical string form into bytes.
