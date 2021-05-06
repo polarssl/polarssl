@@ -40,6 +40,7 @@
 
 #include "x509_invasive.h"
 
+#include <ctype.h>
 #include <string.h>
 
 #if defined(MBEDTLS_PEM_PARSE_C)
@@ -2957,14 +2958,30 @@ find_parent:
 
 /*
  * parse ipv4 address from canonical string form into bytes.
- * return 0 if success, -1 otherwise
+ *
+ * Arguments:
+ *  - [in] h: dotted-decimal ipv4 address, e.g. "192.168.12.88". Must be NUL-terminated.
+ *  - [in] hlen: length of the string at h.
+ *  - [out] addr: pointer to a char array with at least 4 bytes allocated.
+ *      Will be populated the bytes of the parsed IP address if return value is 0.
+ *      Only valid when return value is 0, may contain garbage otherwise!
+ *
+ * Return value:
+ *  - 0 if the string was parsed and address bytes are stored in addr
+ *  - -1 if the string could not be parsed
  */
-MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv4( const char *h, unsigned char *addr )
+MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv4( const char *h, size_t hlen, unsigned char *addr )
 {
     int i;
     const char *strt = h;
     char *endp;
     unsigned long v;
+
+    if( !isdigit(*h) || *(h + hlen + 1) != '\0')
+    {
+        return( -1 );
+    }
+
     for( i = 0; i < 4; i++ )
     {
         v = strtoul( strt, &endp, 10 );
@@ -2991,7 +3008,18 @@ MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv4( const char *h, unsigned cha
 
 /*
  * parse ipv6 address from canonical string form into bytes.
- * return 0 if success, -1 otherwise
+ *
+ * Arguments:
+ *  - [in] h: colon-separated hextet ipv6 address, e.g. "2001:0db8:0000:0000:0000:ff00:0042:8329".
+ *      Must be NUL-terminated.
+ *  - [in] hlen: length of the string at h.
+ *  - [out] addr: pointer to a char array with at least 16 bytes allocated.
+ *      Will be populated the bytes of the parsed IP address if return value is 0.
+ *      Only valid when return value is 0, may contain garbage otherwise!
+ *
+ * Return value:
+ *  - 0 if the string was parsed and address bytes are stored in addr
+ *  - -1 if the string could not be parsed
  */
 MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv6( const char *h, size_t hlen, unsigned char *addr )
 {
@@ -3002,6 +3030,12 @@ MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv6( const char *h, size_t hlen,
     unsigned char *colonp = NULL;
     unsigned char *ipp = ip;
     unsigned long v;
+
+    /* verify we have a NUL-terminated string */
+    if( *(hend + 1) != '\0' )
+    {
+        return( -1 );
+    }
 
     /* can only start with double colon when network part is all zeros */
     if( *strt == ':' )
@@ -3065,7 +3099,7 @@ MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv6( const char *h, size_t hlen,
     if( colonp )
     {
         memcpy( addr, ip, colonp - ip );
-        memcpy( addr + 16 - (ipp - colonp), colonp, ipp - colonp );
+        memcpy( addr + sizeof(ip) - (ipp - colonp), colonp, ipp - colonp );
     }
     else
     {
@@ -3102,7 +3136,7 @@ static int x509_crt_check_ip( const mbedtls_x509_buf *name,
     unsigned char ip[16];
 
     if ( name->len == 4 &&
-            mbedtls_x509_parse_ipv4( cn, ip ) == 0 &&
+            mbedtls_x509_parse_ipv4( cn, cn_len, ip ) == 0 &&
          memcmp( ip, name->p, name->len ) == 0 )
     {
         return( 0 );
