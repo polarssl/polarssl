@@ -113,6 +113,24 @@ set(src_tls
     ssl_tls13_keys.c
 )
 
+find_package(Perl REQUIRED)
+
+file(GLOB error_headers ${CMAKE_CURRENT_SOURCE_DIR}/../include/mbedtls/*.h)
+add_custom_command(
+    OUTPUT
+        ${CMAKE_CURRENT_BINARY_DIR}/error.c
+    COMMAND
+        ${PERL_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/generate_errors.pl
+            ${CMAKE_CURRENT_SOURCE_DIR}/../include/mbedtls
+            ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/data_files
+            ${CMAKE_CURRENT_BINARY_DIR}/error.c
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/generate_errors.pl
+        ${error_headers}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/data_files/error.fmt
+)
+
 if(CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-declarations -Wmissing-prototypes")
 endif(CMAKE_COMPILER_IS_GNUCC)
