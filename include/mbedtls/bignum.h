@@ -851,6 +851,27 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
                          mbedtls_mpi *_RR );
 
 /**
+ * \brief          Montgomery Ladder Exponentiation: X = A^E mod N
+ *
+ * \param X        Destination MPI
+ * \param A        Left-hand MPI
+ * \param E        Exponent MPI
+ * \param N        Modular MPI
+ * \param _RR      Speed-up MPI used for recalculations
+ *
+ * \return         0 if successful,
+ *                 MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed,
+ *                 MBEDTLS_ERR_MPI_BAD_INPUT_DATA if N is negative or even or
+ *                 if E is negative
+ *
+ * \note           _RR is used to avoid re-computing R*R mod N across
+ *                 multiple calls, which speeds up things a bit. It can
+ *                 be set to NULL if the extra performance is unneeded.
+ */
+int mbedtls_mpi_exp_mod_montladder( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *E, const mbedtls_mpi *N, mbedtls_mpi *_RR );
+
+
+/**
  * \brief          Fill an MPI with a number of random bytes.
  *
  * \param X        The destination MPI. This must point to an initialized MPI.

@@ -846,7 +846,7 @@ cleanup:
  * the more bits of the key can be recovered. See [3].
  *
  * Collecting n collisions with m bit long blinding value requires 2^(m-m/n)
- * observations on avarage.
+ * observations on average.
  *
  * For example with 28 byte blinding to achieve 2 collisions the adversary has
  * to make 2^112 observations on avarage.
@@ -875,26 +875,33 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
 
     /* Temporary holding the result */
     mbedtls_mpi T;
+#if !MBEDTLS_RSA_CONSTANT_TIME
 
     /* Temporaries holding P-1, Q-1 and the
      * exponent blinding factor, respectively. */
     mbedtls_mpi P1, Q1, R;
+#endif
 
 #if !defined(MBEDTLS_RSA_NO_CRT)
     /* Temporaries holding the results mod p resp. mod q. */
     mbedtls_mpi TP, TQ;
 
+#if !MBEDTLS_RSA_CONSTANT_TIME
+
     /* Temporaries holding the blinded exponents for
      * the mod p resp. mod q computation (if used). */
     mbedtls_mpi DP_blind, DQ_blind;
+#endif
 
     /* Pointers to actual exponents to be used - either the unblinded
      * or the blinded ones, depending on the presence of a PRNG. */
     mbedtls_mpi *DP = &ctx->DP;
     mbedtls_mpi *DQ = &ctx->DQ;
 #else
+#if !MBEDTLS_RSA_CONSTANT_TIME
     /* Temporary holding the blinded exponent (if used). */
     mbedtls_mpi D_blind;
+#endif    
 
     /* Pointer to actual exponent to be used - either the unblinded
      * or the blinded one, depending on the presence of a PRNG. */
@@ -922,6 +929,7 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
 
     /* MPI Initialization */
     mbedtls_mpi_init( &T );
+#if !MBEDTLS_RSA_CONSTANT_TIME
 
     mbedtls_mpi_init( &P1 );
     mbedtls_mpi_init( &Q1 );
@@ -936,6 +944,7 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
         mbedtls_mpi_init( &DQ_blind );
 #endif
     }
+#endif    
 
 #if !defined(MBEDTLS_RSA_NO_CRT)
     mbedtls_mpi_init( &TP ); mbedtls_mpi_init( &TQ );
@@ -964,6 +973,9 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
         MBEDTLS_MPI_CHK( rsa_prepare_blinding( ctx, f_rng, p_rng ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &T, &T, &ctx->Vi ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &T, &T, &ctx->N ) );
+        
+        #if !MBEDTLS_RSA_CONSTANT_TIME
+
 
         /*
          * Exponent blinding
@@ -1005,6 +1017,7 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
 
         DQ = &DQ_blind;
 #endif /* MBEDTLS_RSA_NO_CRT */
+#endif
     }
 
 #if defined(MBEDTLS_RSA_NO_CRT)
@@ -1016,9 +1029,15 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
      * TP = input ^ dP mod P
      * TQ = input ^ dQ mod Q
      */
+#if !MBEDTLS_RSA_CONSTANT_TIME
 
     MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &TP, &T, DP, &ctx->P, &ctx->RP ) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &TQ, &T, DQ, &ctx->Q, &ctx->RQ ) );
+#else
+    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod_montladder( &TP, &T, DP, &ctx->P, &ctx->RP ) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod_montladder( &TQ, &T, DQ, &ctx->Q, &ctx->RQ ) );
+#endif
+    
 
     /*
      * T = (TP - TQ) * (Q^-1 mod P) mod P
@@ -1061,6 +1080,7 @@ cleanup:
     if( mbedtls_mutex_unlock( &ctx->mutex ) != 0 )
         return( MBEDTLS_ERR_THREADING_MUTEX_ERROR );
 #endif
+#if !MBEDTLS_RSA_CONSTANT_TIME
 
     mbedtls_mpi_free( &P1 );
     mbedtls_mpi_free( &Q1 );
@@ -1075,6 +1095,8 @@ cleanup:
         mbedtls_mpi_free( &DQ_blind );
 #endif
     }
+#endif
+
 
     mbedtls_mpi_free( &T );
 
@@ -1633,9 +1655,20 @@ int mbedtls_rsa_rsaes_pkcs1_v15_decrypt( mbedtls_rsa_context *ctx,
     if( ilen < 16 || ilen > sizeof( buf ) )
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 
-    ret = ( mode == MBEDTLS_RSA_PUBLIC )
-          ? mbedtls_rsa_public(  ctx, input, buf )
-          : mbedtls_rsa_private( ctx, f_rng, p_rng, input, buf );
+    switch(mode){
+        case MBEDTLS_RSA_PUBLIC: {
+            ret = mbedtls_rsa_public(  ctx, input, buf );
+            break;
+        }
+        case MBEDTLS_RSA_PRIVATE: {
+            ret = mbedtls_rsa_private( ctx, f_rng, p_rng, input, buf );
+            break;
+        }
+        default:
+            ret = MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
+            break;
+    }
+
 
     if( ret != 0 )
         goto cleanup;
@@ -1923,9 +1956,18 @@ exit:
     if( ret != 0 )
         return( ret );
 
-    return( ( mode == MBEDTLS_RSA_PUBLIC )
-            ? mbedtls_rsa_public(  ctx, sig, sig )
-            : mbedtls_rsa_private( ctx, f_rng, p_rng, sig, sig ) );
+    switch(mode){
+        case MBEDTLS_RSA_PUBLIC: { // mode =0
+            return mbedtls_rsa_public(  ctx, sig, sig );
+        }
+        case MBEDTLS_RSA_PRIVATE: { // mode = 1
+            return mbedtls_rsa_private( ctx, f_rng, p_rng, sig, sig );
+        }
+
+        default:
+            return MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION;
+    }
+
 }
 
 /*
@@ -2159,7 +2201,9 @@ int mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *ctx,
         return( MBEDTLS_ERR_MPI_ALLOC_FAILED );
     }
 
-    MBEDTLS_MPI_CHK( mbedtls_rsa_private( ctx, f_rng, p_rng, sig, sig_try ) );
+    if(mode == MBEDTLS_RSA_PRIVATE){
+        MBEDTLS_MPI_CHK( mbedtls_rsa_private( ctx, f_rng, p_rng, sig, sig_try ) );
+    }
     MBEDTLS_MPI_CHK( mbedtls_rsa_public( ctx, sig_try, verif ) );
 
     if( mbedtls_safer_memcmp( verif, sig, ctx->len ) != 0 )
@@ -2732,7 +2776,30 @@ int mbedtls_rsa_self_test( int verbose )
 
     if( verbose != 0 )
         mbedtls_printf( "passed\n  PKCS#1 decryption : " );
+        
+    // Default private operation test
+    if( mbedtls_rsa_pkcs1_decrypt( &rsa, myrand, NULL, MBEDTLS_RSA_PRIVATE,
+                                   &len, rsa_ciphertext, rsa_decrypted,
+                                   sizeof(rsa_decrypted) ) != 0 )
+    {
+        if( verbose != 0 )
+            mbedtls_printf( "failed\n" );
 
+        ret = 1;
+        goto cleanup;
+    }
+
+    if( memcmp( rsa_decrypted, rsa_plaintext, len ) != 0 )
+    {
+        if( verbose != 0 )
+            mbedtls_printf( "failed\n" );
+
+        ret = 1;
+        goto cleanup;
+    }
+
+
+    // Constant time test        
     if( mbedtls_rsa_pkcs1_decrypt( &rsa, myrand, NULL, MBEDTLS_RSA_PRIVATE,
                                    &len, rsa_ciphertext, rsa_decrypted,
                                    sizeof(rsa_decrypted) ) != 0 )
