@@ -92,19 +92,32 @@ typedef struct mbedtls_pkcs7_info {
 
 } mbedtls_pkcs7_info;
 
-
 int mbedtls_convert_pem_to_der(const unsigned char *input, size_t ilen,
                                unsigned char **output, size_t *olen)
 {
     int ret;
-    const unsigned char *s1, *s2, *end = input + ilen;
+    const unsigned char *s1, *s2, *end;
     size_t len = 0;
+    unsigned char *inp_cpy;
 
-    s1 = (unsigned char *) strstr( (const char *) input, "-----BEGIN" );
-    if( s1 == NULL ) return (-1);
+    /* ensure last byte of input is NULL so that strstr knows where to stop */
+    inp_cpy = calloc( 1, ilen + 1 );
+    memcpy( inp_cpy, input, ilen );
+    end = inp_cpy + ilen;
 
-    s2 = (unsigned char *) strstr( (const char *) input, "-----END" );
-    if( s2 == NULL ) return (-1);
+    s1 = (unsigned char *) strstr( (const char *) inp_cpy, "-----BEGIN" );
+    if( s1 == NULL )
+    {
+        ret = -1;
+        goto out;
+    }
+
+    s2 = (unsigned char *) strstr( (const char *) inp_cpy, "-----END" );
+    if( s2 == NULL )
+    {
+        ret = -1;
+        goto out;
+    }
 
     s1 += 10;
     while( s1 < end && *s1 != '-')
@@ -117,26 +130,31 @@ int mbedtls_convert_pem_to_der(const unsigned char *input, size_t ilen,
         s1++;
 
     if( s2 <= s1 || s2 > end)
-        return ( -1 );
+    {
+        ret = -1;
+        goto out;
+    }
 
     ret = mbedtls_base64_decode( NULL, 0, &len, (const unsigned char *) s1,
                                  s2 - s1);
-    if( ret == MBEDTLS_ERR_BASE64_INVALID_CHARACTER ) {
-        return ( ret );
-    }
+    if( ret == MBEDTLS_ERR_BASE64_INVALID_CHARACTER )
+        goto out;
+
     /* free this ouside of function */
     *output = mbedtls_calloc( 1, len );
-    if( *output == NULL ) {
+    if( *output == NULL )
         return ( MBEDTLS_ERR_PKCS7_ALLOC_FAILED );
-    }
+
     *olen = len;
 
     if( ( ret = mbedtls_base64_decode( *output, len, &len,
-                                       (const unsigned char *) s1, s2 - s1 ) ) != 0 ) {
-        return ( ret );
-    }
+                                       (const unsigned char *) s1, s2 - s1 ) ) != 0 )
+        goto out;
 
-    return ( 0 );
+out:
+    mbedtls_free(inp_cpy);
+
+    return( ret );
 }
 
 static size_t get_leading_whitespace( unsigned char *data, size_t data_size )
