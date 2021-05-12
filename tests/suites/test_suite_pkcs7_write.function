@@ -47,7 +47,7 @@ void pkcs7_write( char *data_file, char *cert_file, char *key_file, int md )
     key_sizes[0] = key_len;
 
     /* test that we can correctly create a pkcs7 */
-    res = mbedtls_pkcs7_create(&pkcs7_buf, &pkcs7_len, new_data, new_data_len, (const unsigned char **) crts,(const unsigned char **) keys, crt_sizes, key_sizes, key_pairs, md);
+    res = mbedtls_pkcs7_create(&pkcs7_buf, &pkcs7_len, new_data, new_data_len, (const unsigned char **) crts,(const unsigned char **) keys, crt_sizes, key_sizes, key_pairs, md, 0);
     TEST_ASSERT( res == 0 );
 
     /* test that it can be parsed */
@@ -113,7 +113,7 @@ void pkcs7_write_fail( char *data_file, char *cert_file, char *key_file, int md)
     ASSERT_ALLOC( key_sizes , key_pairs * sizeof (key_len) );
     key_sizes[0] = key_len;
 
-    res = mbedtls_pkcs7_create(&pkcs7_buf, &pkcs7_len, new_data, new_data_len, (const unsigned char **) crts,(const unsigned char **) keys, crt_sizes, key_sizes, key_pairs, md);
+    res = mbedtls_pkcs7_create(&pkcs7_buf, &pkcs7_len, new_data, new_data_len, (const unsigned char **) crts,(const unsigned char **) keys, crt_sizes, key_sizes, key_pairs, md, 0);
     TEST_ASSERT( res != 0 );
 
 exit:

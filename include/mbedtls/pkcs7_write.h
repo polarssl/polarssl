@@ -27,10 +27,11 @@
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "config.h"
-#include "md.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
+
+#include "md.h"
 
 
 #ifdef __cplusplus
@@ -59,6 +60,10 @@ extern "C" {
  * \param key_pairs         Number or key pairs. Array length of key/crtFiles.
  * \param hash_funct        Hash function to use in digest, see mbedtls_md_type_t for
  *                          values in mbedtls/md.h
+ * \param keys_are_sigs     Flag that is set to 0 if \p keys contains private keys
+ *                          If not 0, then \p keys are considered to contain raw
+ *                          signatures that were generated externally.
+ *                          Useful if user does not have access to private keys.
  *
  * \note                    NOTE: REMEMBER TO UNALLOC \p pkcs7 MEMORY
  *
@@ -67,7 +72,7 @@ extern "C" {
 int mbedtls_pkcs7_create( unsigned char **pkcs7, size_t *pkcs7_size,
                           const unsigned char *data, size_t data_size, const unsigned char **crts,
                           const unsigned char **keys, size_t *crt_sizes, size_t *key_sizes, int key_pairs,
-                          mbedtls_md_type_t hash_funct );
+                          mbedtls_md_type_t hash_funct, int keys_are_sigs );
 
 /**
  * \brief                   This function recievces a buffer in PEM format and returns the DER.

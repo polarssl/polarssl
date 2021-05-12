@@ -87,6 +87,8 @@ typedef struct mbedtls_pkcs7_info {
     size_t data_size;
     mbedtls_md_type_t hash_funct;
     const char *hash_funct_oid;
+    /*  if already_signed_flag is 1 then then PKCS7Info.keys contains signatures, if 0 then contains siging key in DER format */
+    int already_signed_flag;
 
 } mbedtls_pkcs7_info;
 
@@ -147,36 +149,26 @@ static size_t get_leading_whitespace( unsigned char *data, size_t data_size )
 
 
 static int pkcs7_hash_create( const unsigned char *data, size_t size,
-                              int hash_funct,
-                              char **out_hash, size_t *out_hash_size )
+                              mbedtls_md_type_t hash_funct,
+                              unsigned char **out_hash, size_t *out_hash_size )
 {
     const mbedtls_md_info_t *md_info;
-    mbedtls_md_context_t ctx;
     int ret;
+    size_t i;
 
     md_info = mbedtls_md_info_from_type( hash_funct );
-
-    mbedtls_md_init( &ctx );
-
-    ret = mbedtls_md_setup( &ctx, md_info, 0 );
-    if( ret )
-        goto out;
-
-    ret = mbedtls_md_starts( &ctx );
-    if( ret )
-        goto out;
-
-    ret = mbedtls_md_update( &ctx, data, size );
-    if( ret )
-        goto out;
-
-
-    *out_hash = mbedtls_calloc( 1, md_info->size );
-    if( *out_hash == NULL ) {
+    if( md_info == NULL ) {
+        mbedtls_printf( "ERROR: Invalid hash function %u, see mbedtls_md_type_t\n",
+                        hash_funct );
+        ret = MBEDTLS_ERR_PKCS7_BAD_INPUT_DATA;
         goto out;
     }
-
-    ret = mbedtls_md_finish( &ctx, (unsigned char *) *out_hash );
+    *out_hash = mbedtls_calloc( 1, md_info->size );
+    if( *out_hash == NULL ) {
+        ret = MBEDTLS_ERR_PKCS7_ALLOC_FAILED;
+        goto out;
+    }
+    ret = mbedtls_md( md_info, data, size, (unsigned char *) *out_hash );
     if( ret ) {
         mbedtls_free( *out_hash );
         *out_hash = NULL;
@@ -185,11 +177,12 @@ static int pkcs7_hash_create( const unsigned char *data, size_t size,
 
     *out_hash_size = md_info->size;
     mbedtls_printf( "Hash generation successful, %s: ", md_info->name );
-
+    for (i = 0; i < *out_hash_size - 1; i++)
+        mbedtls_printf("%02x:", (*out_hash)[i]);
+    mbedtls_printf("%02x\n", (*out_hash)[i]);
     ret = 0;
 
 out:
-    mbedtls_md_free( &ctx );
     return ( ret );
 }
 
@@ -326,7 +319,8 @@ static int pkcs7_set_signature( unsigned char **start, size_t *size,
 {
     int ret;
     size_t sig_size, hash_size, sig_size_bits;
-    char *hash = NULL, *signature = NULL, *sig_type = NULL;
+    unsigned char *hash = NULL;
+    char *signature = NULL, *sig_type = NULL;
     mbedtls_pk_context *priv_key;
 
     priv_key = mbedtls_calloc( 1, sizeof( *priv_key ) );
@@ -397,7 +391,16 @@ static int pkcs7_set_algorithm_ids( unsigned char **start, size_t *size,
     int ret;
     char *sig_type = NULL;
 
-    ret = pkcs7_set_signature( start, size, ptr, pkcs7_info, pub, priv, priv_size );
+    /* if the private key already holds signature (see definition of pkcs7Info.keys)
+    * then just write the signature, no generation is needed
+    */
+    if (pkcs7_info->already_signed_flag) {
+        ret = pkcs7_write_data(start, size, ptr, MBEDTLS_ASN1_OCTET_STRING, priv,
+                               priv_size, 0);
+        if (ret)
+            mbedtls_printf("Failed to add signature to PKCS7\n");
+    } else
+        ret = pkcs7_set_signature( start, size, ptr, pkcs7_info, pub, priv, priv_size );
     if( ret != 0 )
         return ( ret );
 
@@ -715,7 +718,7 @@ static int pkcs7_start_generation( unsigned char **start, size_t *size,
 int mbedtls_pkcs7_create( unsigned char **pkcs7, size_t *pkcs7_size,
                           const unsigned char *data, size_t data_size, const unsigned char **crts,
                           const unsigned char **keys, size_t *crt_sizes, size_t *key_sizes, int key_pairs,
-                          mbedtls_md_type_t hash_funct )
+                          mbedtls_md_type_t hash_funct, int keys_are_sigs )
 {
     unsigned char *pkcs7_buff = NULL, *hash_funct_oid;
     unsigned char *ptr;
@@ -754,6 +757,7 @@ int mbedtls_pkcs7_create( unsigned char **pkcs7, size_t *pkcs7_size,
     info.data_size = data_size;
     info.hash_funct = hash_funct;
     info.hash_funct_oid = (char *) hash_funct_oid;
+    info.already_signed_flag = keys_are_sigs;
 
 
     printf( "Generating Pkcs7 with %d pair(s) of signers...\n", key_pairs );
