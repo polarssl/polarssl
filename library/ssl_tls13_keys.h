@@ -271,4 +271,37 @@ int mbedtls_ssl_tls1_3_evolve_secret(
                    const unsigned char *input, size_t input_len,
                    unsigned char *secret_new );
 
+/**
+ * \bref Setup an SSL transform structure representing the
+ *       record protection mechanism used by TLS 1.3
+ *
+ * \param transform    The SSL transform structure to be created. This must have
+ *                     been initialized through mbedtls_ssl_transform_init() and
+ *                     not used in any other way prior to calling this function.
+ *                     In particular, this function does not clean up the
+ *                     transform structure prior to installing the new keys.
+ * \param endpoint     Indicates whether the transform is for the client
+ *                     (value #MBEDTLS_SSL_IS_CLIENT) or the server
+ *                     (value #MBEDTLS_SSL_IS_SERVER).
+ * \param ciphersuite  The numerical identifier for the ciphersuite to use.
+ *                     This must be one of the identifiers listed in
+ *                     ssl_ciphersuites.h.
+ * \param traffic_keys The key material to use. No reference is stored in
+ *                     the SSL transform being generated, and the caller
+ *                     should destroy the key material afterwards.
+ * \param ssl          (Debug-only) The SSL context to use for debug output
+ *                     in case of failure. This parameter is only needed if
+ *                     #MBEDTLS_DEBUG_C is set, and is ignored otherwise.
+ *
+ * \return             \c 0 on success. In this case, \p transform is ready to
+ *                     be used with mbedtls_ssl_transform_decrypt() and
+ *                     mbedtls_ssl_transform_encrypt().
+ * \return             A negative error code on failure.
+ */
+int mbedtls_ssl_tls13_populate_transform( mbedtls_ssl_transform *transform,
+                                          int endpoint,
+                                          int ciphersuite,
+                                          mbedtls_ssl_key_set const *traffic_keys,
+                                          mbedtls_ssl_context *ssl );
+
 #endif /* MBEDTLS_SSL_TLS1_3_KEYS_H */

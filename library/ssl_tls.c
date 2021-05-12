@@ -803,7 +803,7 @@ typedef int ssl_tls_prf_t(const unsigned char *, size_t, const char *,
  *        - MBEDTLS_SSL_EXPORT_KEYS: ssl->conf->{f,p}_export_keys
  *        - MBEDTLS_DEBUG_C: ssl->conf->{f,p}_dbg
  */
-static int ssl_populate_transform( mbedtls_ssl_transform *transform,
+static int ssl_tls12_populate_transform( mbedtls_ssl_transform *transform,
                                    int ciphersuite,
                                    const unsigned char master[48],
 #if defined(MBEDTLS_SSL_SOME_MODES_USE_MAC)
@@ -854,6 +854,15 @@ static int ssl_populate_transform( mbedtls_ssl_transform *transform,
 #if defined(MBEDTLS_SSL_CONTEXT_SERIALIZATION)
     memcpy( transform->randbytes, randbytes, sizeof( transform->randbytes ) );
 #endif
+
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL)
+    if( minor_ver == MBEDTLS_SSL_MINOR_VERSION_4 )
+    {
+        /* At the moment, we keep TLS <= 1.2 and TLS 1.3 transform
+         * generation separate. This should never happen. */
+        return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    }
+#endif /* MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
 
     /*
      * Get various info structures
@@ -947,19 +956,10 @@ static int ssl_populate_transform( mbedtls_ssl_transform *transform,
          *   sequence number).
          */
         transform->ivlen = 12;
-#if defined(MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL)
-        if( minor_ver == MBEDTLS_SSL_MINOR_VERSION_4 )
-        {
+        if( cipher_info->mode == MBEDTLS_MODE_CHACHAPOLY )
             transform->fixed_ivlen = 12;
-        }
         else
-#endif /* MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL */
-        {
-            if( cipher_info->mode == MBEDTLS_MODE_CHACHAPOLY )
-                transform->fixed_ivlen = 12;
-            else
-                transform->fixed_ivlen = 4;
-        }
+            transform->fixed_ivlen = 4;
 
         /* Minimum length of encrypted record */
         explicit_ivlen = transform->ivlen - transform->fixed_ivlen;
@@ -1515,25 +1515,25 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
     }
 
     /* Populate transform structure */
-    ret = ssl_populate_transform( ssl->transform_negotiate,
-                                  ssl->session_negotiate->ciphersuite,
-                                  ssl->session_negotiate->master,
+    ret = ssl_tls12_populate_transform( ssl->transform_negotiate,
+                                        ssl->session_negotiate->ciphersuite,
+                                        ssl->session_negotiate->master,
 #if defined(MBEDTLS_SSL_SOME_MODES_USE_MAC)
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
-                                  ssl->session_negotiate->encrypt_then_mac,
+                                        ssl->session_negotiate->encrypt_then_mac,
 #endif /* MBEDTLS_SSL_ENCRYPT_THEN_MAC */
 #if defined(MBEDTLS_SSL_TRUNCATED_HMAC)
-                                  ssl->session_negotiate->trunc_hmac,
+                                        ssl->session_negotiate->trunc_hmac,
 #endif /* MBEDTLS_SSL_TRUNCATED_HMAC */
 #endif /* MBEDTLS_SSL_SOME_MODES_USE_MAC */
-                                  ssl->handshake->tls_prf,
-                                  ssl->handshake->randbytes,
-                                  ssl->minor_ver,
-                                  ssl->conf->endpoint,
-                                  ssl );
+                                        ssl->handshake->tls_prf,
+                                        ssl->handshake->randbytes,
+                                        ssl->minor_ver,
+                                        ssl->conf->endpoint,
+                                        ssl );
     if( ret != 0 )
     {
-        MBEDTLS_SSL_DEBUG_RET( 1, "ssl_populate_transform", ret );
+        MBEDTLS_SSL_DEBUG_RET( 1, "ssl_tls12_populate_transform", ret );
         return( ret );
     }
 
@@ -6158,7 +6158,7 @@ static int ssl_context_load( mbedtls_ssl_context *ssl,
     if( (size_t)( end - p ) < sizeof( ssl->transform->randbytes ) )
         return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
 
-    ret = ssl_populate_transform( ssl->transform,
+    ret = ssl_tls12_populate_transform( ssl->transform,
                   ssl->session->ciphersuite,
                   ssl->session->master,
 #if defined(MBEDTLS_SSL_SOME_MODES_USE_MAC)
