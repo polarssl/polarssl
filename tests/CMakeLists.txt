@@ -13,11 +13,6 @@ if(NOT MBEDTLS_PYTHON_EXECUTABLE)
     message(FATAL_ERROR "Cannot build test suites without Python 3")
 endif()
 
-# Enable definition of various functions used throughout the testsuite
-# (gethostname, strdup, fileno...) even when compiling with -std=c99. Harmless
-# on non-POSIX platforms.
-add_definitions("-D_POSIX_C_SOURCE=200809L")
-
 # Test suites caught by SKIP_TEST_SUITES are built but not executed.
 # "foo" as a skip pattern skips "test_suite_foo" and "test_suite_foo.bar"
 # but not "test_suite_foobar".
@@ -33,9 +28,26 @@ function(add_test_suite suite_name)
     endif()
 
     add_custom_command(
-        OUTPUT test_suite_${data_name}.c
-        COMMAND ${MBEDTLS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_test_code.py -f ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${suite_name}.function -d ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${data_name}.data -t ${CMAKE_CURRENT_SOURCE_DIR}/suites/main_test.function -p ${CMAKE_CURRENT_SOURCE_DIR}/suites/host_test.function -s ${CMAKE_CURRENT_SOURCE_DIR}/suites --helpers-file ${CMAKE_CURRENT_SOURCE_DIR}/suites/helpers.function -o .
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_test_code.py ${mbedtls_target} ${CMAKE_CURRENT_SOURCE_DIR}/suites/helpers.function ${CMAKE_CURRENT_SOURCE_DIR}/suites/main_test.function ${CMAKE_CURRENT_SOURCE_DIR}/suites/host_test.function ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${suite_name}.function ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${data_name}.data
+        OUTPUT
+            test_suite_${data_name}.c
+        COMMAND
+            ${MBEDTLS_PYTHON_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_test_code.py
+            -f ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${suite_name}.function
+            -d ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${data_name}.data
+            -t ${CMAKE_CURRENT_SOURCE_DIR}/suites/main_test.function
+            -p ${CMAKE_CURRENT_SOURCE_DIR}/suites/host_test.function
+            -s ${CMAKE_CURRENT_SOURCE_DIR}/suites
+            --helpers-file ${CMAKE_CURRENT_SOURCE_DIR}/suites/helpers.function
+            -o .
+        DEPENDS
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_test_code.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${suite_name}.function
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${data_name}.data
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/main_test.function
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/host_test.function
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/helpers.function
+            ${mbedtls_target}
     )
 
     add_executable(test_suite_${data_name} test_suite_${data_name}.c $<TARGET_OBJECTS:mbedtls_test>)
@@ -54,6 +66,11 @@ function(add_test_suite suite_name)
         add_test(${data_name}-suite test_suite_${data_name} --verbose)
     endif()
 endfunction(add_test_suite)
+
+# Enable definition of various functions used throughout the testsuite
+# (gethostname, strdup, fileno...) even when compiling with -std=c99. Harmless
+# on non-POSIX platforms.
+add_definitions("-D_POSIX_C_SOURCE=200809L")
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-function")
