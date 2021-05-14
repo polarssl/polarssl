@@ -14,7 +14,8 @@
 # information is used to automatically generate the body of the query_config()
 # function by using the template in scripts/data_files/query_config.fmt.
 #
-# Usage: ./scripts/generate_query_config.pl without arguments
+# Usage: scripts/generate_query_config.pl without arguments, or
+# generate_query_config.pl config_file template_file output_file
 #
 # Copyright The Mbed TLS Contributors
 # SPDX-License-Identifier: Apache-2.0
@@ -33,15 +34,24 @@
 
 use strict;
 
-my $config_file = "./include/mbedtls/config.h";
+my ($config_file, $query_config_format_file, $query_config_file);
 
-my $query_config_format_file = "./scripts/data_files/query_config.fmt";
-my $query_config_file = "./programs/test/query_config.c";
+if( @ARGV ) {
+    die "Invalid number of arguments" if scalar @ARGV != 3;
+    ($config_file, $query_config_format_file, $query_config_file) = @ARGV;
 
-unless( -f $config_file && -f $query_config_format_file ) {
-    chdir '..' or die;
-    -f $config_file && -f $query_config_format_file
-      or die "Without arguments, must be run from root or a subdirectory\n";
+    -f $config_file or die "No such file: $config_file";
+    -f $query_config_format_file or die "No such file: $query_config_format_file";
+} else {
+    $config_file = "./include/mbedtls/config.h";
+    $query_config_format_file = "./scripts/data_files/query_config.fmt";
+    $query_config_file = "./programs/test/query_config.c";
+
+    unless( -f $config_file && -f $query_config_format_file ) {
+        chdir '..' or die;
+        -f $config_file && -f $query_config_format_file
+          or die "Without arguments, must be run from root or a subdirectory\n";
+    }
 }
 
 # Excluded macros from the generated query_config.c. For example, macros that
