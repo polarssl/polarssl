@@ -4,6 +4,21 @@ set(executables
     psa_constant_names
 )
 
+add_custom_command(
+    OUTPUT
+        ${CMAKE_CURRENT_BINARY_DIR}/psa_constant_names_generated.c
+    COMMAND
+        ${PYTHON}
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/generate_psa_constants.py
+            ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/../..
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/generate_psa_constants.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../include/psa/crypto_values.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../include/psa/crypto_extra.h
+)
+
 foreach(exe IN LISTS executables)
     add_executable(${exe} ${exe}.c $<TARGET_OBJECTS:mbedtls_test>)
     target_link_libraries(${exe} ${mbedcrypto_target})
@@ -11,6 +26,9 @@ foreach(exe IN LISTS executables)
 endforeach()
 
 target_include_directories(psa_constant_names PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+add_custom_target(generate_psa_constant_names_generated_c
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/psa_constant_names_generated.c)
+add_dependencies(psa_constant_names generate_psa_constant_names_generated_c)
 
 install(TARGETS ${executables}
         DESTINATION "bin"
