@@ -60,6 +60,8 @@ static size_t psa_get_hash_block_size( psa_algorithm_t alg )
             return( 128 );
         case PSA_ALG_SHA_512:
             return( 128 );
+        case PSA_ALG_SM3:
+            return( 64 );
         default:
             return( 0 );
     }
