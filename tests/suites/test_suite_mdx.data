@@ -49,3 +49,6 @@ md5_selftest:
 
 RIPEMD160 Selftest
 ripemd160_selftest:
+
+SM3 Selftest
+sm3_selftest:

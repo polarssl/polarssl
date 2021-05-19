@@ -33,6 +33,7 @@
 #include "mbedtls/ccm.h"
 #include "mbedtls/cmac.h"
 #include "mbedtls/md5.h"
+#include "mbedtls/sm3.h"
 #include "mbedtls/ripemd160.h"
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
@@ -266,6 +267,9 @@ const selftest_t selftests[] =
 #endif
 #if defined(MBEDTLS_SHA512_C)
     {"sha512", mbedtls_sha512_self_test},
+#endif
+#if defined(MBEDTLS_SM3_C)
+    {"sm3", mbedtls_sm3_self_test},
 #endif
 #if defined(MBEDTLS_DES_C)
     {"des", mbedtls_des_self_test},

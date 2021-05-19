@@ -1,5 +1,6 @@
 /* BEGIN_HEADER */
 #include "mbedtls/md5.h"
+#include "mbedtls/sm3.h"
 #include "mbedtls/ripemd160.h"
 /* END_HEADER */
 
@@ -54,5 +55,12 @@ void md5_selftest(  )
 void ripemd160_selftest(  )
 {
     TEST_ASSERT( mbedtls_ripemd160_self_test( 1 ) == 0 );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_SM3_C:MBEDTLS_SELF_TEST */
+void sm3_selftest(  )
+{
+    TEST_ASSERT( mbedtls_sm3_self_test( 1 ) == 0 );
 }
 /* END_CASE */
