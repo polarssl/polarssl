@@ -45,6 +45,7 @@
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
+#include "mbedtls/sm3.h"
 
 #if defined(MBEDTLS_PSA_BUILTIN_ALG_MD5) || \
     defined(MBEDTLS_PSA_BUILTIN_ALG_RIPEMD160) || \
@@ -76,6 +77,9 @@ typedef struct
 #endif
 #if defined(MBEDTLS_SHA512_C)
         mbedtls_sha512_context MBEDTLS_PRIVATE(sha512);
+#endif
+#if defined(MBEDTLS_SM3_C)
+        mbedtls_sm3_context MBEDTLS_PRIVATE(sm3);
 #endif
     } MBEDTLS_PRIVATE(ctx);
 } mbedtls_psa_hash_operation_t;
