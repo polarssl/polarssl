@@ -1008,6 +1008,10 @@ PSA hash setup: good, RIPEMD160
 depends_on:PSA_WANT_ALG_RIPEMD160
 hash_setup:PSA_ALG_RIPEMD160:PSA_SUCCESS
 
+PSA hash setup: good, SM3
+depends_on:MBEDTLS_SM3_C
+hash_setup:PSA_ALG_SM3:PSA_SUCCESS
+
 PSA hash setup: bad (unknown hash algorithm)
 depends_on:MBEDTLS_SHA256_C
 hash_setup:PSA_ALG_CATEGORY_HASH:PSA_ERROR_NOT_SUPPORTED
@@ -1108,6 +1112,10 @@ hash_compute_compare:PSA_ALG_MD5:"616263":"900150983cd24fb0d6963f7d28e17f72"
 PSA hash compute: good, RIPEMD160
 depends_on:PSA_WANT_ALG_RIPEMD160
 hash_compute_compare:PSA_ALG_RIPEMD160:"616263":"8eb208f7e05d987a9b044a8e98c6b087f15a0bfc"
+
+PSA hash compute: good, SM3
+depends_on:MBEDTLS_SM3_C
+hash_compute_compare:PSA_ALG_SM3:"616263":"66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0"
 
 PSA hash clone: source state
 hash_clone_source_state:
