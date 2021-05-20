@@ -3608,6 +3608,17 @@
 //#define MBEDTLS_PSK_MAX_LEN               32 /**< Max size of TLS pre-shared keys, in bytes (default 256 bits) */
 //#define MBEDTLS_SSL_COOKIE_TIMEOUT        60 /**< Default expiration delay of DTLS cookies, in seconds if HAVE_TIME, or in number of cookies issued */
 
+/** \def MBEDTLS_TLS_EXT_CID
+ *
+ * At the time of writing, the CID extension has not been assigned its
+ * final value. Set this configuration option to make Mbed TLS use a
+ * different value.
+ *
+ * A future minor revision of Mbed TLS may change the default value of
+ * this option to match evolving standards and usage.
+ */
+//#define MBEDTLS_TLS_EXT_CID                        254
+
 /**
  * Complete list of ciphersuites to use, in order of preference.
  *
