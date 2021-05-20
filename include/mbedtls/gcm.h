@@ -111,6 +111,26 @@ int mbedtls_gcm_setkey( mbedtls_gcm_context *ctx,
                         unsigned int keybits );
 
 /**
+ * \brief           This function associates a GCM context with a cipher.
+ *                  Equivalent to mbedtls_gcm_setkey(), but with memory
+ *                  for cipher algorithm context preallocated.
+ *
+ * \param ctx       The GCM context. This must be initialized.
+ * \param c_info    Pointer to cipher-information structure.
+ * \param key       The encryption key. This must be a readable buffer of at
+ *                  least \p keybits bits.
+ * \param c_ctx     Preallocated cipher context.
+ *
+ * \return          \c 0 on success.
+ * \return          A cipher-specific error code on failure.
+ */
+int mbedtls_gcm_setkey_noalloc( mbedtls_gcm_context *ctx,
+                                const mbedtls_cipher_info_t *c_info,
+                                const unsigned char *key,
+                                void *c_ctx );
+
+
+/**
  * \brief           This function performs GCM encryption or decryption of a buffer.
  *
  * \note            For encryption, the output buffer can be the same as the
@@ -240,6 +260,31 @@ int mbedtls_gcm_starts( mbedtls_gcm_context *ctx,
                 size_t iv_len,
                 const unsigned char *add,
                 size_t add_len );
+
+
+/**
+ * \brief           This function feeds an input buffer into an ongoing GCM
+ *                  encryption or decryption operation as additional data.
+ *                  This needs to be called before starting enc/dec
+ *                  operations.
+ *
+ *    `             The function expects input to be a multiple of 16
+ *                  Bytes. Only the last call before mbedtls_gcm_update() or
+ *                  mbedtls_gcm_finish() can be less than 16 Bytes.
+ *
+ *
+ * \param ctx       The GCM context.
+ * \param length    The length of the input data. This must be a multiple of
+ *                  16 except in the last call before mbedtls_gcm_finish().
+ * \param input     The buffer holding the input ADD.
+ *
+ * \return         \c 0 on success.
+ * \return         #MBEDTLS_ERR_GCM_BAD_INPUT on failure.
+ */
+int mbedtls_gcm_update_add( mbedtls_gcm_context *ctx,
+                            size_t length,
+                            const unsigned char *input );
+
 
 /**
  * \brief           This function feeds an input buffer into an ongoing GCM
