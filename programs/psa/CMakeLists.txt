@@ -2,6 +2,12 @@ set(executables
     crypto_examples
     key_ladder_demo
     psa_constant_names
+    psa_random
+    psa_mac
+    psa_hash
+    psa_encrypt
+    psa_sign_verify
+    psa_key_agreement
 )
 
 foreach(exe IN LISTS executables)
