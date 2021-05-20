@@ -1440,6 +1440,7 @@ component_test_psa_crypto_config_basic() {
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_SHA_256"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_SHA_384"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_SHA_512"
+    loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_SM3"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_XTS"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_CMAC"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_HMAC"
@@ -1572,6 +1573,7 @@ component_build_psa_accel_alg_md5() {
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_256
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_384
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_512
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_SM3
     # Need to define the correct symbol and include the test driver header path in order to build with the test driver
     make CC=gcc CFLAGS="$ASAN_CFLAGS -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_MD5 -I../tests/include -O2" LDFLAGS="$ASAN_CFLAGS"
 }
@@ -1590,6 +1592,7 @@ component_build_psa_accel_alg_ripemd160() {
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_256
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_384
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_512
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SM3
     # Need to define the correct symbol and include the test driver header path in order to build with the test driver
     make CC=gcc CFLAGS="$ASAN_CFLAGS -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_RIPEMD160 -I../tests/include -O2" LDFLAGS="$ASAN_CFLAGS"
 }
@@ -1608,6 +1611,7 @@ component_build_psa_accel_alg_sha1() {
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_256
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_384
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_512
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SM3
     # Need to define the correct symbol and include the test driver header path in order to build with the test driver
     make CC=gcc CFLAGS="$ASAN_CFLAGS -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_SHA_1 -I../tests/include -O2" LDFLAGS="$ASAN_CFLAGS"
 }
@@ -1625,6 +1629,7 @@ component_build_psa_accel_alg_sha224() {
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_1
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_384
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_512
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SM3
     # Need to define the correct symbol and include the test driver header path in order to build with the test driver
     make CC=gcc CFLAGS="$ASAN_CFLAGS -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_SHA_224 -I../tests/include -O2" LDFLAGS="$ASAN_CFLAGS"
 }
@@ -1643,6 +1648,7 @@ component_build_psa_accel_alg_sha256() {
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_224
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_384
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_512
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SM3
     # Need to define the correct symbol and include the test driver header path in order to build with the test driver
     make CC=gcc CFLAGS="$ASAN_CFLAGS -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_SHA_256 -I../tests/include -O2" LDFLAGS="$ASAN_CFLAGS"
 }
@@ -1660,6 +1666,7 @@ component_build_psa_accel_alg_sha384() {
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_1
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_224
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_256
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SM3
     # Need to define the correct symbol and include the test driver header path in order to build with the test driver
     make CC=gcc CFLAGS="$ASAN_CFLAGS -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_SHA_384 -I../tests/include -O2" LDFLAGS="$ASAN_CFLAGS"
 }
@@ -1678,9 +1685,31 @@ component_build_psa_accel_alg_sha512() {
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_224
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_256
     scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_384
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SM3
     # Need to define the correct symbol and include the test driver header path in order to build with the test driver
     make CC=gcc CFLAGS="$ASAN_CFLAGS -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_SHA_512 -I../tests/include -O2" LDFLAGS="$ASAN_CFLAGS"
 }
+
+# This should be renamed to test and updated once the accelerator SM3 code is in place and ready to test.
+component_build_psa_accel_alg_sm3() {
+    # full plus MBEDTLS_PSA_CRYPTO_CONFIG with PSA_WANT_ALG_SM3 without other hashes
+    msg "build: full + MBEDTLS_PSA_CRYPTO_CONFIG + PSA_WANT_ALG_SM3 - other hashes"
+    scripts/config.py full
+    scripts/config.py set MBEDTLS_PSA_CRYPTO_CONFIG
+    scripts/config.py set MBEDTLS_PSA_CRYPTO_DRIVERS
+    scripts/config.py unset MBEDTLS_USE_PSA_CRYPTO
+
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_MD5
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_RIPEMD160
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_1
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_256
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_224
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_384
+    scripts/config.py -f include/psa/crypto_config.h unset PSA_WANT_ALG_SHA_512
+    # Need to define the correct symbol and include the test driver header path in order to build with the test driver
+    make CC=gcc CFLAGS="$ASAN_CFLAGS -DPSA_CRYPTO_DRIVER_TEST -DMBEDTLS_PSA_ACCEL_ALG_SM3 -I../tests/include -O2" LDFLAGS="$ASAN_CFLAGS"
+}
+
 
 # This should be renamed to test and updated once the accelerator RSA code is in place and ready to test.
 component_build_psa_accel_alg_rsa_pkcs1v15_crypt() {
@@ -2117,6 +2146,7 @@ component_test_psa_crypto_drivers () {
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_SHA_256"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_SHA_384"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_SHA_512"
+    loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_SM3"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_XTS"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_CMAC"
     loc_cflags="${loc_cflags} -DMBEDTLS_PSA_ACCEL_ALG_HMAC"

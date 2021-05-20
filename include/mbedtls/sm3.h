@@ -2,6 +2,8 @@
  * \file sm3.h
  *
  * \brief SM3 message digest algorithm (hash function)
+ *
+ *  The SM3 cryptographic hash algorithm is defined in <em>GB/T 32905-2016</em>
  */
 /*
  *  Copyright The Mbed TLS Contributors
@@ -31,8 +33,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* MBEDTLS_ERR_SM3_HW_ACCEL_FAILED is deprecated and should not be used. */
-#define MBEDTLS_ERR_SM3_HW_ACCEL_FAILED                   -0x003B  /**< SM3 hardware accelerator failed */
 #define MBEDTLS_ERR_SM3_BAD_INPUT_DATA                    -0x0076  /**< SM3 input data was malformed. */
 
 #ifdef __cplusplus

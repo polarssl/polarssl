@@ -59,6 +59,10 @@
     ( defined(PSA_CRYPTO_DRIVER_TEST) && defined(MBEDTLS_PSA_ACCEL_ALG_SHA_512) ) )
 #define BUILTIN_ALG_SHA_512     1
 #endif
+#if( defined(MBEDTLS_PSA_BUILTIN_ALG_SM3) || \
+    ( defined(PSA_CRYPTO_DRIVER_TEST) && defined(MBEDTLS_PSA_ACCEL_ALG_SM3) ) )
+#define BUILTIN_ALG_SM3         1
+#endif
 
 #if defined(MBEDTLS_PSA_BUILTIN_ALG_RSA_PKCS1V15_SIGN) || \
     defined(MBEDTLS_PSA_BUILTIN_ALG_RSA_OAEP) || \
@@ -96,7 +100,7 @@ const mbedtls_md_info_t *mbedtls_md_info_from_psa( psa_algorithm_t alg )
         case PSA_ALG_SHA_512:
             return( &mbedtls_sha512_info );
 #endif
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_SM3)
+#if defined(MBEDTLS_SM3_C)
         case PSA_ALG_SM3:
             return( &mbedtls_sm3_info );
 #endif
@@ -157,7 +161,7 @@ static psa_status_t hash_abort(
             mbedtls_sha512_free( &operation->ctx.sha512 );
             break;
 #endif
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_SM3)
+#if defined(BUILTIN_ALG_SM3)
         case PSA_ALG_SM3:
             mbedtls_sm3_free( &operation->ctx.sm3 );
             break;
@@ -225,7 +229,7 @@ static psa_status_t hash_setup(
             ret = mbedtls_sha512_starts( &operation->ctx.sha512, 0 );
             break;
 #endif
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_SM3)
+#if defined(BUILTIN_ALG_SM3)
         case PSA_ALG_SM3:
             mbedtls_sm3_init( &operation->ctx.sm3 );
             ret = mbedtls_sm3_starts_ret( &operation->ctx.sm3 );
@@ -293,7 +297,7 @@ static psa_status_t hash_clone(
                                   &source_operation->ctx.sha512 );
             break;
 #endif
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_SM3)
+#if defined(BUILTIN_ALG_SM3)
         case PSA_ALG_SM3:
             mbedtls_sm3_clone( &target_operation->ctx.sm3,
                                   &source_operation->ctx.sm3 );
@@ -360,7 +364,7 @@ static psa_status_t hash_update(
                                              input, input_length );
             break;
 #endif
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_SM3)
+#if defined(BUILTIN_ALG_SM3)
         case PSA_ALG_SM3:
             ret = mbedtls_sm3_update_ret( &operation->ctx.sm3,
                                              input, input_length );
@@ -437,7 +441,7 @@ static psa_status_t hash_finish(
             ret = mbedtls_sha512_finish( &operation->ctx.sha512, hash );
             break;
 #endif
-#if defined(MBEDTLS_PSA_BUILTIN_ALG_SM3)
+#if defined(BUILTIN_ALG_SM3)
         case PSA_ALG_SM3:
             ret = mbedtls_sm3_finish_ret( &operation->ctx.sm3, hash );
             break;
@@ -573,6 +577,10 @@ static int is_hash_accelerated( psa_algorithm_t alg )
 #endif
 #if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_512)
         case PSA_ALG_SHA_512:
+            return( 1 );
+#endif
+#if defined(MBEDTLS_PSA_ACCEL_ALG_SM3)
+        case PSA_ALG_SM3:
             return( 1 );
 #endif
         default:

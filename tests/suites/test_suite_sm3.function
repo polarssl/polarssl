@@ -9,50 +9,6 @@ void sm3_valid_param( )
 }
 /* END_CASE */
 
-/* BEGIN_CASE depends_on:MBEDTLS_SM3_C:MBEDTLS_CHECK_PARAMS:!MBEDTLS_PARAM_FAILED_ALT */
-void sm3_invalid_param( )
-{
-    mbedtls_sm3_context ctx;
-    unsigned char buf[64] = { 0 };
-    size_t const buflen = sizeof( buf );
-
-    TEST_INVALID_PARAM( mbedtls_sm3_init( NULL ) );
-
-    TEST_INVALID_PARAM( mbedtls_sm3_clone( NULL, &ctx ) );
-    TEST_INVALID_PARAM( mbedtls_sm3_clone( &ctx, NULL ) );
-
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_starts_ret( NULL ) );
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_starts_ret( &ctx ) );
-
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_update_ret( NULL, buf, buflen ) );
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_update_ret( &ctx, NULL, buflen ) );
-
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_finish_ret( NULL, buf ) );
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_finish_ret( &ctx, NULL ) );
-
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_internal_sm3_process( NULL, buf ) );
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_internal_sm3_process( &ctx, NULL ) );
-
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_ret( NULL, buflen, buf ) );
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_ret( buf, buflen, NULL ) );
-    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_SM3_BAD_INPUT_DATA,
-                            mbedtls_sm3_ret( buf, buflen, buf ) );
-
-exit:
-    return;
-}
-/* END_CASE */
-
 /* BEGIN_CASE depends_on:MBEDTLS_SM3_C */
 void mbedtls_sm3( data_t * src_str, data_t * hash )
 {

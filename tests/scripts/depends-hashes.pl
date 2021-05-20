@@ -59,6 +59,7 @@ my @hash_configs = (
     ['unset MBEDTLS_SHA384_C'],
     ['unset MBEDTLS_SHA256_C', 'unset MBEDTLS_SHA224_C'],
     ['unset MBEDTLS_SHA1_C'],
+    ['unset MBEDTLS_SM3_C'],
 );
 
 system( "cp $config_h $config_h.bak" ) and die;

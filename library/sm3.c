@@ -40,10 +40,6 @@
 #endif /* MBEDTLS_PLATFORM_C */
 #endif /* MBEDTLS_SELF_TEST */
 
-#define SM3_VALIDATE_RET(cond)                           \
-    MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_SM3_BAD_INPUT_DATA )
-#define SM3_VALIDATE(cond)  MBEDTLS_INTERNAL_VALIDATE( cond )
-
 #if !defined(MBEDTLS_SM3_ALT)
 
 /*
@@ -71,8 +67,6 @@ do {                                                    \
 
 void mbedtls_sm3_init( mbedtls_sm3_context *ctx )
 {
-    SM3_VALIDATE( ctx != NULL );
-
     memset( ctx, 0, sizeof( mbedtls_sm3_context ) );
 }
 
@@ -87,9 +81,6 @@ void mbedtls_sm3_free( mbedtls_sm3_context *ctx )
 void mbedtls_sm3_clone( mbedtls_sm3_context *dst,
                         const mbedtls_sm3_context *src )
 {
-    SM3_VALIDATE( dst != NULL );
-    SM3_VALIDATE( src != NULL );
-
     *dst = *src;
 }
 
@@ -98,8 +89,6 @@ void mbedtls_sm3_clone( mbedtls_sm3_context *dst,
  */
 int mbedtls_sm3_starts_ret( mbedtls_sm3_context *ctx )
 {
-    SM3_VALIDATE_RET( ctx != NULL );
-
     ctx->total[0] = 0;
     ctx->total[1] = 0;
 
@@ -122,9 +111,9 @@ int mbedtls_sm3_starts_ret( mbedtls_sm3_context *ctx )
 #define EXTMSG_W_LEN (EXTMSG_W1_LEN + EXTMSG_W2_LEN)
 
 #define ROTL32( value, amount ) \
-    ( (uint32_t) ( (value) << (amount) ) | ( (value) >> ( 32 - (amount) ) ) )
+    ( (uint32_t) ( (value) << ( (amount & 0x1f) ) ) | ( (value) >> ( (32 - (amount) ) & 0x1f ) ) )
 
-#define T(i) ( ( (i) <= 15 ) ? 0x79CC4519 : 0x7A879D8A )
+#define T(i) ( ( (i) <= 15 ) ? 0x79CC4519U : 0x7A879D8AU )
 #define GG(j,x,y,z) ( ( (j) <= 15 ) ? ((x) ^ (y) ^ (z)) : ( ((x) & (y)) | ((~x) & (z)) ) )
 #define FF(j,x,y,z) ( ( (j) <= 15 ) ? ((x) ^ (y) ^ (z)) : ( ((x) & (y)) | ((x) & (z)) | ((y) & (z)) ) )
 #define P0(x) ( (x) ^ ROTL32( (x), 9 ) ^ ROTL32( (x), 17 ) )
@@ -166,9 +155,6 @@ int mbedtls_internal_sm3_process( mbedtls_sm3_context *ctx,
 
     int i, j;
 
-    SM3_VALIDATE_RET( ctx != NULL );
-    SM3_VALIDATE_RET( (const unsigned char *)data != NULL );
-
     for( i = 0; i < 8; i++ )
         local.A[i] = ctx->state[i];
 
@@ -176,7 +162,7 @@ int mbedtls_internal_sm3_process( mbedtls_sm3_context *ctx,
 
     for( j = 0; j < 64; j++ )
     {
-        local.ss1 = ROTL32( ROTL32( local.A[0], 12 ) + local.A[4] + ROTL32( T(j), j % 32 ), 7 );
+        local.ss1 = ROTL32( ROTL32( local.A[0], 12 ) + local.A[4] + ROTL32( T(j), j ), 7 );
         local.ss2 = local.ss1 ^ ROTL32( local.A[0], 12 );
         local.tt1 = FF( j, local.A[0], local.A[1], local.A[2] ) + local.A[3] + local.ss2 + local.W[j + EXTMSG_W1_LEN];
         local.tt2 = GG( j, local.A[4], local.A[5], local.A[6] ) + local.A[7] + local.ss1 + local.W[j];
@@ -210,9 +196,6 @@ int mbedtls_sm3_update_ret( mbedtls_sm3_context *ctx,
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t fill;
     uint32_t left;
-
-    SM3_VALIDATE_RET( ctx != NULL );
-    SM3_VALIDATE_RET( ilen == 0 || input != NULL );
 
     if( ilen == 0 )
         return( 0 );
@@ -261,9 +244,6 @@ int mbedtls_sm3_finish_ret( mbedtls_sm3_context *ctx,
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     uint32_t used;
     uint32_t high, low;
-
-    SM3_VALIDATE_RET( ctx != NULL );
-    SM3_VALIDATE_RET( (unsigned char *)output != NULL );
 
     /*
      * Add padding: 0x80 then 0x00 until 8 bytes remain for the length
@@ -326,9 +306,6 @@ int mbedtls_sm3_ret( const unsigned char *input,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_sm3_context ctx;
-
-    SM3_VALIDATE_RET( ilen == 0 || input != NULL );
-    SM3_VALIDATE_RET( (unsigned char *)output != NULL );
 
     mbedtls_sm3_init( &ctx );
 
