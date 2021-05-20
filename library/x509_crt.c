@@ -75,6 +75,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <errno.h>
 #endif /* !_WIN32 || EFIX64 || EFI32 */
 #endif
 
@@ -1637,10 +1638,39 @@ cleanup:
             ret = MBEDTLS_ERR_X509_BUFFER_TOO_SMALL;
             goto cleanup;
         }
-        else if( stat( entry_name, &sb ) == -1 )
+        else
         {
-            ret = MBEDTLS_ERR_X509_FILE_IO_ERROR;
-            goto cleanup;
+            /* determinate if the file entry could be a link, using lstat(2)
+             * is safer than just stat(2), otherwise a broken link will
+             * give us a false positive. */
+            if( lstat( entry_name, &sb ) == -1 )
+            {
+                ret = MBEDTLS_ERR_X509_FILE_IO_ERROR;
+                goto cleanup;
+            }
+
+            /* if the file is a symbolic link, we need to validate the real
+             * information using stat(2). */
+            if( S_ISLNK( sb.st_mode ) )
+            {
+                /* if stat(2) fails it could be a broken link or a generic
+                 * error, if the link is broken, just report it as a
+                 * certificate that could not be processed, otherwise
+                 * just set a MBEDTLS_ERR_X509_FILE_IO_ERROR. */
+                if( stat( entry_name, &sb ) == -1 )
+                {
+                    if( errno == ENOENT )
+                    {
+                        /* Broken link */
+                        ret++;
+                    }
+                    else
+                    {
+                        ret = MBEDTLS_ERR_X509_FILE_IO_ERROR;
+                        goto cleanup;
+                    }
+                }
+            }
         }
 
         if( !S_ISREG( sb.st_mode ) )
