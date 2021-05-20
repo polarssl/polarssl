@@ -597,6 +597,9 @@ static const char * const features[] = {
 #if defined(MBEDTLS_AESNI_C)
     "MBEDTLS_AESNI_C",
 #endif /* MBEDTLS_AESNI_C */
+#if defined(MBEDTLS_ARMV8CE_AES_C)
+    "MBEDTLS_ARMV8CE_AES_C",
+#endif /* MBEDTLS_ARMV8CE_AES_C */
 #if defined(MBEDTLS_AES_C)
     "MBEDTLS_AES_C",
 #endif /* MBEDTLS_AES_C */

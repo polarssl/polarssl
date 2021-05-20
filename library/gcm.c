@@ -41,6 +41,10 @@
 #include "aesni.h"
 #endif
 
+#if defined(MBEDTLS_ARMV8CE_AES_C)
+#include "mbedtls/armv8ce_aes.h"
+#endif
+
 #if defined(MBEDTLS_SELF_TEST) && defined(MBEDTLS_AES_C)
 #include "mbedtls/aes.h"
 #include "mbedtls/platform.h"
@@ -109,6 +113,12 @@ static int gcm_gen_table( mbedtls_gcm_context *ctx )
     memset( h, 0, 16 );
     if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, h, 16, h, &olen ) ) != 0 )
         return( ret );
+
+#if defined(MBEDTLS_ARMV8CE_AES_C)
+	// we don't do feature testing with ARMv8 cryptography extensions
+    memcpy( ctx ->HL, h, 16 );          // put H at the beginning of buffer
+    return( 0 );                        // that's all we need
+#endif
 
     /* pack h as two 64-bits ints, big-endian */
     GET_UINT32_BE( hi, h,  0  );
@@ -218,6 +228,11 @@ static void gcm_mult( mbedtls_gcm_context *ctx, const unsigned char x[16],
     int i = 0;
     unsigned char lo, hi, rem;
     uint64_t zh, zl;
+
+#if defined(MBEDTLS_ARMV8CE_AES_C)
+	mbedtls_armv8ce_gcm_mult( output, x, (const unsigned char *) ctx->HL );
+	return;
+#endif
 
 #if defined(MBEDTLS_AESNI_C) && defined(MBEDTLS_HAVE_X86_64)
     if( mbedtls_aesni_has_support( MBEDTLS_AESNI_CLMUL ) ) {

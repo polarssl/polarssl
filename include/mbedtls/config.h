@@ -46,6 +46,7 @@
  * Requires support for asm() in compiler.
  *
  * Used in:
+ *      library/armv8ce_aes.c
  *      library/aria.c
  *      library/timing.c
  *      library/bn_mul.h
@@ -2131,6 +2132,21 @@
  * This modules adds support for the AES-NI instructions on x86-64
  */
 #define MBEDTLS_AESNI_C
+
+/**
+ * \def MBEDTLS_ARMV8CE_AES_C
+ *
+ * Enable ARMv8 Crypto Extensions for AES and GCM
+ *
+ * Module:  library/armv8ce_aes.c
+ * Caller:  library/aes.c
+ *          library/gcm.c
+ *
+ * Requires: MBEDTLS_HAVE_ASM
+ *
+ * This module adds support for Armv8 Cryptography Extensions for AES and GCM.
+ */
+//#define MBEDTLS_ARMV8CE_AES_C
 
 /**
  * \def MBEDTLS_AES_C

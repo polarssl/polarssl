@@ -72,6 +72,7 @@ OBJS_CRYPTO= \
 	     aesni.o \
 	     arc4.o \
 	     aria.o \
+             armv8ce_aes.o \
 	     asn1parse.o \
 	     asn1write.o \
 	     base64.o \

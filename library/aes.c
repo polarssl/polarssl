@@ -33,11 +33,17 @@
 #include "mbedtls/platform.h"
 #include "mbedtls/platform_util.h"
 #include "mbedtls/error.h"
+
 #if defined(MBEDTLS_PADLOCK_C)
 #include "padlock.h"
 #endif
+
 #if defined(MBEDTLS_AESNI_C)
 #include "aesni.h"
+#endif
+
+#if defined(MBEDTLS_ARMV8CE_AES_C)
+#include "mbedtls/armv8ce_aes.h"
 #endif
 
 #if defined(MBEDTLS_SELF_TEST)
@@ -1002,6 +1008,11 @@ int mbedtls_aes_crypt_ecb( mbedtls_aes_context *ctx,
 #if defined(MBEDTLS_AESNI_C) && defined(MBEDTLS_HAVE_X86_64)
     if( mbedtls_aesni_has_support( MBEDTLS_AESNI_AES ) )
         return( mbedtls_aesni_crypt_ecb( ctx, mode, input, output ) );
+#endif
+
+#if defined(MBEDTLS_ARMV8CE_AES_C)
+	// We don't do runtime checking for ARMv8 Crypto Extensions
+	return mbedtls_armv8ce_aes_crypt_ecb( ctx, mode, input, output );
 #endif
 
 #if defined(MBEDTLS_PADLOCK_C) && defined(MBEDTLS_HAVE_X86)

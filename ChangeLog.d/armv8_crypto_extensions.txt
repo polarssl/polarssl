@@ -1,0 +1,2 @@
+Features
+    * Support ARMv8 Cryptography Extensions for AES and GCM.

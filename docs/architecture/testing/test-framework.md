@@ -56,3 +56,37 @@ The outcome file has 6 fields:
 * **Test case**: the description of the test case.
 * **Result**: one of `PASS`, `SKIP` or `FAIL`.
 * **Cause**: more information explaining the result.
+
+## Testing with different architectures
+
+This section describes ways to test Mbed TLS if the target architecture is different from the architecture on the host.
+
+### QEMU syscall emulation
+
+QEMU supports syscall emulation, which combines instruction emulation with forwarding of Linux system calls to the host
+system to allow you to run cross-compiled Linux binaries as if they were native to the host. Moreover, emulation happens
+automatically if available, so that no changes to the command line are necessary.
+
+This implies that all test suites, test programs and test scripts can be invoked for cross-builds of Mbed TLS, provide
+an appropriate version of QEMU supporting syscall emulation for the target architecture is installed.
+
+#### Example: ARM-v8A AES Crypto Extensions
+
+This example explains how to test Mbed TLS' support for the ARM-v8A Cryptography Extensions using cross-compilation and
+QEMU syscall emulation.
+
+First, cross-compile Mbed TLS for ARM-v8A + Cryptography Extensions, e.g.:
+
+```
+export CC='aarch64-linux-gnu-gcc'
+export CFLAGS='-Ofast -march=armv8-a+crypto'
+export LDFLAGS='-static'
+./scripts/config.pl set MBEDTLS_ARMV8CE_AES_C
+make -j$(nproc)
+```
+
+Next, test programs and scripts can be run as if they were compiled for the host architecture, e.g.:
+
+```
+make test
+```

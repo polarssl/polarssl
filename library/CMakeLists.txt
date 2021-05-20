@@ -15,6 +15,7 @@ set(src_crypto
     aesni.c
     arc4.c
     aria.c
+    armv8ce_aes.c
     asn1parse.c
     asn1write.c
     base64.c

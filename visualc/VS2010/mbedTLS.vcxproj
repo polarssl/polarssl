@@ -144,6 +144,7 @@
     <ClInclude Include="..\..\include\mbedtls\aes.h" />
     <ClInclude Include="..\..\include\mbedtls\arc4.h" />
     <ClInclude Include="..\..\include\mbedtls\aria.h" />
+    <ClInclude Include="..\..\include\mbedtls\armv8ce_aes.h" />
     <ClInclude Include="..\..\include\mbedtls\asn1.h" />
     <ClInclude Include="..\..\include\mbedtls\asn1write.h" />
     <ClInclude Include="..\..\include\mbedtls\base64.h" />
@@ -283,6 +284,7 @@
     <ClCompile Include="..\..\library\aesni.c" />
     <ClCompile Include="..\..\library\arc4.c" />
     <ClCompile Include="..\..\library\aria.c" />
+    <ClCompile Include="..\..\library\armv8ce_aes.c" />
     <ClCompile Include="..\..\library\asn1parse.c" />
     <ClCompile Include="..\..\library\asn1write.c" />
     <ClCompile Include="..\..\library\base64.c" />
