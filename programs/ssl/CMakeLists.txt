@@ -18,22 +18,33 @@ set(executables
     ssl_server2
 )
 
+# Inform CMake the the following file will be generated as part of the build
+# process, so it doesn't complain that it doesn't exist yet. Starting from
+# CMake 3.20, this will no longer be necessary as CMake will automatically
+# propagate this information accross the tree, for now it's only visible
+# inside the same directory, so we need to propagate manually.
+set_source_files_properties(
+    ${CMAKE_CURRENT_BINARY_DIR}/../test/query_config.c
+    PROPERTIES GENERATED TRUE)
+
 foreach(exe IN LISTS executables)
     set(extra_sources "")
     if(exe STREQUAL "ssl_client2" OR exe STREQUAL "ssl_server2")
         list(APPEND extra_sources
-            ${CMAKE_CURRENT_SOURCE_DIR}/../test/query_config.c)
+            ssl_test_lib.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/../test/query_config.h
+            ${CMAKE_CURRENT_BINARY_DIR}/../test/query_config.c)
     endif()
     add_executable(${exe} ${exe}.c $<TARGET_OBJECTS:mbedtls_test>
         ${extra_sources})
     target_link_libraries(${exe} ${libs})
     target_include_directories(${exe} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/include)
+    if(exe STREQUAL "ssl_client2" OR exe STREQUAL "ssl_server2")
+        add_dependencies(${exe} generate_query_config_c)
+        target_include_directories(${exe}
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../test)
+    endif()
 endforeach()
-
-set_property(TARGET ssl_client2 APPEND PROPERTY SOURCES
-    ssl_test_lib.c ${CMAKE_CURRENT_SOURCE_DIR}/../test/query_config.c)
-set_property(TARGET ssl_server2 APPEND PROPERTY SOURCES
-    ssl_test_lib.c ${CMAKE_CURRENT_SOURCE_DIR}/../test/query_config.c)
 
 if(THREADS_FOUND)
     add_executable(ssl_pthread_server ssl_pthread_server.c $<TARGET_OBJECTS:mbedtls_test>)

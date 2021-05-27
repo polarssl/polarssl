@@ -429,6 +429,8 @@ def main(args):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--list', action='store_true',
                         help='List available targets and exit')
+    parser.add_argument('--directory', metavar='DIR',
+                        help='Output directory (default: tests/suites)')
     parser.add_argument('targets', nargs='*', metavar='TARGET',
                         help='Target file to generate (default: all; "-": none)')
     options = parser.parse_args(args)

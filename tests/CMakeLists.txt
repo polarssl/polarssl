@@ -13,10 +13,23 @@ if(NOT MBEDTLS_PYTHON_EXECUTABLE)
     message(FATAL_ERROR "Cannot build test suites without Python 3")
 endif()
 
-# Enable definition of various functions used throughout the testsuite
-# (gethostname, strdup, fileno...) even when compiling with -std=c99. Harmless
-# on non-POSIX platforms.
-add_definitions("-D_POSIX_C_SOURCE=200809L")
+add_custom_command(
+    OUTPUT
+        ${CMAKE_CURRENT_BINARY_DIR}/suites/test_suite_psa_crypto_not_supported.generated.data
+        ${CMAKE_CURRENT_BINARY_DIR}/suites/test_suite_psa_crypto_storage_format.current.data
+        ${CMAKE_CURRENT_BINARY_DIR}/suites/test_suite_psa_crypto_storage_format.v0.data
+    WORKING_DIRECTORY
+        $CMAKE_CURRENT_SOURCE_DIR}/..
+    COMMAND
+        ${MBEDTLS_PYTHON_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../tests/scripts/generate_psa_tests.py
+        --directory ${CMAKE_CURRENT_BINARY_DIR}/suites
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/../tests/scripts/generate_psa_tests.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include/psa/crypto_config.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include/psa/crypto_values.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include/psa/crypto_extra.h
+)
 
 # Test suites caught by SKIP_TEST_SUITES are built but not executed.
 # "foo" as a skip pattern skips "test_suite_foo" and "test_suite_foo.bar"
@@ -32,10 +45,37 @@ function(add_test_suite suite_name)
         set(data_name ${suite_name})
     endif()
 
+    if(data_name STREQUAL "psa_crypto_not_supported.generated" OR
+       data_name STREQUAL "psa_crypto_storage_format.current" OR
+       data_name STREQUAL "psa_crypto_storage_format.v0")
+        set(data_file
+            ${CMAKE_CURRENT_BINARY_DIR}/suites/test_suite_${data_name}.data)
+    else()
+        set(data_file
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${data_name}.data)
+    endif()
+
     add_custom_command(
-        OUTPUT test_suite_${data_name}.c
-        COMMAND ${MBEDTLS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_test_code.py -f ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${suite_name}.function -d ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${data_name}.data -t ${CMAKE_CURRENT_SOURCE_DIR}/suites/main_test.function -p ${CMAKE_CURRENT_SOURCE_DIR}/suites/host_test.function -s ${CMAKE_CURRENT_SOURCE_DIR}/suites --helpers-file ${CMAKE_CURRENT_SOURCE_DIR}/suites/helpers.function -o .
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_test_code.py ${mbedtls_target} ${CMAKE_CURRENT_SOURCE_DIR}/suites/helpers.function ${CMAKE_CURRENT_SOURCE_DIR}/suites/main_test.function ${CMAKE_CURRENT_SOURCE_DIR}/suites/host_test.function ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${suite_name}.function ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${data_name}.data
+        OUTPUT
+            test_suite_${data_name}.c
+        COMMAND
+            ${MBEDTLS_PYTHON_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_test_code.py
+            -f ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${suite_name}.function
+            -d ${data_file}
+            -t ${CMAKE_CURRENT_SOURCE_DIR}/suites/main_test.function
+            -p ${CMAKE_CURRENT_SOURCE_DIR}/suites/host_test.function
+            -s ${CMAKE_CURRENT_SOURCE_DIR}/suites
+            --helpers-file ${CMAKE_CURRENT_SOURCE_DIR}/suites/helpers.function
+            -o .
+        DEPENDS
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_test_code.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/test_suite_${suite_name}.function
+            ${data_file}
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/main_test.function
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/host_test.function
+            ${CMAKE_CURRENT_SOURCE_DIR}/suites/helpers.function
+            ${mbedtls_target}
     )
 
     add_executable(test_suite_${data_name} test_suite_${data_name}.c $<TARGET_OBJECTS:mbedtls_test>)
@@ -54,6 +94,11 @@ function(add_test_suite suite_name)
         add_test(${data_name}-suite test_suite_${data_name} --verbose)
     endif()
 endfunction(add_test_suite)
+
+# Enable definition of various functions used throughout the testsuite
+# (gethostname, strdup, fileno...) even when compiling with -std=c99. Harmless
+# on non-POSIX platforms.
+add_definitions("-D_POSIX_C_SOURCE=200809L")
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-function")
@@ -150,7 +195,9 @@ add_test_suite(psa_crypto_persistent_key)
 add_test_suite(psa_crypto_se_driver_hal)
 add_test_suite(psa_crypto_se_driver_hal_mocks)
 add_test_suite(psa_crypto_slot_management)
+add_test_suite(psa_crypto_storage_format psa_crypto_storage_format.current)
 add_test_suite(psa_crypto_storage_format psa_crypto_storage_format.misc)
+add_test_suite(psa_crypto_storage_format psa_crypto_storage_format.v0)
 add_test_suite(psa_its)
 add_test_suite(random)
 add_test_suite(rsa)
