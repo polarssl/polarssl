@@ -523,10 +523,20 @@
         "andi  r7,   r6, 0xffff \n\t"   \
         "bsrli r6,   r6, 16     \n\t"
 
-#define MULADDC_CORE                    \
+#if(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define MULADDC_LHUI                    \
+        "lhui  r9,   r3,   0    \n\t"   \
+        "addi  r3,   r3,   2    \n\t"   \
+        "lhui  r8,   r3,   0    \n\t"
+#else
+#define MULADDC_LHUI                    \
         "lhui  r8,   r3,   0    \n\t"   \
         "addi  r3,   r3,   2    \n\t"   \
-        "lhui  r9,   r3,   0    \n\t"   \
+        "lhui  r9,   r3,   0    \n\t"
+#endif
+
+#define MULADDC_CORE                    \
+        MULADDC_LHUI                    \
         "addi  r3,   r3,   2    \n\t"   \
         "mul   r10,  r9,  r6    \n\t"   \
         "mul   r11,  r8,  r7    \n\t"   \
