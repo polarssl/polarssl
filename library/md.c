@@ -139,6 +139,11 @@ static const int supported_digests[] = {
 #if defined(MBEDTLS_SHA256_C)
         MBEDTLS_MD_SHA256,
 #endif
+
+#if defined(MBEDTLS_SM3_C)
+        MBEDTLS_MD_SM3,
+#endif
+
 #if defined(MBEDTLS_SHA224_C)
         MBEDTLS_MD_SHA224,
 #endif
@@ -155,9 +160,6 @@ static const int supported_digests[] = {
         MBEDTLS_MD_MD5,
 #endif
 
-#if defined(MBEDTLS_SM3_C)
-        MBEDTLS_MD_SM3,
-#endif
         MBEDTLS_MD_NONE
 };
 
