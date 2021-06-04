@@ -95,7 +95,7 @@ static void dump_T( const mbedtls_ecp_group *grp )
                 CURVE_NAME, i
         );
     }
-    printf("};\n#endif\n\n");
+    printf("};\n#else\n#define %s_T NULL\n#endif\n\n", CURVE_NAME);
 }
 
 int main()
