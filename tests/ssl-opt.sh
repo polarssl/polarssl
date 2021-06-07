@@ -5221,8 +5221,9 @@ run_test    "DHM size: server default, client 2049, rejected" \
             1 \
             -c "DHM prime too short:"
 
-# Check that the SM2 curve is not used for DHM
-run_test    "DHM: no SM2" \
+# Check that the SM2 curve is not used for ECDH
+requires_config_disabled MBEDTLS_USE_PSA_CRYPTO
+run_test    "ECDH: no SM2" \
             "$P_SRV force_ciphersuite=TLS-ECDHE-ECDSA-WITH-AES-128-CCM \
                     curves=sm2p256v1,secp256r1 \
                     debug_level=2" \
