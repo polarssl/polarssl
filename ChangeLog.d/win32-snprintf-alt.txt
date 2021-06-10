@@ -1,0 +1,6 @@
+Changes
+   * The symbols MBEDTLS_PLATFORM_VSNPRINTF_ALT and
+     MBEDTLS_PLATFORM_SNPRINTF_ALT are no longer forced to be defined on
+     Windows. The library still uses its (v)snprintf wrappers on older
+     Windows runtimes where they are needed, so this only affects applications
+     that test MBEDTLS_PLATFORM_{V,}SNPRINTF_ALT in their own code.

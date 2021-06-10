@@ -60,6 +60,9 @@ extern "C" {
 #if defined(__MINGW32__) || (defined(_MSC_VER) && _MSC_VER <= 1900)
 #define MBEDTLS_PLATFORM_HAS_NON_CONFORMING_SNPRINTF
 #define MBEDTLS_PLATFORM_HAS_NON_CONFORMING_VSNPRINTF
+#if !defined(MBEDTLS_PLATFORM_C)
+#error "MBEDTLS_PLATFORM_C is required on older Windows runtimes with a non-conforming snprintf"
+#endif
 #endif
 
 #if !defined(MBEDTLS_PLATFORM_NO_STD_FUNCTIONS)
