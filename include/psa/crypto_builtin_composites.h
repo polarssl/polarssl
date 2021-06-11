@@ -76,6 +76,41 @@ typedef struct
 
 #define MBEDTLS_PSA_MAC_OPERATION_INIT {0, {0}}
 
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_GCM) || \
+    defined(MBEDTLS_PSA_BUILTIN_ALG_CCM) || \
+    defined(MBEDTLS_PSA_BUILTIN_ALG_CHACHA20_POLY1305)
+#define MBEDTLS_PSA_BUILTIN_AEAD  1
+#endif
+
+/* Context structure for the Mbed TLS AEAD implementation. */
+typedef struct
+{
+    psa_algorithm_t alg;
+    psa_key_type_t key_type;
+
+    unsigned int is_encrypt : 1;
+
+    uint8_t tag_length;
+
+    union
+    {
+        unsigned dummy; /* Enable easier initializing of the union. */
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_CCM)
+        mbedtls_ccm_context ccm;
+#endif /* MBEDTLS_PSA_BUILTIN_ALG_CCM */
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_GCM)
+        mbedtls_gcm_context gcm;
+#endif /* MBEDTLS_PSA_BUILTIN_ALG_GCM */
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_CHACHA20_POLY1305)
+        mbedtls_chachapoly_context chachapoly;
+#endif /* MBEDTLS_PSA_BUILTIN_ALG_CHACHA20_POLY1305 */
+
+    } ctx;
+
+} mbedtls_psa_aead_operation_t;
+
+#define MBEDTLS_PSA_AEAD_OPERATION_INIT {0, 0, 0, 0, {0}}
+
 /*
  * BEYOND THIS POINT, TEST DRIVER DECLARATIONS ONLY.
  */
@@ -86,6 +121,10 @@ typedef mbedtls_psa_mac_operation_t mbedtls_opaque_test_driver_mac_operation_t;
 
 #define MBEDTLS_TRANSPARENT_TEST_DRIVER_MAC_OPERATION_INIT MBEDTLS_PSA_MAC_OPERATION_INIT
 #define MBEDTLS_OPAQUE_TEST_DRIVER_MAC_OPERATION_INIT MBEDTLS_PSA_MAC_OPERATION_INIT
+
+typedef mbedtls_psa_aead_operation_t mbedtls_transparent_test_driver_aead_operation_t;
+
+#define MBEDTLS_TRANSPARENT_TEST_DRIVER_AEAD_OPERATION_INIT MBEDTLS_PSA_AEAD_OPERATION_INIT
 
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 

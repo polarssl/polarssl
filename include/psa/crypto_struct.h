@@ -75,6 +75,8 @@ extern "C" {
 
 #include "mbedtls/cmac.h"
 #include "mbedtls/gcm.h"
+#include "mbedtls/ccm.h"
+#include "mbedtls/chachapoly.h"
 
 /* Include the context definition for the compiled-in drivers for the primitive
  * algorithms. */
@@ -151,19 +153,30 @@ static inline struct psa_mac_operation_s psa_mac_operation_init( void )
 
 struct psa_aead_operation_s
 {
+
+    /** Unique ID indicating which driver got assigned to do the
+     * operation. Since driver contexts are driver-specific, swapping
+     * drivers halfway through the operation is not supported.
+     * ID values are auto-generated in psa_crypto_driver_wrappers.h
+     * ID value zero means the context is not valid or not assigned to
+     * any driver (i.e. none of the driver contexts are active). */
+    unsigned int id;
+
     psa_algorithm_t alg;
-    unsigned int key_set : 1;
-    unsigned int iv_set : 1;
-    uint8_t iv_size;
-    uint8_t block_size;
-    union
-    {
-        unsigned dummy; /* Enable easier initializing of the union. */
-        mbedtls_cipher_context_t cipher;
-    } ctx;
+    psa_key_type_t key_type;
+
+    size_t ad_remaining;
+    size_t body_remaining;
+
+    unsigned int nonce_set : 1;
+    unsigned int lengths_set : 1;
+    unsigned int ad_started : 1;
+    unsigned int body_started : 1;
+
+    psa_driver_aead_context_t ctx;
 };
 
-#define PSA_AEAD_OPERATION_INIT {0, 0, 0, 0, 0, {0}}
+#define PSA_AEAD_OPERATION_INIT {0, 0, 0, 0, 0, 0, 0, 0, 0, {0}}
 static inline struct psa_aead_operation_s psa_aead_operation_init( void )
 {
     const struct psa_aead_operation_s v = PSA_AEAD_OPERATION_INIT;

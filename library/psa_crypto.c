@@ -3394,6 +3394,496 @@ psa_status_t psa_aead_decrypt( mbedtls_svc_key_id_t key,
     return( status );
 }
 
+/* Helper function to get the base algorithm from its variants. */
+static psa_algorithm_t psa_aead_get_base_algorithm(psa_algorithm_t alg)
+{
+    switch( PSA_ALG_AEAD_WITH_SHORTENED_TAG( alg, 0 ) )
+    {
+        case PSA_ALG_AEAD_WITH_SHORTENED_TAG( PSA_ALG_CCM, 0 ):
+            return( PSA_ALG_CCM );
+
+        case PSA_ALG_AEAD_WITH_SHORTENED_TAG( PSA_ALG_GCM, 0 ):
+            return( PSA_ALG_GCM );
+
+        case PSA_ALG_AEAD_WITH_SHORTENED_TAG( PSA_ALG_CHACHA20_POLY1305, 0 ):
+            return( PSA_ALG_CHACHA20_POLY1305 );
+
+        default:
+            return( PSA_ERROR_NOT_SUPPORTED );
+    }
+}
+
+/* Set the key for a multipart authenticated encryption operation. */
+psa_status_t psa_aead_encrypt_setup( psa_aead_operation_t *operation,
+                                     mbedtls_svc_key_id_t key,
+                                     psa_algorithm_t alg )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_status_t unlock_status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_slot_t *slot = NULL;
+
+    if( !PSA_ALG_IS_AEAD( alg ) || PSA_ALG_IS_WILDCARD( alg ) )
+    {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
+    if( operation->id != 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( operation->nonce_set || operation->lengths_set ||
+        operation->ad_started || operation->body_started )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    status = psa_get_and_lock_key_slot_with_policy(
+                 key, &slot, PSA_KEY_USAGE_ENCRYPT, alg );
+
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    psa_key_attributes_t attributes = {
+      .core = slot->attr
+    };
+
+    status = psa_driver_wrapper_aead_encrypt_setup( operation,
+                                                    &attributes, slot->key.data,
+                                                    slot->key.bytes, alg );
+
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    operation->key_type = psa_get_key_type( &attributes );
+
+exit:
+
+    unlock_status = psa_unlock_key_slot( slot );
+
+    if( status == PSA_SUCCESS )
+        status = unlock_status;
+
+    if( status == PSA_SUCCESS )
+        operation->alg = psa_aead_get_base_algorithm( alg );
+    else
+        psa_aead_abort( operation );
+
+    return( status );
+}
+
+/* Set the key for a multipart authenticated decryption operation. */
+psa_status_t psa_aead_decrypt_setup( psa_aead_operation_t *operation,
+                                     mbedtls_svc_key_id_t key,
+                                     psa_algorithm_t alg )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_status_t unlock_status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_slot_t *slot = NULL;
+
+    if( !PSA_ALG_IS_AEAD( alg ) || PSA_ALG_IS_WILDCARD( alg ) )
+    {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
+    if( operation->id != 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+   if( operation->nonce_set || operation->lengths_set ||
+        operation->ad_started || operation->body_started )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    status = psa_get_and_lock_key_slot_with_policy(
+                 key, &slot, PSA_KEY_USAGE_DECRYPT, alg );
+
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    psa_key_attributes_t attributes = {
+      .core = slot->attr
+    };
+
+    status = psa_driver_wrapper_aead_decrypt_setup( operation,
+                                                    &attributes, slot->key.data,
+                                                    slot->key.bytes, alg );
+
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    operation->key_type = psa_get_key_type( &attributes );
+
+exit:
+
+    unlock_status = psa_unlock_key_slot( slot );
+
+    if( status == PSA_SUCCESS )
+        status = unlock_status;
+
+    if( status == PSA_SUCCESS )
+        operation->alg = psa_aead_get_base_algorithm( alg );
+    else
+        psa_aead_abort( operation );
+
+    return( status );
+}
+
+/* Generate a random nonce / IV for multipart AEAD operation */
+psa_status_t psa_aead_generate_nonce( psa_aead_operation_t *operation,
+                                      uint8_t *nonce,
+                                      size_t nonce_size,
+                                      size_t *nonce_length )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    size_t required_nonce_size;
+
+     *nonce_length = 0;
+
+    if( operation->id == 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( operation->nonce_set || operation->ad_started ||
+        operation->body_started )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    required_nonce_size = PSA_AEAD_NONCE_LENGTH( operation->key_type,
+                                                operation->alg );
+
+    if( nonce_size < required_nonce_size )
+    {
+        status = PSA_ERROR_BUFFER_TOO_SMALL;
+        goto exit;
+    }
+
+    status = psa_generate_random( nonce, required_nonce_size );
+
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    status = psa_driver_wrapper_aead_set_nonce( operation, nonce,
+                                                required_nonce_size );
+
+exit:
+
+    if( status == PSA_SUCCESS )
+        *nonce_length = required_nonce_size;
+    else
+        psa_aead_abort( operation );
+
+    return( status );
+}
+
+/* Set the nonce for a multipart authenticated encryption or decryption
+   operation.*/
+psa_status_t psa_aead_set_nonce( psa_aead_operation_t *operation,
+                                 const uint8_t *nonce,
+                                 size_t nonce_length )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    if( operation->id == 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( operation->nonce_set || operation->ad_started ||
+        operation->body_started )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    /* Not checking nonce size here as GCM spec allows almost arbitrarily
+     * large nonces. Please note that we do not generally recommend the usage
+     * of nonces of greater length than PSA_AEAD_NONCE_MAX_SIZE, as large
+     * nonces are hashed to a shorter size, which can then lead to collisions
+     * if you encrypt a very large number of messages.*/
+
+    status = psa_driver_wrapper_aead_set_nonce( operation, nonce,
+                                                nonce_length );
+
+exit:
+
+    if( status == PSA_SUCCESS )
+        operation->nonce_set = 1;
+    else
+        psa_aead_abort( operation );
+
+    return( status );
+}
+
+/* Declare the lengths of the message and additional data for multipart AEAD. */
+psa_status_t psa_aead_set_lengths( psa_aead_operation_t *operation,
+                                   size_t ad_length,
+                                   size_t plaintext_length )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    if( operation->id == 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( operation->lengths_set || operation->ad_started ||
+        operation->body_started)
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    status = psa_driver_wrapper_aead_set_lengths( operation, ad_length,
+                                                  plaintext_length );
+
+exit:
+
+    if( status == PSA_SUCCESS )
+    {
+        operation->ad_remaining = ad_length;
+        operation->body_remaining = plaintext_length;
+        operation->lengths_set = 1;
+    }
+    else
+        psa_aead_abort( operation );
+
+    return( status );
+}
+ /* Pass additional data to an active multipart AEAD operation. */
+psa_status_t psa_aead_update_ad( psa_aead_operation_t *operation,
+                                 const uint8_t *input,
+                                 size_t input_length )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    if( operation->id == 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( !operation->nonce_set || operation->body_started )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( operation->lengths_set )
+    {
+        if( operation->ad_remaining < input_length )
+        {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            goto exit;
+        }
+
+        operation->ad_remaining -= input_length;
+    }
+
+    status = psa_driver_wrapper_aead_update_ad( operation, input,
+                                                input_length );
+
+exit:
+
+    if( status == PSA_SUCCESS )
+        operation->ad_started = 1;
+    else
+        psa_aead_abort( operation );
+
+    return( status );
+}
+
+/* Encrypt or decrypt a message fragment in an active multipart AEAD
+   operation.*/
+psa_status_t psa_aead_update( psa_aead_operation_t *operation,
+                              const uint8_t *input,
+                              size_t input_length,
+                              uint8_t *output,
+                              size_t output_size,
+                              size_t *output_length )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    *output_length = 0;
+
+    if( operation->id == 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( !operation->nonce_set )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( operation->lengths_set )
+    {
+        /* Additional data length was supplied, but not all the additional
+           data was supplied.*/
+        if( operation->ad_remaining != 0 )
+        {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            goto exit;
+        }
+
+        /* Too much data provided. */
+        if( operation->body_remaining < input_length )
+        {
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            goto exit;
+        }
+
+        operation->body_remaining -= input_length;
+    }
+
+    status = psa_driver_wrapper_aead_update( operation, input, input_length,
+                                             output, output_size,
+                                             output_length );
+
+exit:
+
+    if( status == PSA_SUCCESS )
+        operation->body_started = 1;
+    else
+        psa_aead_abort( operation );
+
+    return( status );
+}
+
+/* Finish encrypting a message in a multipart AEAD operation. */
+psa_status_t psa_aead_finish( psa_aead_operation_t *operation,
+                              uint8_t *ciphertext,
+                              size_t ciphertext_size,
+                              size_t *ciphertext_length,
+                              uint8_t *tag,
+                              size_t tag_size,
+                              size_t *tag_length )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    *ciphertext_length = 0;
+    *tag_length = 0;
+
+    if( operation->id == 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( !operation->nonce_set )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( operation->lengths_set && (operation->ad_remaining != 0 ||
+                                   operation->body_remaining != 0 ) )
+    {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
+    status = psa_driver_wrapper_aead_finish( operation, ciphertext,
+                                             ciphertext_size,
+                                             ciphertext_length,
+                                             tag, tag_size, tag_length );
+
+exit:
+
+    /* In case the operation fails and the user fails to check for failure or
+     * the zero tag size, make sure the tag is set to something impossible. */
+    if( status != PSA_SUCCESS )
+        memset(tag, '!', tag_size);
+
+    psa_aead_abort( operation );
+
+    return( status );
+}
+
+/* Finish authenticating and decrypting a message in a multipart AEAD
+   operation.*/
+psa_status_t psa_aead_verify( psa_aead_operation_t *operation,
+                              uint8_t *plaintext,
+                              size_t plaintext_size,
+                              size_t *plaintext_length,
+                              const uint8_t *tag,
+                              size_t tag_length )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    *plaintext_length = 0;
+
+    if( operation->id == 0 )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( !operation->nonce_set )
+    {
+        status = PSA_ERROR_BAD_STATE;
+        goto exit;
+    }
+
+    if( operation->lengths_set && (operation->ad_remaining != 0 ||
+                                   operation->body_remaining != 0 ) )
+    {
+        status = PSA_ERROR_INVALID_ARGUMENT;
+        goto exit;
+    }
+
+    status = psa_driver_wrapper_aead_verify( operation, plaintext,
+                                             plaintext_size,
+                                             plaintext_length,
+                                             tag, tag_length );
+
+exit:
+
+    psa_aead_abort( operation );
+
+    return( status );
+}
+
+/* Abort an AEAD operation. */
+psa_status_t psa_aead_abort( psa_aead_operation_t *operation )
+{
+    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+    if( operation->id == 0 )
+    {
+        /* The object has (apparently) been initialized but it is not (yet)
+         * in use. It's ok to call abort on such an object, and there's
+         * nothing to do. */
+        return( PSA_SUCCESS );
+    }
+
+    status = psa_driver_wrapper_aead_abort( operation );
+
+    operation->id = 0;
+    operation->nonce_set = 0;
+    operation->lengths_set = 0;
+    operation->ad_started = 0;
+    operation->body_started = 0;
+
+    return( status );
+}
+
 /****************************************************************/
 /* Generators */
 /****************************************************************/
