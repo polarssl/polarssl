@@ -226,6 +226,18 @@ typedef mbedtls_asn1_named_data mbedtls_x509_name;
  */
 typedef mbedtls_asn1_sequence mbedtls_x509_sequence;
 
+/*
+ * Container for the fields of the Authority Key Identifier object
+ */
+typedef struct mbedtls_x509_authority
+{
+    mbedtls_x509_buf keyIdentifier;
+    mbedtls_x509_sequence authorityCertIssuer;
+    mbedtls_x509_buf authorityCertSerialNumber;
+    mbedtls_x509_buf raw;
+}
+mbedtls_x509_authority;
+
 /** Container for date and time (precision in seconds). */
 typedef struct mbedtls_x509_time
 {

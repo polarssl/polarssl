@@ -421,7 +421,7 @@ void x509_parse_san( char * crt_file, char * result_str )
         cur = &crt.subject_alt_names;
         while( cur != NULL )
         {
-            ret = mbedtls_x509_parse_subject_alt_name( &cur->buf, &san );
+            ret = mbedtls_x509_parse_general_name( &cur->buf, &san );
             TEST_ASSERT( ret == 0 || ret == MBEDTLS_ERR_X509_FEATURE_UNAVAILABLE );
             /*
              * If san type not supported, ignore.
@@ -1265,5 +1265,80 @@ void x509_parse_rsassa_pss_params( data_t * params, int params_tag,
 
 exit:
     ;;
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_FS_IO:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_CERTS_C:MBEDTLS_SHA1_C:MBEDTLS_RSA_C */
+void x509_crt_parse_subjectkeyid( data_t * buf, unsigned int subjectKeyIdLength, int ref_ret )
+{
+    mbedtls_x509_crt crt;
+
+    mbedtls_x509_crt_init( &crt );
+
+    TEST_ASSERT( mbedtls_x509_crt_parse_der( &crt, buf->x, buf->len ) == ref_ret );
+
+    if( ref_ret == 0 )
+    {
+        TEST_ASSERT( crt.subject_key_id.tag == MBEDTLS_ASN1_OCTET_STRING );
+        TEST_ASSERT( crt.subject_key_id.len == subjectKeyIdLength );
+    }
+    else
+    {
+        TEST_ASSERT( crt.subject_key_id.tag == 0 );
+        TEST_ASSERT( crt.subject_key_id.len == 0 );
+    }
+
+exit:
+    mbedtls_x509_crt_free( &crt );
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_FS_IO:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_CERTS_C:MBEDTLS_SHA1_C:MBEDTLS_RSA_C */
+void x509_crt_parse_authoritykeyid( data_t * buf, unsigned int keyIdLength, char *authorityKeyId_issuer, unsigned int serialLength , int ref_ret)
+{
+    mbedtls_x509_crt crt;
+    int bufferCounter = 0;
+    size_t issuerCounter = 0;
+    unsigned int result = 0;
+
+    mbedtls_x509_crt_init( &crt );
+
+    TEST_ASSERT( mbedtls_x509_crt_parse_der( &crt, buf->x, buf->len ) == ref_ret );
+
+    if( ref_ret == 0 )
+    {
+        /* KeyId test */
+        TEST_ASSERT( crt.authority_key_id.keyIdentifier.tag == MBEDTLS_ASN1_OCTET_STRING );
+        TEST_ASSERT( crt.authority_key_id.keyIdentifier.len == keyIdLength );
+
+        /* Issuer test */
+        mbedtls_x509_sequence* issuerPtr = &crt.authority_key_id.authorityCertIssuer;
+        while ( issuerPtr != NULL )
+        {
+            /* First 9 bytes are always ASN1 coding related information that does not matter right now. Only the values are asserted */
+            for ( issuerCounter = 9u; issuerCounter < issuerPtr->buf.len; issuerCounter++ )
+            {
+                result |= ( authorityKeyId_issuer[bufferCounter++] != issuerPtr->buf.p[issuerCounter] );
+            }
+            bufferCounter++; /* Skipping the slash */
+            issuerPtr = issuerPtr->next;
+        }
+        TEST_ASSERT( result == 0 );
+
+        /* Serial test */
+        TEST_ASSERT( crt.authority_key_id.authorityCertSerialNumber.tag == MBEDTLS_ASN1_OCTET_STRING );
+        TEST_ASSERT( crt.authority_key_id.authorityCertSerialNumber.len == serialLength );
+    }
+    else
+    {
+        TEST_ASSERT( crt.authority_key_id.keyIdentifier.tag == 0 );
+        TEST_ASSERT( crt.authority_key_id.keyIdentifier.len == 0 );
+
+        TEST_ASSERT( crt.authority_key_id.authorityCertSerialNumber.tag == 0 );
+        TEST_ASSERT( crt.authority_key_id.authorityCertSerialNumber.len == 0 );
+    }
+
+exit:
+    mbedtls_x509_crt_free( &crt );
 }
 /* END_CASE */

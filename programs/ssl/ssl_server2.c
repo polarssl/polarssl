@@ -65,7 +65,7 @@ int main( void )
 
 /* Size of memory to be allocated for the heap, when using the library's memory
  * management and MBEDTLS_MEMORY_BUFFER_ALLOC_C is enabled. */
-#define MEMORY_HEAP_SIZE        120000
+#define MEMORY_HEAP_SIZE        180000
 
 #define DFL_SERVER_ADDR         NULL
 #define DFL_SERVER_PORT         "4433"

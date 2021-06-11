@@ -315,6 +315,15 @@ rsa_pkcs8_2048_public.der: rsa_pkcs8_2048_public.pem
 	$(OPENSSL) rsa -pubin -in $< -outform DER -pubout -out $@
 all_final += rsa_pkcs8_2048_public.der
 
+authorityKeyId_subjectKeyId.crt:
+	$(OPENSSL) req -x509 -nodes -days 7300 -newkey rsa:2048 -keyout authorityKeyId_subjectKeyId.crt -out authorityKeyId_subjectKeyId.crt -config authorityKeyId_subjectKeyId.conf -extensions 'v3_req'
+# The listed certificates are the copies of authorityKeyId_subjectKeyId.crt with error injections
+# authorityKeyId_subjectKeyId_wrong_SubjectKeyId.crt              The TAG marking the beginning of SubjectKeyId is set to 0x00
+# authorityKeyId_subjectKeyId_wrong_AuthorityKeyId_KeyId.crt      The TAG marking the beginning of AuthorityKeyId field is set to 0x00
+# authorityKeyId_subjectKeyId_wrong_AuthorityKeyId_Sequence.crt   The TAG marking that AuthorityKeyId is a sequence is set to 0x00
+# authorityKeyId_subjectKeyId_wrong_IssuerN.crt                   There are 5 different TAGs based on the x509 doc under AuthorityKeyId(keyId, Dir, Seqence of Dir, serial)
+#                                                                 Each test inject error to one of these
+
 ################################################################
 #### Generate various RSA keys
 ################################################################

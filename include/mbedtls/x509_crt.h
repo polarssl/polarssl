@@ -75,6 +75,9 @@ typedef struct mbedtls_x509_crt
     mbedtls_x509_buf issuer_id;         /**< Optional X.509 v2/v3 issuer unique identifier. */
     mbedtls_x509_buf subject_id;        /**< Optional X.509 v2/v3 subject unique identifier. */
     mbedtls_x509_buf v3_ext;            /**< Optional X.509 v3 extensions.  */
+    mbedtls_x509_buf subject_key_id;    /**< Optional X.509 v3 extension subject key identifier. */
+    mbedtls_x509_authority authority_key_id;    /**< Optional X.509 v3 extension authority key identifier. */
+
     mbedtls_x509_sequence subject_alt_names;    /**< Optional list of raw entries of Subject Alternative Names extension (currently only dNSName and OtherName are listed). */
 
     mbedtls_x509_sequence certificate_policies; /**< Optional list of certificate policies (Only anyPolicy is printed and enforced, however the rest of the policies are still listed). */
@@ -557,7 +560,7 @@ int mbedtls_x509_crt_parse_path( mbedtls_x509_crt *chain, const char *path );
  * \param san      The target structure to populate with the parsed presentation
  *                 of the subject alternative name encoded in \p san_raw.
  *
- * \note           Only "dnsName" and "otherName" of type hardware_module_name
+ * \note           Only "dnsName" and "otherName" and "rfc822Name" of type hardware_module_name
  *                 as defined in RFC 4180 is supported.
  *
  * \note           This function should be called on a single raw data of
@@ -575,7 +578,7 @@ int mbedtls_x509_crt_parse_path( mbedtls_x509_crt *chain, const char *path );
  *                 SAN type.
  * \return         Another negative value for any other failure.
  */
-int mbedtls_x509_parse_subject_alt_name( const mbedtls_x509_buf *san_buf,
+int mbedtls_x509_parse_general_name( const mbedtls_x509_buf *san_buf,
                                          mbedtls_x509_subject_alternative_name *san );
 
 #if !defined(MBEDTLS_X509_REMOVE_INFO)

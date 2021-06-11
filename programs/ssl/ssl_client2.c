@@ -35,7 +35,7 @@ int main( void )
 
 /* Size of memory to be allocated for the heap, when using the library's memory
  * management and MBEDTLS_MEMORY_BUFFER_ALLOC_C is enabled. */
-#define MEMORY_HEAP_SIZE      120000
+#define MEMORY_HEAP_SIZE      180000
 
 #define MAX_REQUEST_SIZE      20000
 #define MAX_REQUEST_SIZE_STR "20000"
