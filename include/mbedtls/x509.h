@@ -333,6 +333,15 @@ int mbedtls_x509_write_names( unsigned char **p, unsigned char *start,
 int mbedtls_x509_write_sig( unsigned char **p, unsigned char *start,
                     const char *oid, size_t oid_len,
                     unsigned char *sig, size_t size );
+int x509_get_ns_cert_type( unsigned char **p,
+                          const unsigned char *end,
+                          unsigned char *ns_cert_type);
+int x509_get_key_usage( unsigned char **p,
+                       const unsigned char *end,
+                       unsigned int *key_usage);
+int x509_get_subject_alt_name( unsigned char **p,
+                              const unsigned char *end,
+                              mbedtls_x509_sequence *subject_alt_name );
 
 #define MBEDTLS_X509_SAFE_SNPRINTF                          \
     do {                                                    \

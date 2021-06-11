@@ -58,6 +58,10 @@ typedef struct mbedtls_x509_csr
 
     mbedtls_pk_context pk;          /**< Container for the public key context. */
 
+    unsigned int key_usage;     /**< Optional key usage extension value: See the values in x509.h */
+    unsigned char ns_cert_type; /**< Optional Netscape certificate type extension value: See the values in x509.h */
+    mbedtls_x509_sequence subject_alt_names;    /**< Optional list of raw entries of Subject Alternative Names extension (currently only dNSName and OtherName are listed). */
+
     mbedtls_x509_buf sig_oid;
     mbedtls_x509_buf sig;
     mbedtls_md_type_t sig_md;       /**< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256 */

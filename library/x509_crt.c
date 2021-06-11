@@ -529,9 +529,9 @@ static int x509_get_basic_constraints( unsigned char **p,
     return( 0 );
 }
 
-static int x509_get_ns_cert_type( unsigned char **p,
-                                       const unsigned char *end,
-                                       unsigned char *ns_cert_type)
+int x509_get_ns_cert_type( unsigned char **p,
+                          const unsigned char *end,
+                          unsigned char *ns_cert_type)
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_x509_bitstring bs = { 0, 0, NULL };
@@ -548,9 +548,9 @@ static int x509_get_ns_cert_type( unsigned char **p,
     return( 0 );
 }
 
-static int x509_get_key_usage( unsigned char **p,
-                               const unsigned char *end,
-                               unsigned int *key_usage)
+int x509_get_key_usage( unsigned char **p,
+                       const unsigned char *end,
+                       unsigned int *key_usage)
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t i;
@@ -622,9 +622,9 @@ static int x509_get_ext_key_usage( unsigned char **p,
  * NOTE: we list all types, but only use dNSName and otherName
  * of type HwModuleName, as defined in RFC 4108, at this point.
  */
-static int x509_get_subject_alt_name( unsigned char **p,
-                                      const unsigned char *end,
-                                      mbedtls_x509_sequence *subject_alt_name )
+int x509_get_subject_alt_name( unsigned char **p,
+                              const unsigned char *end,
+                              mbedtls_x509_sequence *subject_alt_name )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t len, tag_len;

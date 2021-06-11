@@ -80,6 +80,140 @@ static int x509_csr_get_version( unsigned char **p,
 }
 
 /*
+ * Parse CSR extension requests in DER format
+ */
+static int x509_csr_parse_extensions(mbedtls_x509_csr *csr,
+                                     unsigned char **p, const unsigned char *end)
+{
+    int ret;
+    size_t len;
+    unsigned char *end_ext_data;
+
+    while( *p < end )
+    {
+        mbedtls_x509_buf extn_oid = {0, 0, NULL};
+        int ext_type = 0;
+
+        /* Read sequence tag */
+        if( ( ret = mbedtls_asn1_get_tag( p, end, &len,
+                                         MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) ) != 0 )
+            return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS + ret );
+
+        end_ext_data = *p + len;
+
+        /* Get extension ID */
+        if( ( ret = mbedtls_asn1_get_tag( p, end_ext_data, &extn_oid.len,
+                                         MBEDTLS_ASN1_OID ) ) != 0 )
+            return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS + ret );
+
+        extn_oid.tag = MBEDTLS_ASN1_OID;
+        extn_oid.p = *p;
+        *p += extn_oid.len;
+
+        /* Data should be octet string type */
+        if( ( ret = mbedtls_asn1_get_tag( p, end_ext_data, &len,
+                                         MBEDTLS_ASN1_OCTET_STRING ) ) != 0 )
+            return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS + ret );
+        if( *p + len != end_ext_data )
+            return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS +
+                   MBEDTLS_ERR_ASN1_LENGTH_MISMATCH );
+
+        if( mbedtls_oid_get_x509_ext_type( &extn_oid, &ext_type ) == 0 )
+        {
+            switch( ext_type )
+            {
+                case MBEDTLS_X509_EXT_KEY_USAGE:
+                    /* Parse key usage */
+                    if( ( ret = x509_get_key_usage( p, end_ext_data,
+                                                   &csr->key_usage ) ) != 0 )
+                        return( ret );
+                    break;
+
+               case MBEDTLS_X509_EXT_SUBJECT_ALT_NAME:
+                    /* Parse subject alt name */
+                    if( ( ret = x509_get_subject_alt_name( p, end_ext_data,
+                                                          &csr->subject_alt_names ) ) != 0 )
+                        return( ret );
+                    break;
+
+                case MBEDTLS_X509_EXT_NS_CERT_TYPE:
+                    /* Parse netscape certificate type */
+                    if( ( ret = x509_get_ns_cert_type( p, end_ext_data,
+                                                      &csr->ns_cert_type ) ) != 0 )
+                        return( ret );
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        *p = end_ext_data;
+    }
+
+    if( *p != end )
+        return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS +
+               MBEDTLS_ERR_ASN1_LENGTH_MISMATCH );
+
+    return( 0 );
+}
+
+/*
+ * Parse CSR attributes in DER format
+ */
+static int x509_csr_parse_attributes(mbedtls_x509_csr *csr,
+                                     const unsigned char *start, const unsigned char *end)
+{
+    int ret;
+    size_t len;
+    unsigned char *end_attr_data;
+    unsigned char **p = (unsigned char**)&start;
+
+    while (*p < end) {
+        mbedtls_x509_buf attr_oid = {0, 0, NULL};
+
+        if( ( ret = mbedtls_asn1_get_tag( p, end, &len,
+                                         MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) ) != 0 )
+            return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS + ret );
+        end_attr_data = *p + len;
+
+        /* Get attribute ID */
+        if( ( ret = mbedtls_asn1_get_tag( p, end_attr_data, &attr_oid.len,
+                                         MBEDTLS_ASN1_OID ) ) != 0 )
+            return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS + ret );
+
+        attr_oid.tag = MBEDTLS_ASN1_OID;
+        attr_oid.p = *p;
+        *p += attr_oid.len;
+
+        /* Check that this is an extension-request attribute */
+        if( MBEDTLS_OID_CMP(MBEDTLS_OID_PKCS9_CSR_EXT_REQ, &attr_oid) == 0 ) {
+            if( ( ret = mbedtls_asn1_get_tag( p, end, &len,
+                                             MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SET ) ) != 0 )
+                return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS + ret );
+
+            if( ( ret = mbedtls_asn1_get_tag( p, end, &len,
+                                             MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) ) != 0 )
+                return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS + ret );
+
+            if( ( ret = x509_csr_parse_extensions(csr, p, *p + len) ) != 0 )
+                return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS + ret );
+
+            if( *p != end_attr_data )
+                return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS +
+                       MBEDTLS_ERR_ASN1_LENGTH_MISMATCH );
+        }
+
+        *p = end_attr_data;
+    }
+
+    if( *p != end )
+        return( MBEDTLS_ERR_X509_INVALID_EXTENSIONS +
+               MBEDTLS_ERR_ASN1_LENGTH_MISMATCH );
+
+    return( 0 );
+}
+
+/*
  * Parse a CSR in DER format
  */
 int mbedtls_x509_csr_parse_der( mbedtls_x509_csr *csr,
@@ -211,6 +345,12 @@ int mbedtls_x509_csr_parse_der( mbedtls_x509_csr *csr,
     {
         mbedtls_x509_csr_free( csr );
         return( MBEDTLS_ERROR_ADD( MBEDTLS_ERR_X509_INVALID_FORMAT, ret ) );
+    }
+
+    if( ( ret = x509_csr_parse_attributes(csr, p, p + len) ) != 0 )
+    {
+        mbedtls_x509_csr_free( csr );
+        return( ret );
     }
 
     p += len;
