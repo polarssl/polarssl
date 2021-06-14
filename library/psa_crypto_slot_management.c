@@ -318,6 +318,7 @@ static psa_status_t psa_load_builtin_key_into_slot( psa_key_slot_t *slot )
     /* If the key should exist according to the platform, then ask the driver
      * what its expected size is. */
     status = psa_driver_wrapper_get_key_buffer_size( &attributes,
+                                                     ( size_t ) attributes.core.bits,
                                                      &key_buffer_size );
     if( status != PSA_SUCCESS )
         return( status );

@@ -83,6 +83,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
 
 psa_status_t psa_driver_wrapper_get_key_buffer_size(
     const psa_key_attributes_t *attributes,
+    size_t key_bits,
     size_t *key_buffer_size );
 
 psa_status_t psa_driver_wrapper_generate_key(

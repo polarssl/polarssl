@@ -535,6 +535,53 @@ psa_status_t psa_allocate_buffer_to_slot( psa_key_slot_t *slot,
     return( PSA_SUCCESS );
 }
 
+/** Calculate the expected size of a key buffer, based on its attributes
+ *
+ * This function provides a way to get the expected size for storing a key with
+ * the given attributes. This will be the size of the export representation for
+ * cleartext keys, and a driver-defined size for keys stored by opaque drivers.
+ *
+ * \param[in] attributes        The key attribute structure of the key to store.
+ * \param[in] key_bits          The actual key bits used to deduce the size, given
+ *                              that this could vary from the core key_bits in the
+ *                              key attributes.
+ * \param[inout] storage_size   On success, a byte size large enough to contain
+ *                              the declared key. Prepopulated by the caller
+ *                              with the amount of input data in case key_bits
+ *                              is unknown.
+ *
+ * \retval #PSA_SUCCESS
+ * \retval #PSA_ERROR_INVALID_ARGUMENT
+ * \retval #PSA_ERROR_NOT_SUPPORTED
+ */
+static psa_status_t psa_calculate_key_storage_size( const psa_key_attributes_t *attributes,
+                                                    size_t key_bits,
+                                                    size_t* storage_size )
+{
+    if( psa_key_lifetime_is_external( attributes->core.lifetime ) )
+    {
+#if defined(MBEDTLS_PSA_CRYPTO_DRIVERS)
+        return psa_driver_wrapper_get_key_buffer_size( attributes, key_bits, storage_size );
+#else
+        return( PSA_ERROR_INVALID_ARGUMENT );
+#endif
+    }
+    else
+    {
+        if( key_bits != 0 )
+        {
+            size_t expected_size = PSA_EXPORT_KEY_OUTPUT_SIZE( attributes->core.type, key_bits );
+            if( expected_size == 0 )
+                return( PSA_ERROR_NOT_SUPPORTED );
+            *storage_size = expected_size;
+        }
+        /* storage_size retains the prepopulated value (input data size ) in the case
+         * when key_bits is zero.
+         * */
+        return( PSA_SUCCESS );
+    }
+}
+
 psa_status_t psa_copy_key_material_into_slot( psa_key_slot_t *slot,
                                               const uint8_t* data,
                                               size_t data_length )
@@ -1897,6 +1944,7 @@ psa_status_t psa_import_key( const psa_key_attributes_t *attributes,
     psa_key_slot_t *slot = NULL;
     psa_se_drv_table_entry_t *driver = NULL;
     size_t bits;
+    size_t storage_size = data_length;
 
     *key = MBEDTLS_SVC_KEY_ID_INIT;
 
@@ -1912,12 +1960,14 @@ psa_status_t psa_import_key( const psa_key_attributes_t *attributes,
         goto exit;
 
     /* In the case of a transparent key or an opaque key stored in local
-     * storage (thus not in the case of generating a key in a secure element
-     * or cryptoprocessor with storage), we have to allocate a buffer to
-     * hold the generated key material. */
+     * storage, we have to allocate a buffer to hold the generated key
+     * material. */
     if( slot->key.data == NULL )
     {
-        status = psa_allocate_buffer_to_slot( slot, data_length );
+        status = psa_calculate_key_storage_size( attributes, PSA_BYTES_TO_BITS( data_length ), &storage_size );
+        if( status != PSA_SUCCESS )
+            goto exit;
+        status = psa_allocate_buffer_to_slot( slot, storage_size );
         if( status != PSA_SUCCESS )
             goto exit;
     }
@@ -4147,6 +4197,7 @@ static psa_status_t psa_generate_derived_key_internal(
 {
     uint8_t *data = NULL;
     size_t bytes = PSA_BITS_TO_BYTES( bits );
+    size_t storage_size = bytes;
     psa_status_t status;
 
     if( ! key_type_is_raw_bytes( slot->attr.type ) )
@@ -4165,14 +4216,17 @@ static psa_status_t psa_generate_derived_key_internal(
         psa_des_set_key_parity( data, bytes );
 #endif /* MBEDTLS_PSA_BUILTIN_KEY_TYPE_DES */
 
-    status = psa_allocate_buffer_to_slot( slot, bytes );
-    if( status != PSA_SUCCESS )
-        goto exit;
-
     slot->attr.bits = (psa_key_bits_t) bits;
     psa_key_attributes_t attributes = {
       .core = slot->attr
     };
+
+    status = psa_calculate_key_storage_size( &attributes, PSA_BYTES_TO_BITS( bytes ), &storage_size );
+    if( status != PSA_SUCCESS )
+        goto exit;
+    status = psa_allocate_buffer_to_slot( slot, storage_size );
+    if( status != PSA_SUCCESS )
+        goto exit;
 
     status = psa_driver_wrapper_import_key( &attributes,
                                             data, bytes,
@@ -5182,7 +5236,7 @@ psa_status_t psa_generate_key( const psa_key_attributes_t *attributes,
         else
         {
             status = psa_driver_wrapper_get_key_buffer_size(
-                         attributes, &key_buffer_size );
+                         attributes, ( size_t ) attributes->core.bits, &key_buffer_size );
             if( status != PSA_SUCCESS )
                 goto exit;
         }
