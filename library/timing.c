@@ -182,6 +182,25 @@ unsigned long mbedtls_timing_hardclock( void )
           __GNUC__ && __alpha__ */
 
 #if !defined(HAVE_HARDCLOCK) && defined(MBEDTLS_HAVE_ASM) &&      \
+    defined(__GNUC__) && defined(__aarch64__) && defined(__APPLE__)
+
+#define HAVE_HARDCLOCK
+
+unsigned long mbedtls_timing_hardclock( void )
+{
+    /**
+     * In most cases it is disabled for the userland
+     * but in Darwin platform, it is workable w/o 3rd
+     * ring0 module
+     */
+    unsigned long cc;
+    asm volatile( "mrs %0, cntvct_el0" : "=r" (cc) );
+    return( cc );
+}
+#endif /* !HAVE_HARDCLOCK && MBEDTLS_HAVE_ASM &&
+          __GNUC__ && __aarch64__ && __APPLE__ */
+
+#if !defined(HAVE_HARDCLOCK) && defined(MBEDTLS_HAVE_ASM) &&      \
     defined(__GNUC__) && defined(__ia64__)
 
 #define HAVE_HARDCLOCK
