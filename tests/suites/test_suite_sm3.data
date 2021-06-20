@@ -1,6 +1,3 @@
-SM3 Valid parameters
-sm3_valid_param:
-
 SM3 Test Vector A.1.  GB/T 32918.2-2016 Example 1
 depends_on:MBEDTLS_SM3_C
 mbedtls_sm3:"616263":"66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0"
