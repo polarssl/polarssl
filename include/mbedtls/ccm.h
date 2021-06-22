@@ -85,6 +85,9 @@ typedef struct mbedtls_ccm_context
                                                 #MBEDTLS_CCM_DECRYPT or
                                                 #MBEDTLS_CCM_STAR_ENCRYPT or
                                                 #MBEDTLS_CCM_STAR_DECRYPT. */
+    int MBEDTLS_PRIVATE(state);              /*!< Working value holding context's
+                                                  state. Used for chunked data
+                                                  input */
 }
 mbedtls_ccm_context;
 
