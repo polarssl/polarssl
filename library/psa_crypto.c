@@ -4321,8 +4321,8 @@ static psa_status_t psa_tls12_prf_psk_to_ms_set_key(
      * uint16 with the value N, and the PSK itself.
      */
 
-    *cur++ = ( data_length >> 8 ) & 0xff;
-    *cur++ = ( data_length >> 0 ) & 0xff;
+    *cur++ = BYTE_1( data_length );
+    *cur++ = BYTE_0( data_length );
     memset( cur, 0, data_length );
     cur += data_length;
     *cur++ = pms[0];
