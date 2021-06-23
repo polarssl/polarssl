@@ -236,7 +236,7 @@ static int derive_mpi( const mbedtls_ecp_group *grp, mbedtls_mpi *x,
         MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( x, use_size * 8 - grp->nbits ) );
 
     /* While at it, reduce modulo N */
-    if( mbedtls_mpi_cmp_mpi( x, &grp->N ) >= 0 )
+    if( mbedtls_mpi_cmp_mpi_ct( x, &grp->N ) >= 0 )
         MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( x, x, &grp->N ) );
 
 cleanup:
@@ -268,7 +268,7 @@ static int ecdsa_sign_restartable( mbedtls_ecp_group *grp,
         return( MBEDTLS_ERR_ECP_BAD_INPUT_DATA );
 
     /* Make sure d is in range 1..n-1 */
-    if( mbedtls_mpi_cmp_int( d, 1 ) < 0 || mbedtls_mpi_cmp_mpi( d, &grp->N ) >= 0 )
+    if( mbedtls_mpi_cmp_int_ct( d, 1 ) < 0 || mbedtls_mpi_cmp_mpi_ct( d, &grp->N ) >= 0 )
         return( MBEDTLS_ERR_ECP_INVALID_KEY );
 
     mbedtls_ecp_point_init( &R );
@@ -329,7 +329,7 @@ mul:
                                                           ECDSA_RS_ECP ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( pr, &R.X, &grp->N ) );
         }
-        while( mbedtls_mpi_cmp_int( pr, 0 ) == 0 );
+        while( mbedtls_mpi_is_zero( pr ) );
 
 #if defined(MBEDTLS_ECP_RESTARTABLE)
         if( rs_ctx != NULL && rs_ctx->sig != NULL )
@@ -367,7 +367,7 @@ modn:
         MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( s, s, &e ) );
         MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( s, s, &grp->N ) );
     }
-    while( mbedtls_mpi_cmp_int( s, 0 ) == 0 );
+    while( mbedtls_mpi_is_zero( s) );
 
 #if defined(MBEDTLS_ECP_RESTARTABLE)
     if( rs_ctx != NULL && rs_ctx->sig != NULL )

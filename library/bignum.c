@@ -996,6 +996,91 @@ int mbedtls_mpi_write_binary( const mbedtls_mpi *X,
 }
 
 /*
+ * Helper for constant-time code.
+ */
+int mbedtls_mpi_first_nonzero(size_t *out, const mbedtls_mpi *X)
+{
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    MPI_VALIDATE_RET( X->n < 0x80000000 );
+    size_t i, iterator;
+    mbedtls_mpi_sint mask, imask;
+    i = 0;
+    ret = 0;
+    for( iterator = X->n; iterator > 0; ) {
+        iterator--;
+        /*
+         * Conditionally set `i` to `iterator`, only if:
+         *   1. X->p[iterator - 1] is not equal to 0
+         *   2. i is equal to 0
+         *
+         * This works because ((i - 1) >> (sizeof(i) - 1)) will only return 1 if i == 0
+         *
+         * (Note to prevent regressions: If the X->n >= 0x80000000 this also returns 1,
+         * but we prevent that condition above with MPI_VALIDATE_RET().)
+         *
+         * -1 in binary is 11111111 11111111 11111111 11111111
+         *  0 in binary is 00000000 00000000 00000000 00000000
+         *
+         * Thus, `-((i - 1) >> 31)` corresponds to (i == 0 ? -1 : 0),
+         * without conditional jumps.
+         *
+         * i = (-1 & x) ^ 0 is equivalent to i = x; (Sets i to x)
+         * i = (0 & x) ^ i  is equivalent to i = i; (No change to i)
+         *
+         * There is one slight wrinkle, however: The limbs in X->p[] can have
+         * the MSB set to 1. In these scenarios, `-((i - 1) >> 31)` will yield
+         * -1 for negative values too, not just 0.
+         *
+         * To evaluate X->p[iterator] == 0 in constant time, we need to calculate
+         * this somewhat indirectly:
+         *
+         *   (x ^ (x - 1)) >> 31
+         *
+         * If x > 0, they'll both be set to 0, and 0^0 == 0.
+         * If x < 0, then  both be set to 1, and 1^1 == 0.
+         *
+         * The only time the high bit of x differs from the high bit of (x - 1)
+         * is when x == 0.
+         */
+
+        /* if (i == 0) mask = -1; */
+        /* if (i != 0) mask =  0; */
+        mask = -((((mbedtls_mpi_sint) i - 1) >> (MBEDTLS_MPI_UINT_BITS - 1)) & 1);
+
+        /* if (X->p[iterator] == 0) imask = 1; */
+        /* if (X->p[iterator] != 0) imask = 0; */
+        imask = (mbedtls_mpi_sint) (
+            (
+                ((int64_t) X->p[iterator]) ^ (
+                    (int64_t) (X->p[iterator] - 1)
+                )
+            ) >> (MBEDTLS_MPI_UINT_BITS - 1)
+        ) & 1;
+
+        /* if (mask != 0 && imask == 0) mask = -1; else mask = 0; */
+        mask = -((mask & ~imask) & 1);
+
+        /* `mask & iterator` will either yield 0 or `iterator + 1`, without branches: */
+        i ^= ((size_t) mask & (iterator + 1));
+    }
+    *out = i;
+    return ret;
+}
+
+/*
+ * Is this equal to zero? (Constant-time)
+ */
+int mbedtls_mpi_is_zero( mbedtls_mpi *X )
+{
+    mbedtls_mpi_uint d = 0;
+    size_t iter;
+    for (iter = 0; iter < X->n; iter ++) {
+        d |= X->p[iter];
+    }
+    return d == 0;
+}
+
+/*
  * Left-shift: X <<= count
  */
 int mbedtls_mpi_shift_l( mbedtls_mpi *X, size_t count )
@@ -1157,6 +1242,82 @@ int mbedtls_mpi_cmp_mpi( const mbedtls_mpi *X, const mbedtls_mpi *Y )
     return( 0 );
 }
 
+/*
+ * Compare signed values in constant-time
+ */
+int mbedtls_mpi_cmp_mpi_ct( const mbedtls_mpi *X, const mbedtls_mpi *Y )
+{
+    size_t i = 0;
+    size_t j = 0;
+    mbedtls_mpi_uint x1, x2;
+    volatile unsigned char gt = 0U;
+    volatile unsigned char eq = 1U;
+    MPI_VALIDATE_RET( X != NULL );
+    MPI_VALIDATE_RET( Y != NULL );
+
+    /* Calculate the first nonzero index, starting from the most significant limb */
+    mbedtls_mpi_first_nonzero(&i, X);
+    mbedtls_mpi_first_nonzero(&j, Y);
+
+    /*
+    * if( i > j ) return(  X->s );
+    * if( j > i ) return( -Y->s );
+    */
+    gt |= ((j - i) >> (MBEDTLS_MPI_UINT_BITS - 1)) & eq;
+    eq &= (((i ^ j) - 1) >> (MBEDTLS_MPI_UINT_BITS - 1)) & 1;
+
+    /*
+    if( X->s > 0 && Y->s < 0 ) return(  1 );
+    if( Y->s > 0 && X->s < 0 ) return( -1 );
+    */
+    gt |= ((Y->s - X->s) >> 31) & eq;
+    eq &= (((Y->s ^ X->s) - 1) >> 31) & 1;
+
+    /*
+     * Make sure we set i to the lower of the two values (i, j) to ensure we avoid out-of-bound array access,
+     * by using a conditional swap.
+     *
+     * If i != j or X->s != Y->s, we should already have eq set to 0, so we don't actually need to check every limb.
+     * We're only doing so to ensure the algorithm is constant-time.
+     *
+     * If i == j and X->s == Y->s, we're still going to need to evaluate limbs.
+     */
+    x1 = (-(((mbedtls_mpi_sint) (j - i)) >> (MBEDTLS_MPI_UINT_BITS - 1) & 1) & 0xffffffff);
+    i = (i ^ ((i ^ j) & x1));
+
+    /*
+     * This loop compares each limb, starting from the `i` (the highest number of limbs in common).
+     *
+     * If eq == 0, this loop is just ensuring the algorithm is constant-time.
+     *
+     * If eq == 1, we compare the upper half of the limb, then the lower half of the limb, then descend
+     * until no limbs remain.
+     */
+    for( ; i > 0; )
+    {
+        i--;
+        /*
+        * if( X->p[i - 1] > Y->p[i - 1] ) return(  X->s );
+        * if( X->p[i - 1] < Y->p[i - 1] ) return( -X->s );
+        */
+
+        /* Upper half of the limb */
+        x1 = (X->p[i] >> MBEDTLS_MPI_HALF_BITS) & MBEDTLS_MPI_HALF_MASK;
+        x2 = (Y->p[i] >> MBEDTLS_MPI_HALF_BITS) & MBEDTLS_MPI_HALF_MASK;
+
+        gt |= ((x2 - x1) >> (MBEDTLS_MPI_UINT_BITS - 1)) & eq;
+        eq &= (((x2 ^ x1) - 1) >> (MBEDTLS_MPI_UINT_BITS - 1)) & 1;
+
+        /* Lower half of the limb */
+        x1 = X->p[i] & MBEDTLS_MPI_HALF_MASK;
+        x2 = Y->p[i] & MBEDTLS_MPI_HALF_MASK;
+
+        gt |= ((x2 - x1) >> (MBEDTLS_MPI_UINT_BITS - 1)) & eq;
+        eq &= (((x2 ^ x1) - 1) >> (MBEDTLS_MPI_UINT_BITS - 1)) & 1;
+    }
+    return (int) (gt + gt + eq) - 1;
+}
+
 /** Decide if an integer is less than the other, without branches.
  *
  * \param x         First integer.
@@ -1273,6 +1434,23 @@ int mbedtls_mpi_cmp_int( const mbedtls_mpi *X, mbedtls_mpi_sint z )
     Y.p = p;
 
     return( mbedtls_mpi_cmp_mpi( X, &Y ) );
+}
+
+/*
+ * Compare signed values, without timing leaks.
+ */
+int mbedtls_mpi_cmp_int_ct( const mbedtls_mpi *X, mbedtls_mpi_sint z )
+{
+    mbedtls_mpi Y;
+    mbedtls_mpi_uint p[1];
+    MPI_VALIDATE_RET( X != NULL );
+
+    *p  = ( z < 0 ) ? -z : z;
+    Y.s = ( z < 0 ) ? -1 : 1;
+    Y.n = 1;
+    Y.p = p;
+
+    return( mbedtls_mpi_cmp_mpi_ct( X, &Y ) );
 }
 
 /*
@@ -1623,25 +1801,24 @@ void mpi_mul_hlp( size_t i,
 int mbedtls_mpi_mul_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    size_t i, j;
+    size_t i = 0;
+    size_t j = 0;
     mbedtls_mpi TA, TB;
     MPI_VALIDATE_RET( X != NULL );
     MPI_VALIDATE_RET( A != NULL );
     MPI_VALIDATE_RET( B != NULL );
+
+    /* Ensure A->n and B->n are smaller than 2^31. */
+    MPI_VALIDATE_RET( A->n < 0x80000000 );
+    MPI_VALIDATE_RET( B->n < 0x80000000 );
 
     mbedtls_mpi_init( &TA ); mbedtls_mpi_init( &TB );
 
     if( X == A ) { MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TA, A ) ); A = &TA; }
     if( X == B ) { MBEDTLS_MPI_CHK( mbedtls_mpi_copy( &TB, B ) ); B = &TB; }
 
-    for( i = A->n; i > 0; i-- )
-        if( A->p[i - 1] != 0 )
-            break;
-
-    for( j = B->n; j > 0; j-- )
-        if( B->p[j - 1] != 0 )
-            break;
-
+    MBEDTLS_MPI_CHK( mbedtls_mpi_first_nonzero(&i, A) );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_first_nonzero(&j, B) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow( X, i + j ) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_lset( X, 0 ) );
 
@@ -1948,7 +2125,7 @@ int mbedtls_mpi_mod_mpi( mbedtls_mpi *R, const mbedtls_mpi *A, const mbedtls_mpi
     MPI_VALIDATE_RET( A != NULL );
     MPI_VALIDATE_RET( B != NULL );
 
-    if( mbedtls_mpi_cmp_int( B, 0 ) < 0 )
+    if( B->s < 0 )
         return( MBEDTLS_ERR_MPI_NEGATIVE_VALUE );
 
     MBEDTLS_MPI_CHK( mbedtls_mpi_div_mpi( NULL, R, A, B ) );
@@ -2533,6 +2710,8 @@ int mbedtls_mpi_inv_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_mpi G, TA, TU, U1, U2, TB, TV, V1, V2;
+    mbedtls_mpi tmp;
+    unsigned char comp;
     MPI_VALIDATE_RET( X != NULL );
     MPI_VALIDATE_RET( A != NULL );
     MPI_VALIDATE_RET( N != NULL );
@@ -2543,10 +2722,11 @@ int mbedtls_mpi_inv_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
     mbedtls_mpi_init( &TA ); mbedtls_mpi_init( &TU ); mbedtls_mpi_init( &U1 ); mbedtls_mpi_init( &U2 );
     mbedtls_mpi_init( &G ); mbedtls_mpi_init( &TB ); mbedtls_mpi_init( &TV );
     mbedtls_mpi_init( &V1 ); mbedtls_mpi_init( &V2 );
+    mbedtls_mpi_init( &tmp );
 
     MBEDTLS_MPI_CHK( mbedtls_mpi_gcd( &G, A, N ) );
 
-    if( mbedtls_mpi_cmp_int( &G, 1 ) != 0 )
+    if( mbedtls_mpi_cmp_int_ct( &G, 1 ) != 0 )
     {
         ret = MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
         goto cleanup;
@@ -2592,6 +2772,9 @@ int mbedtls_mpi_inv_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( &V2, 1 ) );
         }
 
+        /*
+         The original code looked like this:
+
         if( mbedtls_mpi_cmp_mpi( &TU, &TV ) >= 0 )
         {
             MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &TU, &TU, &TV ) );
@@ -2604,11 +2787,72 @@ int mbedtls_mpi_inv_mod( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi
             MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &V1, &V1, &U1 ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &V2, &V2, &U2 ) );
         }
-    }
-    while( mbedtls_mpi_cmp_int( &TU, 0 ) != 0 );
 
-    while( mbedtls_mpi_cmp_int( &V1, 0 ) < 0 )
+         To make this constant-time, we store the comparison of TU and TV in `comp`,
+         such that it will be 1 only if TU >= TV. Next, we store the result of subtractions
+         in a variable called `tmp`, then perform a constant-time conditional swap based on
+         the `comp` variable.
+
+         After the first three subtractions, we invert the value of `comp` and do the same with
+         the remaining three subtractions from the original else branch.
+
+         @ref https://github.com/veorq/cryptocoding#avoid-branchings-controlled-by-secret-data
+        */
+
+        /* if (mbedtls_mpi_cmp_mpi( &TU, &TV ) >= 0) comp = 0; else comp = 1 */
+        comp = (unsigned char) (~( (mbedtls_mpi_cmp_mpi_ct( &TU, &TV ) & 2) >> 1 ) & 1);
+
+        /*
+         * if( mbedtls_mpi_cmp_mpi( &TU, &TV ) >= 0 )
+         *     MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &TU, &TU, &TV ) );
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &tmp, &TU, &TV ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap(&tmp, &TU, comp) );
+
+        /*
+         * if( mbedtls_mpi_cmp_mpi( &TU, &TV ) >= 0 )
+         *     MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &U1, &U1, &V1 ) );
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &tmp, &U1, &V1 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap(&tmp, &U1, comp) );
+
+        /*
+         * if( mbedtls_mpi_cmp_mpi( &TU, &TV ) >= 0 )
+         *     MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &U2, &U2, &V2 ) );
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &tmp, &U2, &V2 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap(&tmp, &U2, comp) );
+
+        /* Invert the value of `comp` for the next steps */
+        comp = (~comp & 1);
+
+        /*
+         * if( mbedtls_mpi_cmp_mpi( &TU, &TV ) < 0 )
+         *     MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &TV, &TV, &TU ) );
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &tmp, &TV, &TU ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap(&tmp, &TV, (comp & 1)) );
+
+        /*
+         * if( mbedtls_mpi_cmp_mpi( &TU, &TV ) < 0 )
+         *     MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &V1, &V1, &U1 ) );
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &tmp, &V1, &U1 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap(&tmp, &V1, (comp & 1)) );
+
+        /*
+         * if( mbedtls_mpi_cmp_mpi( &TU, &TV ) < 0 )
+         *     MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &V2, &V2, &U2 ) );
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &tmp, &V2, &U2 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_safe_cond_swap(&tmp, &V2, (comp & 1)) );
+    }
+    while ( !mbedtls_mpi_is_zero(&TU) );
+
+    while( mbedtls_mpi_cmp_int_ct( &V1, 0 ) < 0 )
         MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &V1, &V1, N ) );
+
+    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &V1, &V1, N ) );
 
     while( mbedtls_mpi_cmp_mpi( &V1, N ) >= 0 )
         MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &V1, &V1, N ) );
@@ -2620,6 +2864,7 @@ cleanup:
     mbedtls_mpi_free( &TA ); mbedtls_mpi_free( &TU ); mbedtls_mpi_free( &U1 ); mbedtls_mpi_free( &U2 );
     mbedtls_mpi_free( &G ); mbedtls_mpi_free( &TB ); mbedtls_mpi_free( &TV );
     mbedtls_mpi_free( &V1 ); mbedtls_mpi_free( &V2 );
+    mbedtls_mpi_free( &tmp );
 
     return( ret );
 }
