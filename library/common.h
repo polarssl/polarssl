@@ -62,9 +62,19 @@
  * To tidy up code and save horizontal and vertical space, use byte 
  * reading macros to cast
  */
-#define BYTE_0( x ) ( (uint8_t) ( ( x ) & 0xff )  )
-#define BYTE_1( x ) ( (uint8_t) ( ( ( x ) >> 8 ) & 0xff )  )
+#define BYTE_0( x ) ( (uint8_t) ( ( x ) & 0xff ) )
+#define BYTE_1( x ) ( (uint8_t) ( ( ( x ) >> 8  ) & 0xff ) )
 #define BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
 #define BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
+
+/** 
+ * 
+ */
+#define BYTES_TO_U32_LE( data, offset )                         \
+    ( (uint32_t) (data)[offset]                                 \
+      | (uint32_t) ( (uint32_t) (data)[( offset ) + 1] << 8 )   \
+      | (uint32_t) ( (uint32_t) (data)[( offset ) + 2] << 16 )  \
+      | (uint32_t) ( (uint32_t) (data)[( offset ) + 3] << 24 )  \
+    )
 
 #endif /* MBEDTLS_LIBRARY_COMMON_H */
