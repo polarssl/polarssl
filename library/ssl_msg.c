@@ -2247,7 +2247,7 @@ int mbedtls_ssl_flight_transmit( mbedtls_ssl_context *ssl )
              * copy beginning of headers then fill fragmentation fields.
              * Handshake headers: type(1) len(3) seq(2) f_off(3) f_len(3) */
             memcpy( ssl->out_msg, cur->p, 6 );
-            
+
             ssl->out_msg[6] = BYTE_2( frag_off );
             ssl->out_msg[7] = BYTE_1( frag_off );
             ssl->out_msg[8] = BYTE_0( frag_off );

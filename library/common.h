@@ -58,8 +58,8 @@
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
 
 /** Byte Reading Macros
- * 
- * To tidy up code and save horizontal and vertical space, use byte 
+ *
+ * To tidy up code and save horizontal and vertical space, use byte
  * reading macros to cast
  */
 #define BYTE_0( x ) ( (uint8_t) ( ( x ) & 0xff ) )
@@ -113,7 +113,7 @@ do {                                                            \
 } while( 0 )
 #endif
 
-/** 
+/**
  * 32-bit integer conversion from bytes (little endian)
  */
 #define BYTES_TO_U32_LE( data, offset )                         \
