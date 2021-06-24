@@ -1,0 +1,9 @@
+Changes
+   * Create 4 byte reading macros in library/common.h, used in files
+     within the same directory: MBEDTLS_BYTE_0... MBEDTLS_BYTE_3.
+   * Move the (PUT and GET) UINT32_ (BE and LE) macro functions into
+     library/common.h. Rename with the prefix MBEDTLS_ to satisfy
+     test/scripts/check-names.sh (e.g MBEDTLS_PUT_UINT32_LE).
+   * Move BYTES_TO_U32_LE macro function to library/common.h, also given
+     the prefix MBEDTLS_.
+     Fixes #4274.
