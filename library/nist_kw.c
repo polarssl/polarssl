@@ -149,7 +149,7 @@ static void calc_a_xor_t( unsigned char A[KW_SEMIBLOCK_LENGTH], uint64_t t )
     size_t i = 0;
     for( i = 0; i < sizeof( t ); i++ )
     {
-        A[i] ^= BYTE_0( t >> ( ( sizeof( t ) - 1 - i ) * 8 ) );
+        A[i] ^= ( t >> ( ( sizeof( t ) - 1 - i ) * 8 ) ) & 0xff;
     }
 }
 
