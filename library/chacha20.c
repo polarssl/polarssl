@@ -205,14 +205,14 @@ int mbedtls_chacha20_setkey( mbedtls_chacha20_context *ctx,
     ctx->state[3] = 0x6b206574;
 
     /* Set key */
-    ctx->state[4]  = BYTES_TO_U32_LE( key, 0 );
-    ctx->state[5]  = BYTES_TO_U32_LE( key, 4 );
-    ctx->state[6]  = BYTES_TO_U32_LE( key, 8 );
-    ctx->state[7]  = BYTES_TO_U32_LE( key, 12 );
-    ctx->state[8]  = BYTES_TO_U32_LE( key, 16 );
-    ctx->state[9]  = BYTES_TO_U32_LE( key, 20 );
-    ctx->state[10] = BYTES_TO_U32_LE( key, 24 );
-    ctx->state[11] = BYTES_TO_U32_LE( key, 28 );
+    ctx->state[4]  = MBEDTLS_BYTES_TO_U32_LE( key, 0 );
+    ctx->state[5]  = MBEDTLS_BYTES_TO_U32_LE( key, 4 );
+    ctx->state[6]  = MBEDTLS_BYTES_TO_U32_LE( key, 8 );
+    ctx->state[7]  = MBEDTLS_BYTES_TO_U32_LE( key, 12 );
+    ctx->state[8]  = MBEDTLS_BYTES_TO_U32_LE( key, 16 );
+    ctx->state[9]  = MBEDTLS_BYTES_TO_U32_LE( key, 20 );
+    ctx->state[10] = MBEDTLS_BYTES_TO_U32_LE( key, 24 );
+    ctx->state[11] = MBEDTLS_BYTES_TO_U32_LE( key, 28 );
 
     return( 0 );
 }
@@ -228,9 +228,9 @@ int mbedtls_chacha20_starts( mbedtls_chacha20_context* ctx,
     ctx->state[12] = counter;
 
     /* Nonce */
-    ctx->state[13] = BYTES_TO_U32_LE( nonce, 0 );
-    ctx->state[14] = BYTES_TO_U32_LE( nonce, 4 );
-    ctx->state[15] = BYTES_TO_U32_LE( nonce, 8 );
+    ctx->state[13] = MBEDTLS_BYTES_TO_U32_LE( nonce, 0 );
+    ctx->state[14] = MBEDTLS_BYTES_TO_U32_LE( nonce, 4 );
+    ctx->state[15] = MBEDTLS_BYTES_TO_U32_LE( nonce, 8 );
 
     mbedtls_platform_zeroize( ctx->keystream8, sizeof( ctx->keystream8 ) );
 

@@ -190,7 +190,7 @@ int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx,
     for( i = 0; i < 64; i++ )
     {
         if( i < 16 )
-            GET_UINT32_BE( local.W[i], data, 4 * i );
+            MBEDTLS_GET_UINT32_BE( local.W[i], data, 4 * i );
         else
             R( i );
 
@@ -205,7 +205,7 @@ int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx,
     }
 #else /* MBEDTLS_SHA256_SMALLER */
     for( i = 0; i < 16; i++ )
-        GET_UINT32_BE( local.W[i], data, 4 * i );
+        MBEDTLS_GET_UINT32_BE( local.W[i], data, 4 * i );
 
     for( i = 0; i < 16; i += 8 )
     {
@@ -355,8 +355,8 @@ int mbedtls_sha256_finish( mbedtls_sha256_context *ctx,
          | ( ctx->total[1] <<  3 );
     low  = ( ctx->total[0] <<  3 );
 
-    PUT_UINT32_BE( high, ctx->buffer, 56 );
-    PUT_UINT32_BE( low,  ctx->buffer, 60 );
+    MBEDTLS_PUT_UINT32_BE( high, ctx->buffer, 56 );
+    MBEDTLS_PUT_UINT32_BE( low,  ctx->buffer, 60 );
 
     if( ( ret = mbedtls_internal_sha256_process( ctx, ctx->buffer ) ) != 0 )
         return( ret );
@@ -364,18 +364,18 @@ int mbedtls_sha256_finish( mbedtls_sha256_context *ctx,
     /*
      * Output final state
      */
-    PUT_UINT32_BE( ctx->state[0], output,  0 );
-    PUT_UINT32_BE( ctx->state[1], output,  4 );
-    PUT_UINT32_BE( ctx->state[2], output,  8 );
-    PUT_UINT32_BE( ctx->state[3], output, 12 );
-    PUT_UINT32_BE( ctx->state[4], output, 16 );
-    PUT_UINT32_BE( ctx->state[5], output, 20 );
-    PUT_UINT32_BE( ctx->state[6], output, 24 );
+    MBEDTLS_PUT_UINT32_BE( ctx->state[0], output,  0 );
+    MBEDTLS_PUT_UINT32_BE( ctx->state[1], output,  4 );
+    MBEDTLS_PUT_UINT32_BE( ctx->state[2], output,  8 );
+    MBEDTLS_PUT_UINT32_BE( ctx->state[3], output, 12 );
+    MBEDTLS_PUT_UINT32_BE( ctx->state[4], output, 16 );
+    MBEDTLS_PUT_UINT32_BE( ctx->state[5], output, 20 );
+    MBEDTLS_PUT_UINT32_BE( ctx->state[6], output, 24 );
 
 #if defined(MBEDTLS_SHA224_C)
     if( ctx->is224 == 0 )
 #endif
-        PUT_UINT32_BE( ctx->state[7], output, 28 );
+        MBEDTLS_PUT_UINT32_BE( ctx->state[7], output, 28 );
 
     return( 0 );
 }

@@ -276,14 +276,14 @@ void psa_format_key_data_for_storage( const uint8_t *data,
         (psa_persistent_key_storage_format *) storage_data;
 
     memcpy( storage_format->magic, PSA_KEY_STORAGE_MAGIC_HEADER, PSA_KEY_STORAGE_MAGIC_HEADER_LENGTH );
-    PUT_UINT32_LE( 0, storage_format->version, 0 );
-    PUT_UINT32_LE( attr->lifetime, storage_format->lifetime, 0 );
+    MBEDTLS_PUT_UINT32_LE( 0, storage_format->version, 0 );
+    MBEDTLS_PUT_UINT32_LE( attr->lifetime, storage_format->lifetime, 0 );
     PUT_UINT16_LE( (uint16_t) attr->type, storage_format->type, 0 );
     PUT_UINT16_LE( (uint16_t) attr->bits, storage_format->bits, 0 );
-    PUT_UINT32_LE( attr->policy.usage, storage_format->policy, 0 );
-    PUT_UINT32_LE( attr->policy.alg, storage_format->policy, sizeof( uint32_t ) );
-    PUT_UINT32_LE( attr->policy.alg2, storage_format->policy, 2 * sizeof( uint32_t ) );
-    PUT_UINT32_LE( data_length, storage_format->data_len, 0 );
+    MBEDTLS_PUT_UINT32_LE( attr->policy.usage, storage_format->policy, 0 );
+    MBEDTLS_PUT_UINT32_LE( attr->policy.alg, storage_format->policy, sizeof( uint32_t ) );
+    MBEDTLS_PUT_UINT32_LE( attr->policy.alg2, storage_format->policy, 2 * sizeof( uint32_t ) );
+    MBEDTLS_PUT_UINT32_LE( data_length, storage_format->data_len, 0 );
     memcpy( storage_format->key_data, data, data_length );
 }
 
@@ -313,11 +313,11 @@ psa_status_t psa_parse_key_data_from_storage( const uint8_t *storage_data,
     if( status != PSA_SUCCESS )
         return( status );
 
-    GET_UINT32_LE( version, storage_format->version, 0 );
+    MBEDTLS_GET_UINT32_LE( version, storage_format->version, 0 );
     if( version != 0 )
         return( PSA_ERROR_DATA_INVALID );
 
-    GET_UINT32_LE( *key_data_length, storage_format->data_len, 0 );
+    MBEDTLS_GET_UINT32_LE( *key_data_length, storage_format->data_len, 0 );
     if( *key_data_length > ( storage_data_length - sizeof(*storage_format) ) ||
         *key_data_length > PSA_CRYPTO_MAX_STORAGE_SIZE )
         return( PSA_ERROR_DATA_INVALID );
@@ -334,12 +334,12 @@ psa_status_t psa_parse_key_data_from_storage( const uint8_t *storage_data,
         memcpy( *key_data, storage_format->key_data, *key_data_length );
     }
 
-    GET_UINT32_LE( attr->lifetime, storage_format->lifetime, 0 );
+    MBEDTLS_GET_UINT32_LE( attr->lifetime, storage_format->lifetime, 0 );
     GET_UINT16_LE( attr->type, storage_format->type, 0 );
     GET_UINT16_LE( attr->bits, storage_format->bits, 0 );
-    GET_UINT32_LE( attr->policy.usage, storage_format->policy, 0 );
-    GET_UINT32_LE( attr->policy.alg, storage_format->policy, sizeof( uint32_t ) );
-    GET_UINT32_LE( attr->policy.alg2, storage_format->policy, 2 * sizeof( uint32_t ) );
+    MBEDTLS_GET_UINT32_LE( attr->policy.usage, storage_format->policy, 0 );
+    MBEDTLS_GET_UINT32_LE( attr->policy.alg, storage_format->policy, sizeof( uint32_t ) );
+    MBEDTLS_GET_UINT32_LE( attr->policy.alg2, storage_format->policy, 2 * sizeof( uint32_t ) );
 
     return( PSA_SUCCESS );
 }

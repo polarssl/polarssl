@@ -385,7 +385,7 @@ static void aria_fe_xor( uint32_t r[4], const uint32_t p[4],
  * Big endian 128-bit rotation: r = a ^ (b <<< n), used only in key setup.
  *
  * We chose to store bytes into 32-bit words in little-endian format (see
- * GET/PUT_UINT32_LE) so we need to reverse bytes here.
+ * GET/MBEDTLS_PUT_UINT32_LE) so we need to reverse bytes here.
  */
 static void aria_rot128( uint32_t r[4], const uint32_t a[4],
                          const uint32_t b[4], uint8_t n )
@@ -433,21 +433,21 @@ int mbedtls_aria_setkey_enc( mbedtls_aria_context *ctx,
         return( MBEDTLS_ERR_ARIA_BAD_INPUT_DATA );
 
     /* Copy key to W0 (and potential remainder to W1) */
-    GET_UINT32_LE( w[0][0], key,  0 );
-    GET_UINT32_LE( w[0][1], key,  4 );
-    GET_UINT32_LE( w[0][2], key,  8 );
-    GET_UINT32_LE( w[0][3], key, 12 );
+    MBEDTLS_GET_UINT32_LE( w[0][0], key,  0 );
+    MBEDTLS_GET_UINT32_LE( w[0][1], key,  4 );
+    MBEDTLS_GET_UINT32_LE( w[0][2], key,  8 );
+    MBEDTLS_GET_UINT32_LE( w[0][3], key, 12 );
 
     memset( w[1], 0, 16 );
     if( keybits >= 192 )
     {
-        GET_UINT32_LE( w[1][0], key, 16 );  // 192 bit key
-        GET_UINT32_LE( w[1][1], key, 20 );
+        MBEDTLS_GET_UINT32_LE( w[1][0], key, 16 );  // 192 bit key
+        MBEDTLS_GET_UINT32_LE( w[1][1], key, 20 );
     }
     if( keybits == 256 )
     {
-        GET_UINT32_LE( w[1][2], key, 24 );  // 256 bit key
-        GET_UINT32_LE( w[1][3], key, 28 );
+        MBEDTLS_GET_UINT32_LE( w[1][2], key, 24 );  // 256 bit key
+        MBEDTLS_GET_UINT32_LE( w[1][3], key, 28 );
     }
 
     i = ( keybits - 128 ) >> 6;             // index: 0, 1, 2
@@ -524,10 +524,10 @@ int mbedtls_aria_crypt_ecb( mbedtls_aria_context *ctx,
     ARIA_VALIDATE_RET( input != NULL );
     ARIA_VALIDATE_RET( output != NULL );
 
-    GET_UINT32_LE( a, input,  0 );
-    GET_UINT32_LE( b, input,  4 );
-    GET_UINT32_LE( c, input,  8 );
-    GET_UINT32_LE( d, input, 12 );
+    MBEDTLS_GET_UINT32_LE( a, input,  0 );
+    MBEDTLS_GET_UINT32_LE( b, input,  4 );
+    MBEDTLS_GET_UINT32_LE( c, input,  8 );
+    MBEDTLS_GET_UINT32_LE( d, input, 12 );
 
     i = 0;
     while( 1 )
@@ -559,10 +559,10 @@ int mbedtls_aria_crypt_ecb( mbedtls_aria_context *ctx,
     c ^= ctx->rk[i][2];
     d ^= ctx->rk[i][3];
 
-    PUT_UINT32_LE( a, output,  0 );
-    PUT_UINT32_LE( b, output,  4 );
-    PUT_UINT32_LE( c, output,  8 );
-    PUT_UINT32_LE( d, output, 12 );
+    MBEDTLS_PUT_UINT32_LE( a, output,  0 );
+    MBEDTLS_PUT_UINT32_LE( b, output,  4 );
+    MBEDTLS_PUT_UINT32_LE( c, output,  8 );
+    MBEDTLS_PUT_UINT32_LE( d, output, 12 );
 
     return( 0 );
 }

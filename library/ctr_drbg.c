@@ -152,10 +152,10 @@ static int block_cipher_df( unsigned char *output,
      *     (Total is padded to a multiple of 16-bytes with zeroes)
      */
     p = buf + MBEDTLS_CTR_DRBG_BLOCKSIZE;
-    *p++ = BYTE_3( data_len );
-    *p++ = BYTE_2( data_len );
-    *p++ = BYTE_1( data_len );
-    *p++ = BYTE_0( data_len );
+    *p++ = MBEDTLS_BYTE_3( data_len );
+    *p++ = MBEDTLS_BYTE_2( data_len );
+    *p++ = MBEDTLS_BYTE_1( data_len );
+    *p++ = MBEDTLS_BYTE_0( data_len );
     p += 3;
     *p++ = MBEDTLS_CTR_DRBG_SEEDLEN;
     memcpy( p, data, data_len );

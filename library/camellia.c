@@ -353,8 +353,8 @@ int mbedtls_camellia_setkey_enc( mbedtls_camellia_context *ctx,
      * Prepare SIGMA values
      */
     for( i = 0; i < 6; i++ ) {
-        GET_UINT32_BE( SIGMA[i][0], SIGMA_CHARS[i], 0 );
-        GET_UINT32_BE( SIGMA[i][1], SIGMA_CHARS[i], 4 );
+        MBEDTLS_GET_UINT32_BE( SIGMA[i][0], SIGMA_CHARS[i], 0 );
+        MBEDTLS_GET_UINT32_BE( SIGMA[i][1], SIGMA_CHARS[i], 4 );
     }
 
     /*
@@ -365,7 +365,7 @@ int mbedtls_camellia_setkey_enc( mbedtls_camellia_context *ctx,
 
     /* Store KL, KR */
     for( i = 0; i < 8; i++ )
-        GET_UINT32_BE( KC[i], t, i * 4 );
+        MBEDTLS_GET_UINT32_BE( KC[i], t, i * 4 );
 
     /* Generate KA */
     for( i = 0; i < 4; ++i )
@@ -491,10 +491,10 @@ int mbedtls_camellia_crypt_ecb( mbedtls_camellia_context *ctx,
     NR = ctx->nr;
     RK = ctx->rk;
 
-    GET_UINT32_BE( X[0], input,  0 );
-    GET_UINT32_BE( X[1], input,  4 );
-    GET_UINT32_BE( X[2], input,  8 );
-    GET_UINT32_BE( X[3], input, 12 );
+    MBEDTLS_GET_UINT32_BE( X[0], input,  0 );
+    MBEDTLS_GET_UINT32_BE( X[1], input,  4 );
+    MBEDTLS_GET_UINT32_BE( X[2], input,  8 );
+    MBEDTLS_GET_UINT32_BE( X[3], input, 12 );
 
     X[0] ^= *RK++;
     X[1] ^= *RK++;
@@ -529,10 +529,10 @@ int mbedtls_camellia_crypt_ecb( mbedtls_camellia_context *ctx,
     X[0] ^= *RK++;
     X[1] ^= *RK++;
 
-    PUT_UINT32_BE( X[2], output,  0 );
-    PUT_UINT32_BE( X[3], output,  4 );
-    PUT_UINT32_BE( X[0], output,  8 );
-    PUT_UINT32_BE( X[1], output, 12 );
+    MBEDTLS_PUT_UINT32_BE( X[2], output,  0 );
+    MBEDTLS_PUT_UINT32_BE( X[3], output,  4 );
+    MBEDTLS_PUT_UINT32_BE( X[0], output,  8 );
+    MBEDTLS_PUT_UINT32_BE( X[1], output, 12 );
 
     return( 0 );
 }

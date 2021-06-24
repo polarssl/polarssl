@@ -191,14 +191,14 @@ psa_status_t psa_its_set( psa_storage_uid_t uid,
     size_t n;
 
     memcpy( header.magic, PSA_ITS_MAGIC_STRING, PSA_ITS_MAGIC_LENGTH );
-    header.size[0] = BYTE_0( data_length );
-    header.size[1] = BYTE_1( data_length );
-    header.size[2] = BYTE_2( data_length );
-    header.size[3] = BYTE_3( data_length );
-    header.flags[0] = BYTE_0( create_flags );
-    header.flags[1] = BYTE_1( create_flags );
-    header.flags[2] = BYTE_2( create_flags );
-    header.flags[3] = BYTE_3( create_flags );
+    header.size[0] = MBEDTLS_BYTE_0( data_length );
+    header.size[1] = MBEDTLS_BYTE_1( data_length );
+    header.size[2] = MBEDTLS_BYTE_2( data_length );
+    header.size[3] = MBEDTLS_BYTE_3( data_length );
+    header.flags[0] = MBEDTLS_BYTE_0( create_flags );
+    header.flags[1] = MBEDTLS_BYTE_1( create_flags );
+    header.flags[2] = MBEDTLS_BYTE_2( create_flags );
+    header.flags[3] = MBEDTLS_BYTE_3( create_flags );
 
     psa_its_fill_filename( uid, filename );
     stream = fopen( PSA_ITS_STORAGE_TEMP, "wb" );

@@ -223,7 +223,7 @@ int mbedtls_nist_kw_wrap( mbedtls_nist_kw_context *ctx,
         }
 
         memcpy( output, NIST_KW_ICV2, KW_SEMIBLOCK_LENGTH / 2 );
-        PUT_UINT32_BE( ( in_len & 0xffffffff ), output,
+        MBEDTLS_PUT_UINT32_BE( ( in_len & 0xffffffff ), output,
                        KW_SEMIBLOCK_LENGTH / 2 );
 
         memcpy( output + KW_SEMIBLOCK_LENGTH, input, in_len );
@@ -454,7 +454,7 @@ int mbedtls_nist_kw_unwrap( mbedtls_nist_kw_context *ctx,
             ret = MBEDTLS_ERR_CIPHER_AUTH_FAILED;
         }
 
-        GET_UINT32_BE( Plen, A, KW_SEMIBLOCK_LENGTH / 2 );
+        MBEDTLS_GET_UINT32_BE( Plen, A, KW_SEMIBLOCK_LENGTH / 2 );
 
         /*
          * Plen is the length of the plaintext, when the input is valid.
