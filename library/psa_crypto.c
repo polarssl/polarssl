@@ -3195,7 +3195,7 @@ static psa_status_t psa_cipher_setup( psa_cipher_operation_t *operation,
 
     /* The requested algorithm must be one that can be processed by cipher. */
     if( ! PSA_ALG_IS_CIPHER( alg ) )
-        return( PSA_ERROR_INVALID_ARGUMENT );
+        return( PSA_ERROR_NOT_SUPPORTED );
 
     /* Fetch key material from key storage. */
     status = psa_get_and_lock_key_slot_with_policy( key, &slot, usage, alg );
