@@ -76,6 +76,16 @@ void mbedtls_memory_buffer_alloc_init( unsigned char *buf, size_t len );
 void mbedtls_memory_buffer_alloc_free( void );
 
 /**
+ * \brief   Returns the size of the allocated block
+ *
+ * \note    This code is not optimized and provides a straight-forward
+ *          implementation of a stack-based memory allocator.
+ *
+ * \param block   pointer to the allocated block
+ */
+size_t mbedtls_memory_buffer_alloc_block_size(void *block);
+
+/**
  * \brief   Determine when the allocator should automatically verify the state
  *          of the entire chain of headers / meta-data.
  *          (Default: MBEDTLS_MEMORY_VERIFY_NONE)

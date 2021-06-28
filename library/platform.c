@@ -26,12 +26,22 @@
 #include "mbedtls/error.h"
 
 /* The compile time configuration of memory allocation via the macros
- * MBEDTLS_PLATFORM_{FREE/CALLOC}_MACRO takes precedence over the runtime
- * configuration via mbedtls_platform_set_calloc_free(). So, omit everything
- * related to the latter if MBEDTLS_PLATFORM_{FREE/CALLOC}_MACRO are defined. */
-#if defined(MBEDTLS_PLATFORM_MEMORY) &&                 \
-    !( defined(MBEDTLS_PLATFORM_CALLOC_MACRO) &&        \
-       defined(MBEDTLS_PLATFORM_FREE_MACRO) )
+ * MBEDTLS_PLATFORM_{FREE/MALLOC/CALLOC/REALLOC}_MACRO takes precedence
+ * over the runtime configuration via mbedtls_platform_set_calloc_free()
+ * or via mbedtls_platform_set_malloc_calloc_realloc_free().
+ * So, omit everything related to the latter if
+ * MBEDTLS_PLATFORM_{FREE/MALLOC/CALLOC/REALLOC}_MACRO are defined. */
+#if defined(MBEDTLS_PLATFORM_MEMORY)
+
+#if !defined(MBEDTLS_PLATFORM_STD_MALLOC)
+static void *platform_malloc_uninit( size_t size )
+{
+    ((void) size);
+    return( NULL );
+}
+
+#define MBEDTLS_PLATFORM_STD_MALLOC   platform_malloc_uninit
+#endif /* !MBEDTLS_PLATFORM_STD_MALLOC */
 
 #if !defined(MBEDTLS_PLATFORM_STD_CALLOC)
 static void *platform_calloc_uninit( size_t n, size_t size )
@@ -44,6 +54,17 @@ static void *platform_calloc_uninit( size_t n, size_t size )
 #define MBEDTLS_PLATFORM_STD_CALLOC   platform_calloc_uninit
 #endif /* !MBEDTLS_PLATFORM_STD_CALLOC */
 
+#if !defined(MBEDTLS_PLATFORM_STD_REALLOC)
+static void *platform_realloc_uninit( void *ptr, size_t new_size )
+{
+    ((void) ptr);
+    ((void) new_size);
+    return( NULL );
+}
+
+#define MBEDTLS_PLATFORM_STD_REALLOC   platform_realloc_uninit
+#endif /* !MBEDTLS_PLATFORM_STD_REALLOC */
+
 #if !defined(MBEDTLS_PLATFORM_STD_FREE)
 static void platform_free_uninit( void *ptr )
 {
@@ -53,12 +74,24 @@ static void platform_free_uninit( void *ptr )
 #define MBEDTLS_PLATFORM_STD_FREE     platform_free_uninit
 #endif /* !MBEDTLS_PLATFORM_STD_FREE */
 
+static void * (*mbedtls_malloc_func)( size_t ) = MBEDTLS_PLATFORM_STD_MALLOC;
 static void * (*mbedtls_calloc_func)( size_t, size_t ) = MBEDTLS_PLATFORM_STD_CALLOC;
+static void * (*mbedtls_realloc_func)( void *, size_t ) = MBEDTLS_PLATFORM_STD_REALLOC;
 static void (*mbedtls_free_func)( void * ) = MBEDTLS_PLATFORM_STD_FREE;
+
+void * mbedtls_malloc( size_t size )
+{
+    return (*mbedtls_malloc_func)( size );
+}
 
 void * mbedtls_calloc( size_t nmemb, size_t size )
 {
     return (*mbedtls_calloc_func)( nmemb, size );
+}
+
+void * mbedtls_realloc( void *ptr, size_t new_size )
+{
+    return (*mbedtls_realloc_func)( ptr, new_size );
 }
 
 void mbedtls_free( void * ptr )
@@ -66,16 +99,28 @@ void mbedtls_free( void * ptr )
     (*mbedtls_free_func)( ptr );
 }
 
-int mbedtls_platform_set_calloc_free( void * (*calloc_func)( size_t, size_t ),
-                              void (*free_func)( void * ) )
+int mbedtls_platform_set_calloc_free(
+        void * (*calloc_func)( size_t, size_t ),
+        void (*free_func)( void * ) )
 {
     mbedtls_calloc_func = calloc_func;
     mbedtls_free_func = free_func;
     return( 0 );
 }
-#endif /* MBEDTLS_PLATFORM_MEMORY &&
-          !( defined(MBEDTLS_PLATFORM_CALLOC_MACRO) &&
-             defined(MBEDTLS_PLATFORM_FREE_MACRO) ) */
+
+int mbedtls_platform_set_malloc_calloc_realloc_free(
+        void * (*malloc_func)( size_t ),
+        void * (*calloc_func)( size_t, size_t ),
+        void * (*realloc_func)( void *, size_t ),
+        void (*free_func)( void * ) )
+{
+    mbedtls_malloc_func = malloc_func;
+    mbedtls_calloc_func = calloc_func;
+    mbedtls_realloc_func = realloc_func;
+    mbedtls_free_func = free_func;
+    return( 0 );
+}
+#endif /* MBEDTLS_PLATFORM_MEMORY */
 
 #if defined(MBEDTLS_PLATFORM_HAS_NON_CONFORMING_SNPRINTF)
 #include <stdarg.h>
@@ -305,12 +350,12 @@ int mbedtls_platform_std_nv_seed_write( unsigned char *buf, size_t buf_len )
     size_t n;
 
     if( ( file = fopen( MBEDTLS_PLATFORM_STD_NV_SEED_FILE, "w" ) ) == NULL )
-        return -1;
+        return( -1 );
 
     if( ( n = fwrite( buf, 1, buf_len, file ) ) != buf_len )
     {
         fclose( file );
-        return -1;
+        return( -1 );
     }
 
     fclose( file );

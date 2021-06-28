@@ -221,25 +221,21 @@ static int verify_chain( void )
     return( 0 );
 }
 
-static void *buffer_alloc_calloc( size_t n, size_t size )
+static void *buffer_alloc_malloc( size_t size )
 {
     memory_header *new, *cur = heap.first_free;
     unsigned char *p;
-    void *ret;
-    size_t original_len, len;
+    void          *ret;
+    size_t         len = size;
 #if defined(MBEDTLS_MEMORY_BACKTRACE)
-    void *trace_buffer[MAX_BT];
-    size_t trace_cnt;
+    void          *trace_buffer[MAX_BT];
+    size_t         trace_cnt;
 #endif
 
     if( heap.buf == NULL || heap.first == NULL )
         return( NULL );
 
-    original_len = len = n * size;
-
-    if( n == 0 || size == 0 || len / n != size )
-        return( NULL );
-    else if( len > (size_t)-MBEDTLS_MEMORY_ALIGN_MULTIPLE )
+    if( len == 0 || len > (size_t)-MBEDTLS_MEMORY_ALIGN_MULTIPLE )
         return( NULL );
 
     if( len % MBEDTLS_MEMORY_ALIGN_MULTIPLE )
@@ -309,7 +305,6 @@ static void *buffer_alloc_calloc( size_t n, size_t size )
             mbedtls_exit( 1 );
 
         ret = (unsigned char *) cur + sizeof( memory_header );
-        memset( ret, 0, original_len );
 
         return( ret );
     }
@@ -367,7 +362,24 @@ static void *buffer_alloc_calloc( size_t n, size_t size )
         mbedtls_exit( 1 );
 
     ret = (unsigned char *) cur + sizeof( memory_header );
-    memset( ret, 0, original_len );
+
+    return( ret );
+}
+
+static void *buffer_alloc_calloc( size_t n, size_t size )
+{
+    void   *ret;
+    size_t  len = n * size;
+
+    if( n == 0 || size == 0 || len / n != size )
+        return( NULL );
+    else if( len > (size_t)-MBEDTLS_MEMORY_ALIGN_MULTIPLE )
+        return( NULL );
+
+    ret = buffer_alloc_malloc( len );
+    if( ret == NULL )
+        return( NULL );
+    memset( ret, 0, len );
 
     return( ret );
 }
@@ -489,6 +501,34 @@ static void buffer_alloc_free( void *ptr )
         mbedtls_exit( 1 );
 }
 
+static void *buffer_alloc_realloc( void *ptr, size_t new_size )
+{
+    memory_header *ptr_hdr;
+    size_t         ptr_dim;
+    void          *new_ptr;
+
+    if( ptr == NULL )
+        return buffer_alloc_malloc( new_size );
+
+    ptr_hdr = (memory_header *)( (unsigned char *)ptr - sizeof( memory_header ) );
+    ptr_dim = ptr_hdr->size;
+
+    buffer_alloc_free( ptr );
+
+    if( new_size == 0 )
+        return( NULL );
+
+    new_ptr = buffer_alloc_malloc( new_size );
+
+    if( new_ptr == NULL )
+        return buffer_alloc_malloc( ptr_dim );
+
+    if( new_ptr != ptr )
+        memmove( new_ptr, ptr, ( ptr_dim < new_size ) ? ptr_dim : new_size );
+
+    return( new_ptr );
+}
+
 void mbedtls_memory_buffer_set_verify( int verify )
 {
     heap.verify = verify;
@@ -542,6 +582,17 @@ void mbedtls_memory_buffer_alloc_cur_get( size_t *cur_used, size_t *cur_blocks )
 #endif /* MBEDTLS_MEMORY_DEBUG */
 
 #if defined(MBEDTLS_THREADING_C)
+static void *buffer_alloc_malloc_mutexed( size_t size )
+{
+    void *buf;
+    if( mbedtls_mutex_lock( &heap.mutex ) != 0 )
+        return( NULL );
+    buf = buffer_alloc_malloc( size );
+    if( mbedtls_mutex_unlock( &heap.mutex ) )
+        return( NULL );
+    return( buf );
+}
+
 static void *buffer_alloc_calloc_mutexed( size_t n, size_t size )
 {
     void *buf;
@@ -562,6 +613,17 @@ static void buffer_alloc_free_mutexed( void *ptr )
     buffer_alloc_free( ptr );
     (void) mbedtls_mutex_unlock( &heap.mutex );
 }
+
+static void *buffer_alloc_realloc_mutexed( void *ptr, size_t size )
+{
+    void *buf;
+    if( mbedtls_mutex_lock( &heap.mutex ) != 0 )
+        return( NULL );
+    buf = buffer_alloc_realloc( ptr, size );
+    if( mbedtls_mutex_unlock( &heap.mutex ) )
+        return( NULL );
+    return( buf );
+}
 #endif /* MBEDTLS_THREADING_C */
 
 void mbedtls_memory_buffer_alloc_init( unsigned char *buf, size_t len )
@@ -570,10 +632,17 @@ void mbedtls_memory_buffer_alloc_init( unsigned char *buf, size_t len )
 
 #if defined(MBEDTLS_THREADING_C)
     mbedtls_mutex_init( &heap.mutex );
-    mbedtls_platform_set_calloc_free( buffer_alloc_calloc_mutexed,
-                              buffer_alloc_free_mutexed );
+    mbedtls_platform_set_malloc_calloc_realloc_free(
+                buffer_alloc_malloc_mutexed,
+                buffer_alloc_calloc_mutexed,
+                buffer_alloc_realloc_mutexed,
+                buffer_alloc_free_mutexed );
 #else
-    mbedtls_platform_set_calloc_free( buffer_alloc_calloc, buffer_alloc_free );
+    mbedtls_platform_set_malloc_calloc_realloc_free(
+                buffer_alloc_malloc,
+                buffer_alloc_calloc,
+                buffer_alloc_realloc,
+                buffer_alloc_free );
 #endif
 
     if( len < sizeof( memory_header ) + MBEDTLS_MEMORY_ALIGN_MULTIPLE )
@@ -605,6 +674,16 @@ void mbedtls_memory_buffer_alloc_free( void )
     mbedtls_mutex_free( &heap.mutex );
 #endif
     mbedtls_platform_zeroize( &heap, sizeof(buffer_alloc_ctx) );
+}
+
+size_t mbedtls_memory_buffer_alloc_block_size(void *block)
+{
+    memory_header *block_hdr = (memory_header *)( (unsigned char *)block - sizeof( memory_header ) );
+
+    if( verify_header( block_hdr ) != 0 )
+        return 0;
+
+    return block_hdr->size;
 }
 
 #if defined(MBEDTLS_SELF_TEST)
@@ -648,6 +727,7 @@ int mbedtls_memory_buffer_alloc_self_test( int verbose )
 {
     unsigned char buf[1024];
     unsigned char *p, *q, *r, *end;
+    unsigned char *_p, *_q;
     int ret = 0;
 
     if( verbose != 0 )
@@ -728,6 +808,41 @@ int mbedtls_memory_buffer_alloc_self_test( int verbose )
     mbedtls_free( p );
 
     TEST_ASSERT( check_all_free( ) == 0 );
+
+    mbedtls_memory_buffer_alloc_free( );
+
+    if( verbose != 0 )
+        mbedtls_printf( "passed\n" );
+
+    if( verbose != 0 )
+        mbedtls_printf( "  MBA test #4 (realloc): " );
+
+    mbedtls_memory_buffer_alloc_init( buf, sizeof( buf ) );
+
+    p = mbedtls_malloc( 128 );
+    q = mbedtls_malloc( 384 );
+    r = mbedtls_malloc( 128 );
+
+    _q = q;
+    _p = p;
+
+    TEST_ASSERT( check_pointer( p ) == 0 );
+    TEST_ASSERT( check_pointer( q ) == 0 );
+    TEST_ASSERT( check_pointer( r ) == 0 );
+
+    mbedtls_free( q );
+
+    p = mbedtls_realloc( p, 192 );
+
+    TEST_ASSERT( check_pointer( p ) == 0 );
+    TEST_ASSERT( check_pointer( q ) == 0 );
+    TEST_ASSERT( p == _p );
+
+    p = mbedtls_realloc( p, 128 );
+    q = mbedtls_malloc( 64 );
+
+    TEST_ASSERT( p == _p );
+    TEST_ASSERT( q == _q );
 
     mbedtls_memory_buffer_alloc_free( );
 
