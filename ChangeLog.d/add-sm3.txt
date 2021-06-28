@@ -1,0 +1,2 @@
+Features
+   * Add SM3 hash algorithm to mbedtls and PSA Crypto. PR #4492.

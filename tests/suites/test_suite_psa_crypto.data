@@ -1008,6 +1008,10 @@ PSA hash setup: good, RIPEMD160
 depends_on:PSA_WANT_ALG_RIPEMD160
 hash_setup:PSA_ALG_RIPEMD160:PSA_SUCCESS
 
+PSA hash setup: good, SM3
+depends_on:MBEDTLS_SM3_C
+hash_setup:PSA_ALG_SM3:PSA_SUCCESS
+
 PSA hash setup: bad (unknown hash algorithm)
 depends_on:MBEDTLS_SHA256_C
 hash_setup:PSA_ALG_CATEGORY_HASH:PSA_ERROR_NOT_SUPPORTED
@@ -1108,6 +1112,10 @@ hash_compute_compare:PSA_ALG_MD5:"616263":"900150983cd24fb0d6963f7d28e17f72"
 PSA hash compute: good, RIPEMD160
 depends_on:PSA_WANT_ALG_RIPEMD160
 hash_compute_compare:PSA_ALG_RIPEMD160:"616263":"8eb208f7e05d987a9b044a8e98c6b087f15a0bfc"
+
+PSA hash compute: good, SM3
+depends_on:MBEDTLS_SM3_C
+hash_compute_compare:PSA_ALG_SM3:"616263":"66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0"
 
 PSA hash clone: source state
 hash_clone_source_state:
@@ -1373,6 +1381,14 @@ mac_sign:PSA_KEY_TYPE_AES:"2b7e151628aed2a6abf7158809cf4f3c":PSA_ALG_TRUNCATED_M
 PSA MAC verify: CMAC-AES-128, truncated to 4 bytes
 depends_on:PSA_WANT_ALG_CMAC:PSA_WANT_KEY_TYPE_AES
 mac_verify:PSA_KEY_TYPE_AES:"2b7e151628aed2a6abf7158809cf4f3c":PSA_ALG_TRUNCATED_MAC(PSA_ALG_CMAC, 4):"6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411":"dfa66747"
+
+PSA MAC sign: Test case 1 - HMAC-SM3
+depends_on:MBEDTLS_SM3_C
+mac_sign:PSA_KEY_TYPE_HMAC:"0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b":PSA_ALG_HMAC(PSA_ALG_SM3):"4869205468657265":"51b00d1fb49832bfb01c3ce27848e59f871d9ba938dc563b338ca964755cce70"
+
+PSA MAC verify: Test case 1 - HMAC-SM3
+depends_on:MBEDTLS_SM3_C
+mac_verify:PSA_KEY_TYPE_HMAC:"0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b":PSA_ALG_HMAC(PSA_ALG_SM3):"4869205468657265":"51b00d1fb49832bfb01c3ce27848e59f871d9ba938dc563b338ca964755cce70"
 
 Cipher operation object initializers zero properly
 cipher_operation_init:

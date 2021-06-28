@@ -321,6 +321,7 @@
 //#define MBEDTLS_SHA1_ALT
 //#define MBEDTLS_SHA256_ALT
 //#define MBEDTLS_SHA512_ALT
+//#define MBEDTLS_SM3_ALT
 
 /*
  * When replacing the elliptic curve module, pleace consider, that it is
@@ -370,23 +371,26 @@
  *            implementation should be provided for mbedtls_ecdsa_sign_det_ext().
  *
  */
-//#define MBEDTLS_MD5_PROCESS_ALT
-//#define MBEDTLS_RIPEMD160_PROCESS_ALT
-//#define MBEDTLS_SHA1_PROCESS_ALT
-//#define MBEDTLS_SHA256_PROCESS_ALT
-//#define MBEDTLS_SHA512_PROCESS_ALT
-//#define MBEDTLS_DES_SETKEY_ALT
-//#define MBEDTLS_DES_CRYPT_ECB_ALT
-//#define MBEDTLS_DES3_CRYPT_ECB_ALT
 //#define MBEDTLS_AES_SETKEY_ENC_ALT
 //#define MBEDTLS_AES_SETKEY_DEC_ALT
 //#define MBEDTLS_AES_ENCRYPT_ALT
 //#define MBEDTLS_AES_DECRYPT_ALT
+//#define MBEDTLS_DES_SETKEY_ALT
+//#define MBEDTLS_DES_CRYPT_ECB_ALT
+//#define MBEDTLS_DES3_CRYPT_ECB_ALT
 //#define MBEDTLS_ECDH_GEN_PUBLIC_ALT
 //#define MBEDTLS_ECDH_COMPUTE_SHARED_ALT
 //#define MBEDTLS_ECDSA_VERIFY_ALT
 //#define MBEDTLS_ECDSA_SIGN_ALT
 //#define MBEDTLS_ECDSA_GENKEY_ALT
+//#define MBEDTLS_MD2_PROCESS_ALT
+//#define MBEDTLS_MD4_PROCESS_ALT
+//#define MBEDTLS_MD5_PROCESS_ALT
+//#define MBEDTLS_RIPEMD160_PROCESS_ALT
+//#define MBEDTLS_SHA1_PROCESS_ALT
+//#define MBEDTLS_SHA256_PROCESS_ALT
+//#define MBEDTLS_SHA512_PROCESS_ALT
+//#define MBEDTLS_SM3_PROCESS_ALT
 
 /**
  * \def MBEDTLS_ECP_INTERNAL_ALT
@@ -2766,6 +2770,18 @@
  * This module adds support for SHA-512.
  */
 #define MBEDTLS_SHA512_C
+
+/**
+ * \def MBEDTLS_SM3_C
+ *
+ * Enable the sm3 hash algorithm.
+ *
+ * Module:  library/sm3.c
+ * Caller:  library/md.c
+ *
+ * This module is required for the SSL/TLS 1.2.
+ */
+#define MBEDTLS_SM3_C
 
 /**
  * \def MBEDTLS_SSL_CACHE_C

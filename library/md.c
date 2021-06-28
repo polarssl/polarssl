@@ -35,6 +35,7 @@
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
+#include "mbedtls/sm3.h"
 
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
@@ -113,6 +114,15 @@ const mbedtls_md_info_t mbedtls_sha512_info = {
 };
 #endif
 
+#if defined(MBEDTLS_SM3_C)
+const mbedtls_md_info_t mbedtls_sm3_info = {
+    "SM3",
+    MBEDTLS_MD_SM3,
+    32,
+    64,
+};
+#endif
+
 /*
  * Reminder: update profiles in x509_crt.c when adding a new hash!
  */
@@ -129,6 +139,11 @@ static const int supported_digests[] = {
 #if defined(MBEDTLS_SHA256_C)
         MBEDTLS_MD_SHA256,
 #endif
+
+#if defined(MBEDTLS_SM3_C)
+        MBEDTLS_MD_SM3,
+#endif
+
 #if defined(MBEDTLS_SHA224_C)
         MBEDTLS_MD_SHA224,
 #endif
@@ -187,6 +202,10 @@ const mbedtls_md_info_t *mbedtls_md_info_from_string( const char *md_name )
     if( !strcmp( "SHA512", md_name ) )
         return mbedtls_md_info_from_type( MBEDTLS_MD_SHA512 );
 #endif
+#if defined(MBEDTLS_SM3_C)
+    if( !strcmp( "SM3", md_name ) )
+        return mbedtls_md_info_from_type( MBEDTLS_MD_SM3 );
+#endif
     return( NULL );
 }
 
@@ -221,6 +240,10 @@ const mbedtls_md_info_t *mbedtls_md_info_from_type( mbedtls_md_type_t md_type )
 #if defined(MBEDTLS_SHA512_C)
         case MBEDTLS_MD_SHA512:
             return( &mbedtls_sha512_info );
+#endif
+#if defined(MBEDTLS_SM3_C)
+        case MBEDTLS_MD_SM3:
+            return( &mbedtls_sm3_info );
 #endif
         default:
             return( NULL );
@@ -274,6 +297,11 @@ void mbedtls_md_free( mbedtls_md_context_t *ctx )
 #if defined(MBEDTLS_SHA512_C)
             case MBEDTLS_MD_SHA512:
                 mbedtls_sha512_free( ctx->md_ctx );
+                break;
+#endif
+#if defined(MBEDTLS_SM3_C)
+            case MBEDTLS_MD_SM3:
+                mbedtls_sm3_free( ctx->md_ctx );
                 break;
 #endif
             default:
@@ -340,6 +368,11 @@ int mbedtls_md_clone( mbedtls_md_context_t *dst,
             mbedtls_sha512_clone( dst->md_ctx, src->md_ctx );
             break;
 #endif
+#if defined(MBEDTLS_SM3_C)
+        case MBEDTLS_MD_SM3:
+            mbedtls_sm3_clone( dst->md_ctx, src->md_ctx );
+            break;
+#endif
         default:
             return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );
     }
@@ -402,6 +435,11 @@ int mbedtls_md_setup( mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_inf
             ALLOC( sha512 );
             break;
 #endif
+#if defined(MBEDTLS_SM3_C)
+        case MBEDTLS_MD_SM3:
+            ALLOC( sm3 );
+            break;
+#endif
         default:
             return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );
     }
@@ -455,6 +493,10 @@ int mbedtls_md_starts( mbedtls_md_context_t *ctx )
         case MBEDTLS_MD_SHA512:
             return( mbedtls_sha512_starts( ctx->md_ctx, 0 ) );
 #endif
+#if defined(MBEDTLS_SM3_C)
+        case MBEDTLS_MD_SM3:
+            return( mbedtls_sm3_starts_ret( ctx->md_ctx ) );
+#endif
         default:
             return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );
     }
@@ -494,6 +536,10 @@ int mbedtls_md_update( mbedtls_md_context_t *ctx, const unsigned char *input, si
 #if defined(MBEDTLS_SHA512_C)
         case MBEDTLS_MD_SHA512:
             return( mbedtls_sha512_update( ctx->md_ctx, input, ilen ) );
+#endif
+#if defined(MBEDTLS_SM3_C)
+        case MBEDTLS_MD_SM3:
+            return( mbedtls_sm3_update_ret( ctx->md_ctx, input, ilen ) );
 #endif
         default:
             return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );
@@ -535,6 +581,10 @@ int mbedtls_md_finish( mbedtls_md_context_t *ctx, unsigned char *output )
         case MBEDTLS_MD_SHA512:
             return( mbedtls_sha512_finish( ctx->md_ctx, output ) );
 #endif
+#if defined(MBEDTLS_SM3_C)
+        case MBEDTLS_MD_SM3:
+            return( mbedtls_sm3_finish_ret( ctx->md_ctx, output ) );
+#endif
         default:
             return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );
     }
@@ -575,6 +625,10 @@ int mbedtls_md( const mbedtls_md_info_t *md_info, const unsigned char *input, si
 #if defined(MBEDTLS_SHA512_C)
         case MBEDTLS_MD_SHA512:
             return( mbedtls_sha512( input, ilen, output, 0 ) );
+#endif
+#if defined(MBEDTLS_SM3_C)
+        case MBEDTLS_MD_SM3:
+            return( mbedtls_sm3_ret( input, ilen, output ) );
 #endif
         default:
             return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );
@@ -779,6 +833,10 @@ int mbedtls_md_process( mbedtls_md_context_t *ctx, const unsigned char *data )
 #if defined(MBEDTLS_SHA512_C)
         case MBEDTLS_MD_SHA512:
             return( mbedtls_internal_sha512_process( ctx->md_ctx, data ) );
+#endif
+#if defined(MBEDTLS_SM3_C)
+        case MBEDTLS_MD_SM3:
+            return( mbedtls_internal_sm3_process( ctx->md_ctx, data ) );
 #endif
         default:
             return( MBEDTLS_ERR_MD_BAD_INPUT_DATA );

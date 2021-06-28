@@ -181,6 +181,11 @@ extern "C" {
 #define MBEDTLS_SHA512_C
 #endif
 
+#if defined(PSA_WANT_ALG_SM3) && !defined(MBEDTLS_PSA_ACCEL_ALG_SM3)
+#define MBEDTLS_PSA_BUILTIN_ALG_SM3 1
+#define MBEDTLS_SM3_C
+#endif
+
 #if defined(PSA_WANT_ALG_TLS12_PRF)
 #if !defined(MBEDTLS_PSA_ACCEL_ALG_TLS12_PRF)
 #define MBEDTLS_PSA_BUILTIN_ALG_TLS12_PRF 1
@@ -755,6 +760,11 @@ extern "C" {
 #if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
 #define MBEDTLS_PSA_BUILTIN_ECC_SECP_K1_256 1
 #define PSA_WANT_ECC_SECP_K1_256
+#endif
+
+#if defined(MBEDTLS_SM3_C)
+#define MBEDTLS_PSA_BUILTIN_ALG_SM3 1
+#define PSA_WANT_ALG_SM3 1
 #endif
 
 #endif /* MBEDTLS_PSA_CRYPTO_CONFIG */
