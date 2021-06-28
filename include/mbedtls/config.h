@@ -228,6 +228,22 @@
 //#define MBEDTLS_PLATFORM_SETUP_TEARDOWN_ALT
 
 /**
+ * \def MBEDTLS_PLATFORM_TF_SNPRINTF
+ *
+ * Uncomment to enable the reduced snprintf to be used for trusted firmware.
+ *
+ * \warning Only The following type specifiers are supported:
+ * %d or %i - signed decimal format
+ * %u - unsigned decimal format
+ * The print panics on all other formats specifiers.
+ *
+ * \warning MBEDTLS_PLATFORM_SNPRINTF_ALT cannot be defined at the same time as
+ * MBEDTLS_PLATFORM_TF_SNPRINTF!
+ *
+ */
+//#define MBEDTLS_PLATFORM_TF_SNPRINTF
+
+/**
  * \def MBEDTLS_DEPRECATED_WARNING
  *
  * Mark deprecated functions and features so that they generate a warning if

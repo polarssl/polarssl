@@ -442,6 +442,16 @@
 #error "MBEDTLS_PLATFORM_SNPRINTF_ALT defined, but not all prerequisites"
 #endif
 
+#if defined(MBEDTLS_PLATFORM_TF_SNPRINTF) && !defined(MBEDTLS_PLATFORM_C)
+#error "MBEDTLS_PLATFORM_TF_SNPRINTF defined, but not all prerequisites"
+#endif
+
+#if defined(MBEDTLS_PLATFORM_TF_SNPRINTF) &&\
+    ( defined(MBEDTLS_PLATFORM_SNPRINTF_ALT) ||\
+      defined(MBEDTLS_PLATFORM_STD_SNPRINTF) )
+#error "MBEDTLS_PLATFORM_TF_SNPRINTF and MBEDTLS_PLATFORM_SNPRINTF_ALT/MBEDTLS_PLATFORM_STD_SNPRINTF, cannot be defined simultaneously"
+#endif
+
 #if defined(MBEDTLS_PLATFORM_SNPRINTF_MACRO) && !defined(MBEDTLS_PLATFORM_C)
 #error "MBEDTLS_PLATFORM_SNPRINTF_MACRO defined, but not all prerequisites"
 #endif
@@ -449,7 +459,7 @@
 #if defined(MBEDTLS_PLATFORM_SNPRINTF_MACRO) &&\
     ( defined(MBEDTLS_PLATFORM_STD_SNPRINTF) ||\
         defined(MBEDTLS_PLATFORM_SNPRINTF_ALT) )
-#error "MBEDTLS_PLATFORM_SNPRINTF_MACRO and MBEDTLS_PLATFORM_STD_SNPRINTF/MBEDTLS_PLATFORM_SNPRINTF_ALT cannot be defined simultaneously"
+#error "MBEDTLS_PLATFORM_SNPRINTF_MACRO and MBEDTLS_PLATFORM_STD_SNPRINTF/MBEDTLS_PLATFORM_SNPRINTF_ALT/MBEDTLS_PLATFORM_TF_SNPRINTF cannot be defined simultaneously"
 #endif
 
 #if defined(MBEDTLS_PLATFORM_STD_MEM_HDR) &&\
