@@ -4078,7 +4078,7 @@ int mbedtls_ssl_context_load( mbedtls_ssl_context *ssl,
 void mbedtls_ssl_config_init( mbedtls_ssl_config *conf );
 
 /**
- * \brief          Load reasonnable default SSL configuration values.
+ * \brief          Load reasonable default SSL configuration values.
  *                 (You need to call mbedtls_ssl_config_init() first.)
  *
  * \param conf     SSL configuration context
