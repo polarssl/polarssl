@@ -324,6 +324,10 @@ static int ssl_write_supported_elliptic_curves_ext( mbedtls_ssl_context *ssl,
          *grp_id != MBEDTLS_ECP_DP_NONE;
          grp_id++ )
     {
+#if defined(MBEDTLS_ECDH_C)
+        if ( !mbedtls_ecdh_can_do( *grp_id ) )
+            continue;
+#endif
         info = mbedtls_ecp_curve_info_from_grp_id( *grp_id );
         if( info == NULL )
         {

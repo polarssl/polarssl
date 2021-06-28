@@ -3045,10 +3045,13 @@ static int ssl_prepare_server_key_exchange( mbedtls_ssl_context *ssl,
         size_t len = 0;
 
         /* Match our preference list against the offered curves */
-        for( gid = ssl->conf->curve_list; *gid != MBEDTLS_ECP_DP_NONE; gid++ )
+        for( gid = ssl->conf->curve_list; *gid != MBEDTLS_ECP_DP_NONE; gid++ ) {
+            if ( !mbedtls_ecdh_can_do( *gid ) )
+                continue;
             for( curve = ssl->handshake->curves; *curve != NULL; curve++ )
                 if( (*curve)->grp_id == *gid )
                     goto curve_matching_done;
+        }
 
 curve_matching_done:
         if( curve == NULL || *curve == NULL )

@@ -1,0 +1,2 @@
+Features
+   * Added SM2 curve parameters ("sm2p256v1").
