@@ -153,8 +153,10 @@ static int pkcs7_get_content_info_type( unsigned char **p, unsigned char *end,
 
     ret = mbedtls_asn1_get_tag( p, end, &len, MBEDTLS_ASN1_CONSTRUCTED
                                             | MBEDTLS_ASN1_SEQUENCE );
-    if( ret != 0 )
+    if( ret != 0 ) {
+        *p = start;
         return( MBEDTLS_ERR_PKCS7_INVALID_CONTENT_INFO + ret );
+    }
 
     ret = mbedtls_asn1_get_tag( p, end, &len, MBEDTLS_ASN1_OID );
     if( ret != 0 ) {
