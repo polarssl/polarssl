@@ -77,8 +77,12 @@ int mbedtls_pkcs7_load_file( const char *path, unsigned char **buf, size_t *n )
     fseek( file, 0, SEEK_SET );
 
     *buf = mbedtls_calloc( 1, *n + 1 );
-    if( *buf == NULL )
+    if( *buf == NULL ) 
+    {
+        fclose( file );
+        
         return( MBEDTLS_ERR_PKCS7_ALLOC_FAILED );
+    }
 
     if( fread( *buf, 1, *n, file ) != *n )
     {
