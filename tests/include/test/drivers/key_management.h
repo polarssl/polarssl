@@ -98,6 +98,14 @@ psa_status_t mbedtls_test_opaque_get_builtin_key(
     psa_key_attributes_t *attributes,
     uint8_t *key_buffer, size_t key_buffer_size, size_t *key_buffer_length );
 
+psa_status_t mbedtls_test_opaque_copy_key(
+    psa_key_attributes_t *attributes,
+    const uint8_t *source_key,
+    size_t source_key_size,
+    uint8_t *target_key_buffer,
+    size_t target_buffer_size,
+    size_t *key_length );
+
 psa_status_t mbedtls_test_opaque_wrap_key(
     const uint8_t *clear_key,
     size_t clear_key_size,

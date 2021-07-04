@@ -1862,3 +1862,89 @@ exit:
     PSA_DONE( );
 }
 /* END_CASE */
+
+/* BEGIN_CASE */
+void copy_key_various( int source_usage_arg,
+                   int source_alg_arg, int source_alg2_arg,
+                   int source_lifetime_arg,
+                   int type_arg, data_t *material,
+                   int target_usage_arg,
+                   int target_alg_arg, int target_alg2_arg,
+                   int target_lifetime_arg,
+                   int expected_usage_arg,
+                   int expected_alg_arg, int expected_alg2_arg )
+{
+    psa_key_attributes_t source_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_attributes_t target_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_usage_t expected_usage = expected_usage_arg;
+    psa_algorithm_t expected_alg = expected_alg_arg;
+    psa_algorithm_t expected_alg2 = expected_alg2_arg;
+    mbedtls_svc_key_id_t source_key = MBEDTLS_SVC_KEY_ID_INIT;
+    mbedtls_svc_key_id_t target_key = MBEDTLS_SVC_KEY_ID_INIT;
+    uint8_t *export_buffer = NULL;
+
+    PSA_ASSERT( psa_crypto_init( ) );
+
+    /* Prepare the source key. */
+    psa_set_key_usage_flags( &source_attributes, source_usage_arg );
+    psa_set_key_algorithm( &source_attributes, source_alg_arg );
+    psa_set_key_enrollment_algorithm( &source_attributes, source_alg2_arg );
+    psa_set_key_type( &source_attributes, type_arg );
+    psa_set_key_lifetime( &source_attributes, source_lifetime_arg );
+    PSA_ASSERT( psa_import_key( &source_attributes,
+                                material->x, material->len,
+                                &source_key ) );
+    PSA_ASSERT( psa_get_key_attributes( source_key, &source_attributes ) );
+
+    /* Prepare the target attributes. */
+    target_attributes = source_attributes;
+    psa_set_key_lifetime( &target_attributes, target_lifetime_arg );
+
+    if( target_usage_arg != -1 )
+        psa_set_key_usage_flags( &target_attributes, target_usage_arg );
+    if( target_alg_arg != -1 )
+        psa_set_key_algorithm( &target_attributes, target_alg_arg );
+    if( target_alg2_arg != -1 )
+        psa_set_key_enrollment_algorithm( &target_attributes, target_alg2_arg );
+
+    /* Copy the key. */
+    PSA_ASSERT( psa_copy_key( source_key,
+                              &target_attributes, &target_key ) );
+
+    /* Destroy the source to ensure that this doesn't affect the target. */
+    PSA_ASSERT( psa_destroy_key( source_key ) );
+
+    /* Test that the target slot has the expected content and policy. */
+    PSA_ASSERT( psa_get_key_attributes( target_key, &target_attributes ) );
+    TEST_EQUAL( psa_get_key_type( &source_attributes ),
+                psa_get_key_type( &target_attributes ) );
+    TEST_EQUAL( psa_get_key_bits( &source_attributes ),
+                psa_get_key_bits( &target_attributes ) );
+    TEST_EQUAL( expected_usage, psa_get_key_usage_flags( &target_attributes ) );
+    TEST_EQUAL( expected_alg, psa_get_key_algorithm( &target_attributes ) );
+    TEST_EQUAL( expected_alg2,
+                psa_get_key_enrollment_algorithm( &target_attributes ) );
+    if( expected_usage & PSA_KEY_USAGE_EXPORT )
+    {
+        size_t length;
+        ASSERT_ALLOC( export_buffer, material->len );
+        PSA_ASSERT( psa_export_key( target_key, export_buffer,
+                                    material->len, &length ) );
+        ASSERT_COMPARE( material->x, material->len,
+                        export_buffer, length );
+    }
+
+    PSA_ASSERT( psa_destroy_key( target_key ) );
+
+exit:
+    /*
+     * Source and target key attributes may have been returned by
+     * psa_get_key_attributes() thus reset them as required.
+     */
+    psa_reset_key_attributes( &source_attributes );
+    psa_reset_key_attributes( &target_attributes );
+
+    PSA_DONE( );
+    mbedtls_free( export_buffer );
+}
+/* END_CASE */

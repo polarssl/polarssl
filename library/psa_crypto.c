@@ -2061,10 +2061,11 @@ psa_status_t psa_copy_key( mbedtls_svc_key_id_t source_key,
     psa_key_slot_t *target_slot = NULL;
     psa_key_attributes_t actual_attributes = *specified_attributes;
     psa_se_drv_table_entry_t *driver = NULL;
+    size_t storage_size = 0;
 
     *target_key = MBEDTLS_SVC_KEY_ID_INIT;
 
-    status = psa_get_and_lock_transparent_key_slot_with_policy(
+    status = psa_get_and_lock_key_slot_with_policy(
                  source_key, &source_slot, PSA_KEY_USAGE_COPY, 0 );
     if( status != PSA_SUCCESS )
         goto exit;
@@ -2084,31 +2085,49 @@ psa_status_t psa_copy_key( mbedtls_svc_key_id_t source_key,
                                      &target_slot, &driver );
     if( status != PSA_SUCCESS )
         goto exit;
-
-#if defined(MBEDTLS_PSA_CRYPTO_SE_C)
-    if( driver != NULL )
-    {
-        /* Copying to a secure element is not implemented yet. */
-        status = PSA_ERROR_NOT_SUPPORTED;
-        goto exit;
-    }
-#endif /* MBEDTLS_PSA_CRYPTO_SE_C */
-
-    if( psa_key_lifetime_is_external( actual_attributes.core.lifetime ) )
+    if( PSA_KEY_LIFETIME_GET_LOCATION( target_slot->attr.lifetime ) !=
+        PSA_KEY_LIFETIME_GET_LOCATION( source_slot->attr.lifetime ) )
     {
         /*
-         * Copying through an opaque driver is not implemented yet, consider
-         * a lifetime with an external location as an invalid parameter for
-         * now.
-         */
+         * If the source and target keys are stored across different locations,
+         * the source key would need to be exported as plaintext and re-imported
+         * in the other location. This has security implications which have not
+         * been fully mapped.For now, this can be acheived through
+         * appropriate API invocations from the application, if needed.
+         * */
         status = PSA_ERROR_INVALID_ARGUMENT;
         goto exit;
     }
-
-    status = psa_copy_key_material( source_slot, target_slot );
-    if( status != PSA_SUCCESS )
-        goto exit;
-
+    /*
+     * When the source and target keys are within the same location,
+     * - For transparent keys it is a blind copy sans any driver invocation,
+     * - For opaque keys this translates to an invocation of the drivers'
+     *   copy_key entry point through the dispatch layer.
+     * */
+    if( psa_key_lifetime_is_external( actual_attributes.core.lifetime ) )
+    {
+        status = psa_driver_wrapper_get_key_buffer_size( &actual_attributes,
+                         actual_attributes.core.bits, &storage_size );
+        if( status != PSA_SUCCESS )
+            goto exit;
+        status = psa_allocate_buffer_to_slot( target_slot, storage_size );
+        if( status != PSA_SUCCESS )
+            goto exit;
+        status = psa_driver_wrapper_copy_key( &actual_attributes,
+                                              source_slot->key.data,
+                                              source_slot->key.bytes,
+                                              target_slot->key.data,
+                                              target_slot->key.bytes,
+                                              &target_slot->key.bytes );
+        if( status != PSA_SUCCESS )
+            goto exit;
+    }
+    else
+    {
+        status = psa_copy_key_material( source_slot, target_slot );
+        if( status != PSA_SUCCESS )
+            goto exit;
+    }
     status = psa_finish_key_creation( target_slot, driver, target_key );
 exit:
     if( status != PSA_SUCCESS )

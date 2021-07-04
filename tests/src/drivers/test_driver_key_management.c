@@ -586,6 +586,25 @@ psa_status_t mbedtls_test_opaque_get_builtin_key(
     }
 }
 
+psa_status_t mbedtls_test_opaque_copy_key(
+    psa_key_attributes_t *attributes,
+    const uint8_t *source_key, size_t source_key_size,
+    uint8_t *target_key_buffer, size_t target_buffer_size, size_t *key_length )
+{
+    /* This is a case where the opaque test driver emulates an SE without storage.
+     * With that all key context is stored in the wrapped buffer.
+     * So no additional house keeping is necessary to reference count the
+     * copied keys. This could change when the opaque test driver is extended
+     * to support SE with storage, or to emulate an SE without storage but
+     * still holding some slot references */
+    if( source_key_size > target_buffer_size )
+        return( PSA_ERROR_BUFFER_TOO_SMALL );
+    memcpy( target_key_buffer, source_key, source_key_size );
+    *key_length = source_key_size;
+    (void)attributes;
+    return( PSA_SUCCESS );
+}
+
 /*
  * The wrap function mbedtls_test_opaque_wrap_key pads and wraps the clear key.
  * It expects the clear and wrap buffers to be passed in.
