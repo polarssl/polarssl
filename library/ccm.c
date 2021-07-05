@@ -122,7 +122,10 @@ void mbedtls_ccm_free( mbedtls_ccm_context *ctx )
         ctx->y[i] ^= ctx->b[i];                                                               \
                                                                                               \
     if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->y, &olen ) ) != 0 ) \
-        return( ret );
+    {                                                                                         \
+        ctx->state |= CCM_STATE__ERROR;                                                       \
+        return( ret );                                                                        \
+    }                                                                                         \
 
 /*
  * Encrypt or decrypt a partial block with CTR
@@ -135,6 +138,7 @@ void mbedtls_ccm_free( mbedtls_ccm_context *ctx )
         if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->ctr,         \
                                            16, ctx->b, &olen ) ) != 0 )        \
         {                                                                      \
+            ctx->state |= CCM_STATE__ERROR;                                    \
             return( ret );                                                     \
         }                                                                      \
                                                                                \
@@ -145,6 +149,7 @@ void mbedtls_ccm_free( mbedtls_ccm_context *ctx )
 #define CCM_STATE__CLEAR                0
 #define CCM_STATE__STARTED              0x0001
 #define CCM_STATE__LENGHTS_SET          0x0002
+#define CCM_STATE__ERROR                0x0004
 
 static void mbedtls_ccm_clear_state(mbedtls_ccm_context *ctx) {
     ctx->state = CCM_STATE__CLEAR;
@@ -175,7 +180,10 @@ static int mbedtls_ccm_calculate_first_block(mbedtls_ccm_context *ctx)
         ctx->b[15-i] = (unsigned char)( len_left & 0xFF );
 
     if( len_left > 0 )
+    {
+        ctx->state |= CCM_STATE__ERROR;
         return( MBEDTLS_ERR_CCM_BAD_INPUT );
+    }
 
     /* Start CBC-MAC with first block*/
     UPDATE_CBC_MAC;
@@ -188,11 +196,14 @@ int mbedtls_ccm_starts( mbedtls_ccm_context *ctx,
                         const unsigned char *iv,
                         size_t iv_len )
 {
-    int ret;
-
     /* Also implies q is within bounds */
     if( iv_len < 7 || iv_len > 13 )
         return( MBEDTLS_ERR_CCM_BAD_INPUT );
+
+    if( ctx->state & CCM_STATE__ERROR )
+    {
+        mbedtls_ccm_clear_state(ctx);
+    }
 
     ctx->mode = mode;
     ctx->q = 16 - 1 - (unsigned char) iv_len;
@@ -230,9 +241,7 @@ int mbedtls_ccm_starts( mbedtls_ccm_context *ctx,
     memcpy( ctx->b + 1, iv, iv_len );
 
     ctx->state |= CCM_STATE__STARTED;
-    ret = mbedtls_ccm_calculate_first_block(ctx);
-
-    return ret;
+    return mbedtls_ccm_calculate_first_block(ctx);
 }
 
 int mbedtls_ccm_set_lengths( mbedtls_ccm_context *ctx,
@@ -240,8 +249,6 @@ int mbedtls_ccm_set_lengths( mbedtls_ccm_context *ctx,
                              size_t plaintext_len,
                              size_t tag_len )
 {
-    int ret;
-
     /*
      * Check length requirements: SP800-38C A.1
      * Additional requirement: a < 2^16 - 2^8 to simplify the code.
@@ -254,6 +261,11 @@ int mbedtls_ccm_set_lengths( mbedtls_ccm_context *ctx,
 
     if( total_ad_len >= 0xFF00 )
         return( MBEDTLS_ERR_CCM_BAD_INPUT );
+
+    if( ctx->state & CCM_STATE__ERROR )
+    {
+        mbedtls_ccm_clear_state(ctx);
+    }
 
     /*
      * First block B_0:
@@ -273,9 +285,7 @@ int mbedtls_ccm_set_lengths( mbedtls_ccm_context *ctx,
     ctx->plaintext_len = plaintext_len;
 
     ctx->state |= CCM_STATE__LENGHTS_SET;
-    ret = mbedtls_ccm_calculate_first_block(ctx);
-
-    return ret;
+    return mbedtls_ccm_calculate_first_block(ctx);
 }
 
 int mbedtls_ccm_update_ad( mbedtls_ccm_context *ctx,
