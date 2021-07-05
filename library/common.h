@@ -71,7 +71,7 @@
  * 32-bit integer manipulation macros (big endian)
  */
 #ifndef MBEDTLS_GET_UINT32_BE
-#define MBEDTLS_GET_UINT32_BE(n,b,i)                            \
+#define MBEDTLS_GET_UINT32_BE(n,b,i)                    \
     do {                                                \
         (n) = ( (uint32_t) (b)[(i)    ] << 24 )         \
             | ( (uint32_t) (b)[(i) + 1] << 16 )         \
@@ -81,7 +81,7 @@
 #endif
 
 #ifndef MBEDTLS_PUT_UINT32_BE
-#define MBEDTLS_PUT_UINT32_BE(n,b,i)                            \
+#define MBEDTLS_PUT_UINT32_BE(n,b,i)                    \
     do {                                                \
         (b)[(i)    ] = (unsigned char) ( (n) >> 24 );   \
         (b)[(i) + 1] = (unsigned char) ( (n) >> 16 );   \
@@ -94,7 +94,7 @@
  * 32-bit integer manipulation macros (little endian)
  */
 #ifndef MBEDTLS_GET_UINT32_LE
-#define MBEDTLS_GET_UINT32_LE(n,b,i)                            \
+#define MBEDTLS_GET_UINT32_LE(n,b,i)                    \
     do {                                                \
         (n) = ( (uint32_t) (b)[(i)    ]       )         \
             | ( (uint32_t) (b)[(i) + 1] <<  8 )         \
@@ -104,7 +104,7 @@
 #endif
 
 #ifndef MBEDTLS_PUT_UINT32_LE
-#define MBEDTLS_PUT_UINT32_LE(n,b,i)                                        \
+#define MBEDTLS_PUT_UINT32_LE(n,b,i)                                \
     do {                                                            \
         (b)[(i)    ] = (unsigned char) ( ( (n)       ) & 0xFF );    \
         (b)[(i) + 1] = (unsigned char) ( ( (n) >>  8 ) & 0xFF );    \
@@ -116,11 +116,32 @@
 /**
  * 32-bit integer conversion from bytes (little endian)
  */
-#define MBEDTLS_BYTES_TO_U32_LE( data, offset )                         \
+#define MBEDTLS_BYTES_TO_U32_LE( data, offset )                 \
     ( (uint32_t) (data)[offset]                                 \
       | (uint32_t) ( (uint32_t) (data)[( offset ) + 1] << 8 )   \
       | (uint32_t) ( (uint32_t) (data)[( offset ) + 2] << 16 )  \
       | (uint32_t) ( (uint32_t) (data)[( offset ) + 3] << 24 )  \
     )
+
+
+/*
+ * 16-bit integer manipulation macros (little endian)
+ */
+#ifndef MBEDTLS_GET_UINT16_LE
+#define MBEDTLS_GET_UINT16_LE( n, b, i )                \
+{                                                       \
+    (n) = ( (uint16_t) (b)[(i)    ]       )             \
+        | ( (uint16_t) (b)[(i) + 1] <<  8 );            \
+}
+#endif
+
+#ifndef MBEDTLS_PUT_UINT16_LE
+#define MBEDTLS_PUT_UINT16_LE( n, b, i )                        \
+{                                                               \
+    (b)[(i)    ] = (unsigned char) ( ( (n)       ) & 0xFF );    \
+    (b)[(i) + 1] = (unsigned char) ( ( (n) >>  8 ) & 0xFF );    \
+}
+#endif
+
 
 #endif /* MBEDTLS_LIBRARY_COMMON_H */

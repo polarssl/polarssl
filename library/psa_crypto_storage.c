@@ -231,25 +231,6 @@ static psa_status_t psa_crypto_storage_get_data_length(
     return( PSA_SUCCESS );
 }
 
-/*
- * 16-bit integer manipulation macros (little endian)
- */
-#ifndef GET_UINT16_LE
-#define GET_UINT16_LE( n, b, i )                        \
-{                                                       \
-    (n) = ( (uint16_t) (b)[(i)    ]       )             \
-        | ( (uint16_t) (b)[(i) + 1] <<  8 );            \
-}
-#endif
-
-#ifndef PUT_UINT16_LE
-#define PUT_UINT16_LE( n, b, i )                                \
-{                                                               \
-    (b)[(i)    ] = (unsigned char) ( ( (n)       ) & 0xFF );    \
-    (b)[(i) + 1] = (unsigned char) ( ( (n) >>  8 ) & 0xFF );    \
-}
-#endif
-
 /**
  * Persistent key storage magic header.
  */
@@ -278,8 +259,8 @@ void psa_format_key_data_for_storage( const uint8_t *data,
     memcpy( storage_format->magic, PSA_KEY_STORAGE_MAGIC_HEADER, PSA_KEY_STORAGE_MAGIC_HEADER_LENGTH );
     MBEDTLS_PUT_UINT32_LE( 0, storage_format->version, 0 );
     MBEDTLS_PUT_UINT32_LE( attr->lifetime, storage_format->lifetime, 0 );
-    PUT_UINT16_LE( (uint16_t) attr->type, storage_format->type, 0 );
-    PUT_UINT16_LE( (uint16_t) attr->bits, storage_format->bits, 0 );
+    MBEDTLS_PUT_UINT16_LE( (uint16_t) attr->type, storage_format->type, 0 );
+    MBEDTLS_PUT_UINT16_LE( (uint16_t) attr->bits, storage_format->bits, 0 );
     MBEDTLS_PUT_UINT32_LE( attr->policy.usage, storage_format->policy, 0 );
     MBEDTLS_PUT_UINT32_LE( attr->policy.alg, storage_format->policy, sizeof( uint32_t ) );
     MBEDTLS_PUT_UINT32_LE( attr->policy.alg2, storage_format->policy, 2 * sizeof( uint32_t ) );
@@ -335,8 +316,8 @@ psa_status_t psa_parse_key_data_from_storage( const uint8_t *storage_data,
     }
 
     MBEDTLS_GET_UINT32_LE( attr->lifetime, storage_format->lifetime, 0 );
-    GET_UINT16_LE( attr->type, storage_format->type, 0 );
-    GET_UINT16_LE( attr->bits, storage_format->bits, 0 );
+    MBEDTLS_GET_UINT16_LE( attr->type, storage_format->type, 0 );
+    MBEDTLS_GET_UINT16_LE( attr->bits, storage_format->bits, 0 );
     MBEDTLS_GET_UINT32_LE( attr->policy.usage, storage_format->policy, 0 );
     MBEDTLS_GET_UINT32_LE( attr->policy.alg, storage_format->policy, sizeof( uint32_t ) );
     MBEDTLS_GET_UINT32_LE( attr->policy.alg2, storage_format->policy, 2 * sizeof( uint32_t ) );
