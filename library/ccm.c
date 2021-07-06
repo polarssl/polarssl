@@ -281,42 +281,43 @@ int mbedtls_ccm_update_ad( mbedtls_ccm_context *ctx,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     unsigned char i;
-    size_t len_left, olen;
-    const unsigned char *src;
+    size_t olen, use_len, offset;
 
-    /*
-     * If there is additional data, update CBC-MAC with
-     * add_len, add, 0 (padding to a block boundary)
-     */
-    if( add_len > 0 )
+    if( ctx->add_len > 0 && add_len > 0)
     {
-        size_t use_len;
-        len_left = add_len;
-        src = add;
-
-        memset( ctx->b, 0, 16 );
-        ctx->b[0] = (unsigned char)( ( add_len >> 8 ) & 0xFF );
-        ctx->b[1] = (unsigned char)( ( add_len      ) & 0xFF );
-
-        use_len = len_left < 16 - 2 ? len_left : 16 - 2;
-        memcpy( ctx->b + 2, src, use_len );
-        len_left -= use_len;
-        src += use_len;
-
-        UPDATE_CBC_MAC;
-
-        while( len_left > 0 )
+        if( ctx->processed == 0 )
         {
-            use_len = len_left > 16 ? 16 : len_left;
-
             memset( ctx->b, 0, 16 );
-            memcpy( ctx->b, src, use_len );
-            UPDATE_CBC_MAC;
+            ctx->b[0] = (unsigned char)( ( ctx->add_len >> 8 ) & 0xFF );
+            ctx->b[1] = (unsigned char)( ( ctx->add_len      ) & 0xFF );
 
-            len_left -= use_len;
-            src += use_len;
+            ctx->processed += 2;
+        }
+
+        while( add_len > 0 )
+        {
+            offset = ctx->processed % 16;
+
+            use_len = 16 - offset;
+
+            if( use_len > add_len )
+                use_len = add_len;
+
+            memcpy( ctx->b + offset, add, use_len );
+            ctx->processed += use_len;
+            add_len -= use_len;
+            add += use_len;
+
+            if( use_len + offset == 16 || ctx->processed - 2 == ctx->add_len )
+            {
+                UPDATE_CBC_MAC;
+                memset( ctx->b, 0, 16 );
+            }
         }
     }
+
+    if( ctx->processed - 2 == ctx->add_len )
+        ctx->processed = 0; // prepare for mbedtls_ccm_update()
 
     return (0);
 }
