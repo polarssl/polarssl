@@ -15,6 +15,7 @@ jobs:
           - gcc-arm-none-eabi
           - libnewlib-arm-none-eabi
           - gcc-arm-linux-gnueabi
+          - libc6-dev-armel-cross
       language: python # Needed to get pip for Python 3
       python: 3.5 # version from Ubuntu 16.04
       install:

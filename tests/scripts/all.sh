@@ -2396,7 +2396,7 @@ component_build_arm_none_eabi_gcc_arm5vte () {
     scripts/config.py baremetal
     # This is an imperfect substitute for
     # component_build_arm_linux_gnueabi_gcc_arm5vte
-    # in case the gcc-arm-linux-gnueabihf toolchain is not available
+    # in case the gcc-arm-linux-gnueabi toolchain is not available
     make CC="${ARM_NONE_EABI_GCC_PREFIX}gcc" AR="${ARM_NONE_EABI_GCC_PREFIX}ar" CFLAGS='-std=c99 -Werror -Wall -Wextra -march=armv5te -O1' LDFLAGS='-march=armv5te' SHELL='sh -x' lib
 
     msg "size: ${ARM_NONE_EABI_GCC_PREFIX}gcc -march=armv5te -O1"
