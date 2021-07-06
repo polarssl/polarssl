@@ -1738,3 +1738,127 @@ exit:
     mbedtls_test_driver_hash_hooks = mbedtls_test_driver_hash_hooks_init();
 }
 /* END_CASE */
+/* BEGIN_CASE */
+void import_export_opaque_with_data( data_t *data, int type_arg,
+                       int attr_bits_arg,
+                       int expected_status_arg )
+{
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_attributes_t got_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    mbedtls_svc_key_id_t key = MBEDTLS_SVC_KEY_ID_INIT;
+    psa_key_type_t type = type_arg;
+    /* Force Location to external => Opaque */
+    psa_key_lifetime_t life_time  = ( ( PSA_CRYPTO_TEST_DRIVER_LOCATION << 8 ) | PSA_KEY_PERSISTENCE_VOLATILE );
+    size_t attr_bits = attr_bits_arg;
+    psa_status_t expected_status = expected_status_arg;
+    unsigned char *exported = NULL;
+    size_t export_size = (ptrdiff_t) data->len;
+    size_t exported_length = 0U;
+    psa_status_t status;
+
+    PSA_ASSERT( psa_crypto_init( ) );
+
+    psa_set_key_type( &attributes, type );
+    psa_set_key_bits( &attributes, attr_bits );
+    psa_set_key_lifetime( &attributes, life_time);
+    psa_set_key_usage_flags( &attributes, PSA_KEY_USAGE_EXPORT );
+
+    status = psa_import_key( &attributes, data->x, data->len, &key );
+    TEST_EQUAL( status, expected_status );
+    if( expected_status != PSA_SUCCESS )
+        goto exit;
+
+    PSA_ASSERT( psa_get_key_attributes( key, &got_attributes ) );
+    TEST_EQUAL( psa_get_key_type( &got_attributes ), type );
+    if( attr_bits != 0 )
+        TEST_EQUAL( attr_bits, psa_get_key_bits( &got_attributes ) );
+
+    /* Export the key */
+    ASSERT_ALLOC( exported, export_size);
+    status = psa_export_key( key, exported, export_size, &exported_length );
+    TEST_EQUAL( status, PSA_SUCCESS );
+    if( status != PSA_SUCCESS )
+        goto exit;
+
+    /* The exported length must be set by psa_export_key() to a value between 0
+     * and export_size. On errors, the exported length must be 0. */
+    TEST_ASSERT( exported_length != 0 );
+    TEST_ASSERT( status == PSA_SUCCESS || exported_length == 0 );
+    ASSERT_COMPARE( data->x, data->len, exported, exported_length );
+    PSA_ASSERT( psa_destroy_key( key ) );
+
+exit:
+    /*
+     * Key attributes may have been returned by psa_get_key_attributes()
+     * thus reset them as required.
+     */
+    psa_reset_key_attributes( &got_attributes );
+    mbedtls_free( exported );
+    psa_destroy_key( key );
+    PSA_DONE( );
+}
+/* END_CASE */
+/* BEGIN_CASE */
+void import_export_opaque_public_key( data_t *data,
+                               int type_arg,
+                               int alg_arg,
+                               int export_size_delta,
+                               int expected_export_status_arg,
+                               data_t *expected_public_key )
+{
+    mbedtls_svc_key_id_t key = MBEDTLS_SVC_KEY_ID_INIT;
+    psa_key_type_t type = type_arg;
+    psa_algorithm_t alg = alg_arg;
+    psa_status_t expected_export_status = expected_export_status_arg;
+    psa_status_t status;
+    /* Force Location to external => Opaque */
+    psa_key_lifetime_t life_time  = ( ( PSA_CRYPTO_TEST_DRIVER_LOCATION << 8 ) | PSA_KEY_PERSISTENCE_VOLATILE );
+    unsigned char *exported = NULL;
+    size_t export_size = expected_public_key->len + export_size_delta;
+    size_t exported_length = 0U;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    PSA_ASSERT( psa_crypto_init( ) );
+
+    psa_set_key_usage_flags( &attributes, PSA_KEY_USAGE_EXPORT );
+    psa_set_key_algorithm( &attributes, alg );
+    psa_set_key_type( &attributes, type );
+    psa_set_key_lifetime( &attributes, life_time);
+
+    /* Import the key */
+    PSA_ASSERT( psa_import_key( &attributes, data->x, data->len, &key ) );
+
+    /* Export the public key */
+    ASSERT_ALLOC( exported, export_size );
+    status = psa_export_public_key( key,
+                                    exported, export_size,
+                                    &exported_length );
+    TEST_EQUAL( status, expected_export_status );
+    if( status == PSA_SUCCESS )
+    {
+        psa_key_type_t public_type = PSA_KEY_TYPE_PUBLIC_KEY_OF_KEY_PAIR( type );
+        size_t bits;
+        PSA_ASSERT( psa_get_key_attributes( key, &attributes ) );
+        bits = psa_get_key_bits( &attributes );
+        TEST_ASSERT( expected_public_key->len <=
+                     PSA_EXPORT_KEY_OUTPUT_SIZE( public_type, bits ) );
+        TEST_ASSERT( expected_public_key->len <=
+                     PSA_EXPORT_PUBLIC_KEY_OUTPUT_SIZE( public_type, bits ) );
+        TEST_ASSERT( expected_public_key->len <=
+                     PSA_EXPORT_PUBLIC_KEY_MAX_SIZE );
+        ASSERT_COMPARE( expected_public_key->x, expected_public_key->len,
+                        exported, exported_length );
+    }
+
+exit:
+    /*
+     * Key attributes may have been returned by psa_get_key_attributes()
+     * thus reset them as required.
+     */
+    psa_reset_key_attributes( &attributes );
+
+    mbedtls_free( exported );
+    psa_destroy_key( key );
+    PSA_DONE( );
+}
+/* END_CASE */

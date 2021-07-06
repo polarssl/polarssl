@@ -611,7 +611,7 @@ psa_status_t mbedtls_psa_rsa_verify_hash(
 #if defined(MBEDTLS_PSA_ACCEL_KEY_TYPE_RSA_KEY_PAIR) || \
     defined(MBEDTLS_PSA_ACCEL_KEY_TYPE_RSA_PUBLIC_KEY)
 
-psa_status_t mbedtls_transparent_test_driver_rsa_import_key(
+psa_status_t mbedtls_test_driver_rsa_import_key(
     const psa_key_attributes_t *attributes,
     const uint8_t *data, size_t data_length,
     uint8_t *key_buffer, size_t key_buffer_size,
@@ -622,7 +622,7 @@ psa_status_t mbedtls_transparent_test_driver_rsa_import_key(
                             key_buffer_length, bits ) );
 }
 
-psa_status_t mbedtls_transparent_test_driver_rsa_export_public_key(
+psa_status_t mbedtls_test_driver_rsa_export_public_key(
     const psa_key_attributes_t *attributes,
     const uint8_t *key_buffer, size_t key_buffer_size,
     uint8_t *data, size_t data_size, size_t *data_length )
