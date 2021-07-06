@@ -172,10 +172,20 @@ static int mbedtls_ccm_calculate_first_block(mbedtls_ccm_context *ctx)
 
     /*
      * First block B_0:
-     * 0        .. 0        flags           - set by: mbedtls_ccm_starts() and mbedtls_ccm_set_lenghts()
+     * 0        .. 0        flags
      * 1        .. iv_len   nonce (aka iv)  - set by: mbedtls_ccm_starts()
-     * iv_len+1 .. 15       length          - set by: mbedtls_ccm_calculate_first_block()
+     * iv_len+1 .. 15       length
+     *
+     * With flags as (bits):
+     * 7        0
+     * 6        add present?
+     * 5 .. 3   (t - 2) / 2
+     * 2 .. 0   q - 1
      */
+    ctx->b[0] |= ( ctx->add_len > 0 ) << 6;
+    ctx->b[0] |= ( ( ctx->tag_len - 2 ) / 2 ) << 3;
+    ctx->b[0] |= ctx->q - 1;
+
     for( i = 0, len_left = ctx->plaintext_len; i < ctx->q; i++, len_left >>= 8 )
         ctx->b[15-i] = (unsigned char)( len_left & 0xFF );
 
@@ -225,19 +235,8 @@ int mbedtls_ccm_starts( mbedtls_ccm_context *ctx,
     ctx->ctr[15] = 1;
 
     /*
-     * First block B_0:
-     * 0        .. 0        flags           - set by: mbedtls_ccm_starts() and mbedtls_ccm_set_lenghts()
-     * 1        .. iv_len   nonce (aka iv)  - set by: mbedtls_ccm_starts()
-     * iv_len+1 .. 15       length          - set by: mbedtls_ccm_calculate_first_block()
-     *
-     * With flags as (bits):
-     * 7        0
-     * 6        add present?                - set by: mbedtls_ccm_set_lengths()
-     * 5 .. 3   (t - 2) / 2                 - set by: mbedtls_ccm_set_lengths()
-     * 2 .. 0   q - 1                       - set by: mbedtls_ccm_starts()
+     * See mbedtls_ccm_calculate_first_block() for B block layout description
      */
-    ctx->b[0] |= ctx->q - 1;
-
     memcpy( ctx->b + 1, iv, iv_len );
 
     ctx->state |= CCM_STATE__STARTED;
@@ -267,22 +266,10 @@ int mbedtls_ccm_set_lengths( mbedtls_ccm_context *ctx,
         mbedtls_ccm_clear_state(ctx);
     }
 
-    /*
-     * First block B_0:
-     * 0        .. 0        flags           - set by: mbedtls_ccm_starts() and mbedtls_ccm_set_lenghts()
-     * 1        .. iv_len   nonce (aka iv)  - set by: mbedtls_ccm_starts()
-     * iv_len+1 .. 15       length          - set by: mbedtls_ccm_calculate_first_block()
-     *
-     * With flags as (bits):
-     * 7        0
-     * 6        add present?                - set by: mbedtls_ccm_set_lengths()
-     * 5 .. 3   (t - 2) / 2                 - set by: mbedtls_ccm_set_lengths()
-     * 2 .. 0   q - 1                       - set by: mbedtls_ccm_starts()
-     */
-    ctx->b[0] |= ( total_ad_len > 0 ) << 6;
-    ctx->b[0] |= ( ( tag_len - 2 ) / 2 ) << 3;
-
     ctx->plaintext_len = plaintext_len;
+    ctx->add_len = total_ad_len;
+    ctx->tag_len = tag_len;
+    ctx->processed = 0;
 
     ctx->state |= CCM_STATE__LENGHTS_SET;
     return mbedtls_ccm_calculate_first_block(ctx);

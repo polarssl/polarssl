@@ -79,7 +79,10 @@ typedef struct mbedtls_ccm_context
     unsigned char MBEDTLS_PRIVATE(y)[16];    /*!< The Y working buffer */
     unsigned char MBEDTLS_PRIVATE(ctr)[16];  /*!< The counter buffer */
     unsigned char MBEDTLS_PRIVATE(q);        /*!< The Q working value */
-    size_t MBEDTLS_PRIVATE(plaintext_len);   /*!< The counter buffer */
+    size_t MBEDTLS_PRIVATE(plaintext_len);   /*!< Total plaintext length */
+    size_t MBEDTLS_PRIVATE(add_len);         /*!< Total authentication data length */
+    size_t MBEDTLS_PRIVATE(tag_len);         /*!< Total tag length */
+    size_t MBEDTLS_PRIVATE(processed);       /*!< How many bytes of input data were processed (chunked input) */
     int MBEDTLS_PRIVATE(mode);               /*!< The operation to perform:
                                                 #MBEDTLS_CCM_ENCRYPT or
                                                 #MBEDTLS_CCM_DECRYPT or
