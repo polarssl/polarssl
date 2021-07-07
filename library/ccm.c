@@ -109,13 +109,10 @@ void mbedtls_ccm_free( mbedtls_ccm_context *ctx )
 }
 
 /*
- * Macros for common operations.
- * Results in smaller compiled code than static inline functions.
- */
-
-/*
  * Update the CBC-MAC state in y using a block in b
  * (Always using b as the source helps the compiler optimise a bit better.)
+ *
+ * Macro results in smaller compiled code than static inline functions.
  */
 #define UPDATE_CBC_MAC                                                                        \
     for( i = 0; i < 16; i++ )                                                                 \
@@ -127,29 +124,36 @@ void mbedtls_ccm_free( mbedtls_ccm_context *ctx )
         return( ret );                                                                        \
     }                                                                                         \
 
-/*
- * Encrypt or decrypt a partial block with CTR
- * Warning: using b for temporary storage! src and dst must not be b!
- * This avoids allocating one more 16 bytes buffer while allowing src == dst.
- */
-#define CTR_CRYPT( dst, src, len  )                                            \
-    do                                                                         \
-    {                                                                          \
-        if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->ctr,         \
-                                           16, ctx->b, &olen ) ) != 0 )        \
-        {                                                                      \
-            ctx->state |= CCM_STATE__ERROR;                                    \
-            return( ret );                                                     \
-        }                                                                      \
-                                                                               \
-        for( i = 0; i < (len); i++ )                                           \
-            (dst)[i] = (src)[i] ^ ctx->b[i];                                   \
-    } while( 0 )
-
 #define CCM_STATE__CLEAR                0
 #define CCM_STATE__STARTED              0x0001
 #define CCM_STATE__LENGHTS_SET          0x0002
 #define CCM_STATE__ERROR                0x0004
+
+/*
+ * Encrypt or decrypt a partial block with CTR
+ */
+static int mbedtls_ccm_crypt( mbedtls_ccm_context *ctx,
+                              size_t offset, size_t use_len,
+                              const unsigned char *input,
+                              unsigned char *output )
+{
+    size_t i;
+    size_t olen = 0;
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    unsigned char tmp_buf[16] = {0};
+
+    if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->ctr, 16, tmp_buf,
+                                       &olen ) ) != 0 )
+    {
+        ctx->state |= CCM_STATE__ERROR;                                    \
+        return ret;
+    }
+
+    for( i = 0; i < use_len; i++ )
+        output[i] = input[i] ^ tmp_buf[offset + i];
+
+    return ret;
+}
 
 static void mbedtls_ccm_clear_state(mbedtls_ccm_context *ctx) {
     ctx->state = CCM_STATE__CLEAR;
@@ -359,7 +363,7 @@ int mbedtls_ccm_update( mbedtls_ccm_context *ctx,
             UPDATE_CBC_MAC;
         }
 
-        CTR_CRYPT( dst, src, use_len );
+        mbedtls_ccm_crypt( ctx, 0, use_len, src, dst );
 
         if( ctx->mode == CCM_DECRYPT )
         {
@@ -389,7 +393,6 @@ int mbedtls_ccm_finish( mbedtls_ccm_context *ctx,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     unsigned char i;
-    size_t olen;
 
     /*
      * Authentication: reset counter and crypt/mask internal tag
@@ -397,7 +400,9 @@ int mbedtls_ccm_finish( mbedtls_ccm_context *ctx,
     for( i = 0; i < ctx->q; i++ )
         ctx->ctr[15-i] = 0;
 
-    CTR_CRYPT( ctx->y, ctx->y, 16 );
+    ret = mbedtls_ccm_crypt( ctx, 0, 16, ctx->y, ctx->y );
+    if( ret != 0 )
+        return ret;
     memcpy( tag, ctx->y, tag_len );
     mbedtls_ccm_clear_state(ctx);
 
