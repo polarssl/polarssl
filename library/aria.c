@@ -385,7 +385,8 @@ static void aria_fe_xor( uint32_t r[4], const uint32_t p[4],
  * Big endian 128-bit rotation: r = a ^ (b <<< n), used only in key setup.
  *
  * We chose to store bytes into 32-bit words in little-endian format (see
- * GET/MBEDTLS_PUT_UINT32_LE) so we need to reverse bytes here.
+ * MBEDTLS_GET_UINT32_LE / MBEDTLS_PUT_UINT32_LE ) so we need to reverse
+ * bytes here.
  */
 static void aria_rot128( uint32_t r[4], const uint32_t a[4],
                          const uint32_t b[4], uint8_t n )

@@ -59,15 +59,36 @@
 
 /** Byte Reading Macros
  *
- * To tidy up code and save horizontal and vertical space, use byte
- * reading macros to cast
+ * Obtain the most significant byte of x using 0xff
+ * Using MBEDTLS_BYTE_a will shift a*8 bits
+ * to retrieve the next byte of information
  */
 #define MBEDTLS_BYTE_0( x ) ( (uint8_t) ( ( x ) & 0xff ) )
 #define MBEDTLS_BYTE_1( x ) ( (uint8_t) ( ( ( x ) >> 8  ) & 0xff ) )
 #define MBEDTLS_BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
 #define MBEDTLS_BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
 
-/*
+/**
+ * 32-bit integer manipulation macros
+ *
+ * \brief   Using GET-
+ *          From input data, take the most significant bytes
+ *          and concatonate them as you shift along
+ *          Using PUT-
+ *          Read from a 32 bit integer and store each byte
+ *          in memory, offset by a byte each, resulting in
+ *          each byte being adjacent in memory.
+ *
+ * \param   n   32 bit integer where data is accessed via
+ *              PUT or stored using GET
+ * \param   b   const unsigned char array of data to be
+ *              manipulated
+ * \param   i   offset in bytes, In the case of UINT32, i
+ *              would increment by 4 every use assuming
+ *              the data is being stored in the same location
+ */
+
+/**
  * 32-bit integer manipulation macros (big endian)
  */
 #ifndef MBEDTLS_GET_UINT32_BE
@@ -90,7 +111,7 @@
     } while( 0 )
 #endif
 
-/*
+/**
  * 32-bit integer manipulation macros (little endian)
  */
 #ifndef MBEDTLS_GET_UINT32_LE
@@ -123,8 +144,27 @@
       | (uint32_t) ( (uint32_t) (data)[( offset ) + 3] << 24 )  \
     )
 
+/**
+ * 16-bit integer manipulation macros
+ *
+ * \brief   Using GET-
+ *          From input data, take the most significant bytes
+ *          and concatonate them as you shift along
+ *          Using PUT-
+ *          Read from a 16 bit integer and store each byte
+ *          in memory, offset by a byte each, resulting in
+ *          each byte being adjacent in memory.
+ *
+ * \param   n   16 bit integer where data is accessed via
+ *              PUT or stored using GET
+ * \param   b   const unsigned char array of data to be
+ *              manipulated
+ * \param   i   offset in bytes, In the case of UINT16, i
+ *              would increment by 2 every use assuming
+ *              the data is being stored in the same location
+ */
 
-/*
+/**
  * 16-bit integer manipulation macros (little endian)
  */
 #ifndef MBEDTLS_GET_UINT16_LE
