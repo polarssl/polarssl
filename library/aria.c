@@ -434,21 +434,21 @@ int mbedtls_aria_setkey_enc( mbedtls_aria_context *ctx,
         return( MBEDTLS_ERR_ARIA_BAD_INPUT_DATA );
 
     /* Copy key to W0 (and potential remainder to W1) */
-    MBEDTLS_GET_UINT32_LE( w[0][0], key,  0 );
-    MBEDTLS_GET_UINT32_LE( w[0][1], key,  4 );
-    MBEDTLS_GET_UINT32_LE( w[0][2], key,  8 );
-    MBEDTLS_GET_UINT32_LE( w[0][3], key, 12 );
+    w[0][0] = MBEDTLS_GET_UINT32_LE( key,  0 );
+    w[0][1] = MBEDTLS_GET_UINT32_LE( key,  4 );
+    w[0][2] = MBEDTLS_GET_UINT32_LE( key,  8 );
+    w[0][3] = MBEDTLS_GET_UINT32_LE( key, 12 );
 
     memset( w[1], 0, 16 );
     if( keybits >= 192 )
     {
-        MBEDTLS_GET_UINT32_LE( w[1][0], key, 16 );  // 192 bit key
-        MBEDTLS_GET_UINT32_LE( w[1][1], key, 20 );
+        w[1][0] = MBEDTLS_GET_UINT32_LE( key, 16 );  // 192 bit key
+        w[1][1] = MBEDTLS_GET_UINT32_LE( key, 20 );
     }
     if( keybits == 256 )
     {
-        MBEDTLS_GET_UINT32_LE( w[1][2], key, 24 );  // 256 bit key
-        MBEDTLS_GET_UINT32_LE( w[1][3], key, 28 );
+        w[1][2] = MBEDTLS_GET_UINT32_LE( key, 24 );  // 256 bit key
+        w[1][3] = MBEDTLS_GET_UINT32_LE( key, 28 );
     }
 
     i = ( keybits - 128 ) >> 6;             // index: 0, 1, 2
@@ -525,10 +525,10 @@ int mbedtls_aria_crypt_ecb( mbedtls_aria_context *ctx,
     ARIA_VALIDATE_RET( input != NULL );
     ARIA_VALIDATE_RET( output != NULL );
 
-    MBEDTLS_GET_UINT32_LE( a, input,  0 );
-    MBEDTLS_GET_UINT32_LE( b, input,  4 );
-    MBEDTLS_GET_UINT32_LE( c, input,  8 );
-    MBEDTLS_GET_UINT32_LE( d, input, 12 );
+    a = MBEDTLS_GET_UINT32_LE( input,  0 );
+    b = MBEDTLS_GET_UINT32_LE( input,  4 );
+    c = MBEDTLS_GET_UINT32_LE( input,  8 );
+    d = MBEDTLS_GET_UINT32_LE( input, 12 );
 
     i = 0;
     while( 1 )

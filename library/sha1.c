@@ -103,22 +103,22 @@ int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx,
     SHA1_VALIDATE_RET( ctx != NULL );
     SHA1_VALIDATE_RET( (const unsigned char *)data != NULL );
 
-    MBEDTLS_GET_UINT32_BE( local.W[ 0], data,  0 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 1], data,  4 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 2], data,  8 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 3], data, 12 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 4], data, 16 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 5], data, 20 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 6], data, 24 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 7], data, 28 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 8], data, 32 );
-    MBEDTLS_GET_UINT32_BE( local.W[ 9], data, 36 );
-    MBEDTLS_GET_UINT32_BE( local.W[10], data, 40 );
-    MBEDTLS_GET_UINT32_BE( local.W[11], data, 44 );
-    MBEDTLS_GET_UINT32_BE( local.W[12], data, 48 );
-    MBEDTLS_GET_UINT32_BE( local.W[13], data, 52 );
-    MBEDTLS_GET_UINT32_BE( local.W[14], data, 56 );
-    MBEDTLS_GET_UINT32_BE( local.W[15], data, 60 );
+    local.W[ 0] = MBEDTLS_GET_UINT32_BE( data,  0 );
+    local.W[ 1] = MBEDTLS_GET_UINT32_BE( data,  4 );
+    local.W[ 2] = MBEDTLS_GET_UINT32_BE( data,  8 );
+    local.W[ 3] = MBEDTLS_GET_UINT32_BE( data, 12 );
+    local.W[ 4] = MBEDTLS_GET_UINT32_BE( data, 16 );
+    local.W[ 5] = MBEDTLS_GET_UINT32_BE( data, 20 );
+    local.W[ 6] = MBEDTLS_GET_UINT32_BE( data, 24 );
+    local.W[ 7] = MBEDTLS_GET_UINT32_BE( data, 28 );
+    local.W[ 8] = MBEDTLS_GET_UINT32_BE( data, 32 );
+    local.W[ 9] = MBEDTLS_GET_UINT32_BE( data, 36 );
+    local.W[10] = MBEDTLS_GET_UINT32_BE( data, 40 );
+    local.W[11] = MBEDTLS_GET_UINT32_BE( data, 44 );
+    local.W[12] = MBEDTLS_GET_UINT32_BE( data, 48 );
+    local.W[13] = MBEDTLS_GET_UINT32_BE( data, 52 );
+    local.W[14] = MBEDTLS_GET_UINT32_BE( data, 56 );
+    local.W[15] = MBEDTLS_GET_UINT32_BE( data, 60 );
 
 #define S(x,n) (((x) << (n)) | (((x) & 0xFFFFFFFF) >> (32 - (n))))
 

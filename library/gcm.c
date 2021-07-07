@@ -88,12 +88,12 @@ static int gcm_gen_table( mbedtls_gcm_context *ctx )
         return( ret );
 
     /* pack h as two 64-bits ints, big-endian */
-    MBEDTLS_GET_UINT32_BE( hi, h,  0  );
-    MBEDTLS_GET_UINT32_BE( lo, h,  4  );
+    hi = MBEDTLS_GET_UINT32_BE( h,  0  );
+    lo = MBEDTLS_GET_UINT32_BE( h,  4  );
     vh = (uint64_t) hi << 32 | lo;
 
-    MBEDTLS_GET_UINT32_BE( hi, h,  8  );
-    MBEDTLS_GET_UINT32_BE( lo, h,  12 );
+    hi = MBEDTLS_GET_UINT32_BE( h,  8  );
+    lo = MBEDTLS_GET_UINT32_BE( h,  12 );
     vl = (uint64_t) hi << 32 | lo;
 
     /* 8 = 1000 corresponds to 1 in GF(2^128) */

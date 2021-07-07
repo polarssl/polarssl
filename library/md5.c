@@ -87,22 +87,22 @@ int mbedtls_internal_md5_process( mbedtls_md5_context *ctx,
         uint32_t X[16], A, B, C, D;
     } local;
 
-    MBEDTLS_GET_UINT32_LE( local.X[ 0], data,  0 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 1], data,  4 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 2], data,  8 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 3], data, 12 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 4], data, 16 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 5], data, 20 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 6], data, 24 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 7], data, 28 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 8], data, 32 );
-    MBEDTLS_GET_UINT32_LE( local.X[ 9], data, 36 );
-    MBEDTLS_GET_UINT32_LE( local.X[10], data, 40 );
-    MBEDTLS_GET_UINT32_LE( local.X[11], data, 44 );
-    MBEDTLS_GET_UINT32_LE( local.X[12], data, 48 );
-    MBEDTLS_GET_UINT32_LE( local.X[13], data, 52 );
-    MBEDTLS_GET_UINT32_LE( local.X[14], data, 56 );
-    MBEDTLS_GET_UINT32_LE( local.X[15], data, 60 );
+    local.X[ 0] = MBEDTLS_GET_UINT32_LE( data,  0 );
+    local.X[ 1] = MBEDTLS_GET_UINT32_LE( data,  4 );
+    local.X[ 2] = MBEDTLS_GET_UINT32_LE( data,  8 );
+    local.X[ 3] = MBEDTLS_GET_UINT32_LE( data, 12 );
+    local.X[ 4] = MBEDTLS_GET_UINT32_LE( data, 16 );
+    local.X[ 5] = MBEDTLS_GET_UINT32_LE( data, 20 );
+    local.X[ 6] = MBEDTLS_GET_UINT32_LE( data, 24 );
+    local.X[ 7] = MBEDTLS_GET_UINT32_LE( data, 28 );
+    local.X[ 8] = MBEDTLS_GET_UINT32_LE( data, 32 );
+    local.X[ 9] = MBEDTLS_GET_UINT32_LE( data, 36 );
+    local.X[10] = MBEDTLS_GET_UINT32_LE( data, 40 );
+    local.X[11] = MBEDTLS_GET_UINT32_LE( data, 44 );
+    local.X[12] = MBEDTLS_GET_UINT32_LE( data, 48 );
+    local.X[13] = MBEDTLS_GET_UINT32_LE( data, 52 );
+    local.X[14] = MBEDTLS_GET_UINT32_LE( data, 56 );
+    local.X[15] = MBEDTLS_GET_UINT32_LE( data, 60 );
 
 #define S(x,n)                                                          \
     ( ( (x) << (n) ) | ( ( (x) & 0xFFFFFFFF) >> ( 32 - (n) ) ) )

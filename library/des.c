@@ -400,8 +400,8 @@ void mbedtls_des_setkey( uint32_t SK[32], const unsigned char key[MBEDTLS_DES_KE
     int i;
     uint32_t X, Y, T;
 
-    MBEDTLS_GET_UINT32_BE( X, key, 0 );
-    MBEDTLS_GET_UINT32_BE( Y, key, 4 );
+    X = MBEDTLS_GET_UINT32_BE( key, 0 );
+    Y = MBEDTLS_GET_UINT32_BE( key, 4 );
 
     /*
      * Permuted Choice 1
@@ -610,8 +610,8 @@ int mbedtls_des_crypt_ecb( mbedtls_des_context *ctx,
 
     SK = ctx->sk;
 
-    MBEDTLS_GET_UINT32_BE( X, input, 0 );
-    MBEDTLS_GET_UINT32_BE( Y, input, 4 );
+    X = MBEDTLS_GET_UINT32_BE( input, 0 );
+    Y = MBEDTLS_GET_UINT32_BE( input, 4 );
 
     DES_IP( X, Y );
 
@@ -697,8 +697,8 @@ int mbedtls_des3_crypt_ecb( mbedtls_des3_context *ctx,
 
     SK = ctx->sk;
 
-    MBEDTLS_GET_UINT32_BE( X, input, 0 );
-    MBEDTLS_GET_UINT32_BE( Y, input, 4 );
+    X = MBEDTLS_GET_UINT32_BE( input, 0 );
+    Y = MBEDTLS_GET_UINT32_BE( input, 4 );
 
     DES_IP( X, Y );
 

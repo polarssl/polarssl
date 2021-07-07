@@ -454,7 +454,7 @@ int mbedtls_nist_kw_unwrap( mbedtls_nist_kw_context *ctx,
             ret = MBEDTLS_ERR_CIPHER_AUTH_FAILED;
         }
 
-        MBEDTLS_GET_UINT32_BE( Plen, A, KW_SEMIBLOCK_LENGTH / 2 );
+        Plen = MBEDTLS_GET_UINT32_BE( A, KW_SEMIBLOCK_LENGTH / 2 );
 
         /*
          * Plen is the length of the plaintext, when the input is valid.

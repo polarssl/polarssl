@@ -190,7 +190,7 @@ int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx,
     for( i = 0; i < 64; i++ )
     {
         if( i < 16 )
-            MBEDTLS_GET_UINT32_BE( local.W[i], data, 4 * i );
+            local.W[i] = MBEDTLS_GET_UINT32_BE( data, 4 * i );
         else
             R( i );
 
@@ -205,7 +205,7 @@ int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx,
     }
 #else /* MBEDTLS_SHA256_SMALLER */
     for( i = 0; i < 16; i++ )
-        MBEDTLS_GET_UINT32_BE( local.W[i], data, 4 * i );
+        local.W[i] = MBEDTLS_GET_UINT32_BE( data, 4 * i );
 
     for( i = 0; i < 16; i += 8 )
     {
