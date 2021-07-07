@@ -68,7 +68,7 @@ fi > _identifiers
 
 if [ $( wc -l < _identifiers ) -eq $( wc -l < _decls ) ]; then
     rm _decls
-    egrep -v '^(u?int(16|32|64)_t)$' _identifiers | sort > identifiers
+    egrep -v '^(u?int(16|32|64)_t|MBEDTLS_CHECK_RETURN)$' _identifiers | sort > identifiers
     rm _identifiers
 else
     echo "$0: oops, lost some identifiers" 2>&1
