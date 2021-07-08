@@ -433,15 +433,15 @@ static void ssl_extract_add_data_from_record( unsigned char* add_data,
         *cur = rec->cid_len;
         cur++;
 
-        cur[0] = ( rec->data_len >> 8 ) & 0xFF;
-        cur[1] = ( rec->data_len >> 0 ) & 0xFF;
+        cur[0] = MBEDTLS_CHAR_1( rec->data_len );
+        cur[1] = MBEDTLS_CHAR_0( rec->data_len );
         cur += 2;
     }
     else
 #endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
     {
-        cur[0] = ( rec->data_len >> 8 ) & 0xFF;
-        cur[1] = ( rec->data_len >> 0 ) & 0xFF;
+        cur[0] = MBEDTLS_CHAR_1( rec->data_len );
+        cur[1] = MBEDTLS_CHAR_0( rec->data_len );
         cur += 2;
     }
 
@@ -2473,8 +2473,8 @@ int mbedtls_ssl_write_handshake_msg( mbedtls_ssl_context *ssl )
             /* Write message_seq and update it, except for HelloRequest */
             if( hs_type != MBEDTLS_SSL_HS_HELLO_REQUEST )
             {
-                ssl->out_msg[4] = ( ssl->handshake->out_msg_seq >> 8 ) & 0xFF;
-                ssl->out_msg[5] = ( ssl->handshake->out_msg_seq      ) & 0xFF;
+                ssl->out_msg[4] = MBEDTLS_CHAR_1( ssl->handshake->out_msg_seq );
+                ssl->out_msg[5] = MBEDTLS_CHAR_0( ssl->handshake->out_msg_seq );
                 ++( ssl->handshake->out_msg_seq );
             }
             else

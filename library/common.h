@@ -68,6 +68,15 @@
 #define MBEDTLS_BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
 #define MBEDTLS_BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
 
+#define MBEDTLS_CHAR_0( x ) ( (unsigned char) (   ( x )         & 0xff ) )
+#define MBEDTLS_CHAR_1( x ) ( (unsigned char) ( ( ( x ) >> 8  ) & 0xff ) )
+#define MBEDTLS_CHAR_2( x ) ( (unsigned char) ( ( ( x ) >> 16 ) & 0xff ) )
+#define MBEDTLS_CHAR_3( x ) ( (unsigned char) ( ( ( x ) >> 24 ) & 0xff ) )
+#define MBEDTLS_CHAR_4( x ) ( (unsigned char) ( ( ( x ) >> 32 ) & 0xff ) )
+#define MBEDTLS_CHAR_5( x ) ( (unsigned char) ( ( ( x ) >> 40 ) & 0xff ) )
+#define MBEDTLS_CHAR_6( x ) ( (unsigned char) ( ( ( x ) >> 48 ) & 0xff ) )
+#define MBEDTLS_CHAR_7( x ) ( (unsigned char) ( ( ( x ) >> 56 ) & 0xff ) )
+
 /**
  * 32-bit integer manipulation GET macros (big endian)
  *
