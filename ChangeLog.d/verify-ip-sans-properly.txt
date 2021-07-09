@@ -1,0 +1,5 @@
+Features
+   * X.509 hostname verification now supports IPAddress Subject Alternate Names.
+     Both IPv4 (in canonical dot-decimal notation) and IPv6 (formatted according
+     to https://tools.ietf.org/html/rfc5952) are supported.
+     Contributed by Eugene Kobyakov (NetFoundry)

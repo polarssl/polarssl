@@ -276,6 +276,7 @@
     <ClInclude Include="..\..\library\psa_crypto_storage.h" />
     <ClInclude Include="..\..\library\ssl_invasive.h" />
     <ClInclude Include="..\..\library\ssl_tls13_keys.h" />
+    <ClInclude Include="..\..\library\x509_invasive.h" />
     <ClInclude Include="..\..\3rdparty\everest\include\everest\everest.h" />
     <ClInclude Include="..\..\3rdparty\everest\include\everest\Hacl_Curve25519.h" />
     <ClInclude Include="..\..\3rdparty\everest\include\everest\kremlib.h" />

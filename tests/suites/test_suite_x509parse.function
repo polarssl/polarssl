@@ -10,6 +10,8 @@
 #include "mbedtls/error.h"
 #include "string.h"
 
+#include <x509_invasive.h>
+
 #if MBEDTLS_X509_MAX_INTERMEDIATE_CA > 19
 #error "The value of MBEDTLS_X509_MAX_INTERMEDIATE_C is larger \
 than the current threshold 19. To test larger values, please \
@@ -399,6 +401,32 @@ int parse_crt_ext_cb( void *p_ctx, mbedtls_x509_crt const *crt, mbedtls_x509_buf
  * depends_on:MBEDTLS_BIGNUM_C
  * END_DEPENDENCIES
  */
+
+/* BEGIN_CASE depends_on:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_TEST_HOOKS */
+void x509_ipv4_parse( char * ipv4, data_t * exp, int ref_ret )
+{
+    unsigned char addr[4];
+    int ret = mbedtls_x509_parse_ipv4( ipv4, strlen(ipv4), addr  );
+    TEST_EQUAL( ret, ref_ret );
+
+    if( ret == 0 ) {
+        ASSERT_COMPARE( exp->x, exp->len, addr, sizeof( addr ) );
+    }
+}
+/* END_CASE */
+
+/* BEGIN_CASE depends_on:MBEDTLS_X509_CRT_PARSE_C:MBEDTLS_TEST_HOOKS */
+void x509_ipv6_parse( char * ipv6, data_t * exp, int ref_ret )
+{
+    unsigned char addr[16];
+    int ret = mbedtls_x509_parse_ipv6( ipv6, strlen(ipv6), addr  );
+    TEST_EQUAL( ret, ref_ret );
+
+    if( ret == 0 ) {
+        ASSERT_COMPARE( exp->x, exp->len, addr, sizeof( addr ) );
+    }
+}
+/* END_CASE */
 
 /* BEGIN_CASE depends_on:MBEDTLS_FS_IO:MBEDTLS_X509_CRT_PARSE_C */
 void x509_parse_san( char * crt_file, char * result_str )
