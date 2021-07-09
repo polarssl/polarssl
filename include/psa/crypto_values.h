@@ -1129,6 +1129,23 @@
  */
 #define PSA_ALG_OFB                             ((psa_algorithm_t)0x04c01200)
 
+/** The CCM* cipher mode without authentication.
+ *
+ * This is CCM* as specified in IEEE 802.15.4 §7, with a tag length of 0.
+ * For CCM* with a nonzero tag length, use the AEAD algorithm #PSA_ALG_CCM.
+ *
+ * The underlying block cipher is determined by the key type.
+ *
+ * CCM* requires knowledge of the plaintext length before producing output.
+ * As a consequence, it can only be used with the single-part cipher interface
+ * (psa_cipher_encrypt() and psa_cipher_decrypt()), not with the multi-part
+ * cipher interface.
+ *
+ * The IV can be from 8 to 13 bytes long. The length of the message
+ * is at most `2^(8*(15-n))-1` where `n` is the length of the IV.
+ */
+#define PSA_ALG_CCM_STAR_NO_TAG                 ((psa_algorithm_t)0x04c01300)
+
 /** The XTS cipher mode.
  *
  * XTS is a cipher mode which is built from a block cipher. It requires at
