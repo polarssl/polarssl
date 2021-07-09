@@ -1,0 +1,9 @@
+API changes
+   * Add function mbedtls_ssl_conf_trusted_authority() for configuring the
+     "Trusted CA Indication" extension. Add the corresponding struct
+     mbedtls_ssl_trusted_authority as well as identifier type definitions.
+
+Features
+   * Add support for the extension "Trusted CA Indication" (trusted_ca_keys)
+     as defined in RFC 6066, for both client and server side. Contributed by
+     Fabian Hartung in PR #3371.

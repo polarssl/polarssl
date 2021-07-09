@@ -111,6 +111,8 @@ int main( void )
 #define DFL_AUTH_MODE           -1
 #define DFL_CERT_REQ_CA_LIST    MBEDTLS_SSL_CERT_REQ_CA_LIST_ENABLED
 #define DFL_MFL_CODE            MBEDTLS_SSL_MAX_FRAG_LEN_NONE
+#define DFL_TRUSTED_ID          NULL
+#define DFL_TRUSTED_ID_TYPE     -1
 #define DFL_TRUNC_HMAC          -1
 #define DFL_TICKETS             MBEDTLS_SSL_SESSION_TICKETS_ENABLED
 #define DFL_TICKET_TIMEOUT      86400
@@ -334,6 +336,15 @@ int main( void )
 #define USAGE_MAX_FRAG_LEN ""
 #endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
 
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+#define USAGE_TRUSTED_CA_KEYS                                               \
+    "    trusted_id=%%s       A list of trusted authorities. id1[,...]\n"   \
+    "                        default: \"\" (disabled)\n"                    \
+    "    trusted_id_type=%%d  default: -1 (disabled)\n"
+#else
+#define USAGE_TRUSTED_CA_KEYS ""
+#endif
+
 #if defined(MBEDTLS_SSL_ALPN)
 #define USAGE_ALPN \
     "    alpn=%%s             default: \"\" (disabled)\n"   \
@@ -480,6 +491,7 @@ int main( void )
     USAGE_NSS_KEYLOG_FILE                                   \
     USAGE_CACHE                                             \
     USAGE_MAX_FRAG_LEN                                      \
+    USAGE_TRUSTED_CA_KEYS                                   \
     USAGE_ALPN                                              \
     USAGE_EMS                                               \
     USAGE_ETM                                               \
@@ -569,6 +581,8 @@ struct options
     int auth_mode;              /* verify mode for connection               */
     int cert_req_ca_list;       /* should we send the CA list?              */
     unsigned char mfl_code;     /* code for maximum fragment length         */
+    char *trusted_id;           /* list of trusted authorities              */
+    int trusted_id_type;        /* trusted authority type                   */
     int trunc_hmac;             /* accept truncated hmac?                   */
     int tickets;                /* enable / disable session tickets         */
     int ticket_timeout;         /* session ticket lifetime                  */
@@ -1483,6 +1497,8 @@ int main( int argc, char *argv[] )
     opt.auth_mode           = DFL_AUTH_MODE;
     opt.cert_req_ca_list    = DFL_CERT_REQ_CA_LIST;
     opt.mfl_code            = DFL_MFL_CODE;
+    opt.trusted_id          = DFL_TRUSTED_ID;
+    opt.trusted_id_type     = DFL_TRUSTED_ID_TYPE;
     opt.trunc_hmac          = DFL_TRUNC_HMAC;
     opt.tickets             = DFL_TICKETS;
     opt.ticket_timeout      = DFL_TICKET_TIMEOUT;
@@ -1776,6 +1792,10 @@ int main( int argc, char *argv[] )
         {
             opt.alpn_string = q;
         }
+        else if( strcmp( p, "trusted_id" ) == 0)
+            opt.trusted_id = q;
+        else if( strcmp( p, "trusted_id_type" ) == 0)
+            opt.trusted_id_type = atoi( q );
         else if( strcmp( p, "trunc_hmac" ) == 0 )
         {
             switch( atoi( q ) )
@@ -2501,6 +2521,42 @@ int main( int argc, char *argv[] )
         goto exit;
     }
 #endif /* MBEDTLS_SSL_DTLS_SRTP */
+
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+    if( opt.trusted_id != DFL_TRUSTED_ID &&
+        opt.trusted_id_type != DFL_TRUSTED_ID_TYPE )
+    {
+        const char *id = NULL;
+
+        /* Parse comma-separated list */
+        p = (char *) opt.trusted_id;
+
+        while( *p != '\0' )
+        {
+            id = p;
+
+            /* Terminate the current string and move on to next one */
+            while( *p != ',' && *p != '\0' )
+                p++;
+            if( *p == ',' )
+                *p++ = '\0';
+
+            if( ( ret = mbedtls_ssl_conf_trusted_authority( &conf, (const unsigned char *) id,
+                                                strlen( id ), opt.trusted_id_type ) ) != 0 ) {
+                  mbedtls_printf( " failed\n  ! mbedtls_ssl_conf_trusted_authority returned %d\n\n", ret );
+                  goto exit;
+            }
+        }
+    }
+    else if ( opt.trusted_id_type == MBEDTLS_SSL_CA_ID_TYPE_PRE_AGREED )
+    {
+        if( ( ret = mbedtls_ssl_conf_trusted_authority( &conf, NULL,
+                                            0, opt.trusted_id_type ) ) != 0 ) {
+              mbedtls_printf( " failed\n  ! mbedtls_ssl_conf_trusted_authority returned %d\n\n", ret );
+              goto exit;
+        }
+    }
+#endif
 
 #if defined(MBEDTLS_SSL_EXTENDED_MASTER_SECRET)
     if( opt.extended_ms != DFL_EXTENDED_MS )

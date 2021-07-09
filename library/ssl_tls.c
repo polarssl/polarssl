@@ -3608,6 +3608,76 @@ void mbedtls_ssl_set_hs_authmode( mbedtls_ssl_context *ssl,
 }
 #endif /* MBEDTLS_SSL_SERVER_NAME_INDICATION */
 
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+int mbedtls_ssl_conf_trusted_authority( mbedtls_ssl_config *conf,
+                                        const unsigned char *id,
+                                        size_t id_len,
+                                        int id_type )
+{
+    mbedtls_ssl_trusted_authority **head = &conf->trusted_auth;
+    mbedtls_ssl_trusted_authority *new_auth;
+
+    /* Check id type and length */
+    switch( id_type )
+    {
+        case MBEDTLS_SSL_CA_ID_TYPE_PRE_AGREED:
+            if( id_len > 0 )
+                return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+            break;
+        case MBEDTLS_SSL_CA_ID_TYPE_KEY_SHA1_HASH:
+        case MBEDTLS_SSL_CA_ID_TYPE_CERT_SHA1_HASH:
+            if( id_len != 20 )
+                return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+            break;
+        case MBEDTLS_SSL_CA_ID_TYPE_X509_NAME:
+            if( id_len == 0 )
+                return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+            break;
+        default:
+            return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+    }
+
+    new_auth = mbedtls_calloc( 1, sizeof( mbedtls_ssl_trusted_authority ) );
+    if( new_auth == NULL )
+        return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
+
+    if( id != NULL && id_len != 0 )
+    {
+        new_auth->id = mbedtls_calloc( 1, id_len );
+        if( new_auth->id == NULL )
+        {
+            mbedtls_free( new_auth );
+            return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
+        }
+        memcpy( new_auth->id, id, id_len );
+        new_auth->len = id_len;
+    }
+    else
+    {
+        new_auth->len = 0;
+        new_auth->id = NULL;
+    }
+
+    new_auth->id_type = id_type;
+    new_auth->next = NULL;
+
+    /* Update head if the list was null, else add to the end */
+    if( *head == NULL )
+    {
+        *head = new_auth;
+    }
+    else
+    {
+        mbedtls_ssl_trusted_authority *cur = *head;
+        while( cur->next != NULL )
+            cur = cur->next;
+        cur->next = new_auth;
+    }
+
+    return( 0 );
+}
+#endif /* MBEDTLS_SSL_TRUSTED_CA_KEYS */
+
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 void mbedtls_ssl_set_verify( mbedtls_ssl_context *ssl,
                      int (*f_vrfy)(void *, mbedtls_x509_crt *, int, uint32_t *),
@@ -5217,6 +5287,21 @@ static void ssl_key_cert_free( mbedtls_ssl_key_cert *key_cert )
 }
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+static void ssl_trusted_auth_free( mbedtls_ssl_trusted_authority *trusted_authority )
+{
+    mbedtls_ssl_trusted_authority *cur = trusted_authority, *next;
+
+    while( cur != NULL )
+    {
+        next = cur->next;
+        mbedtls_free( cur->id );
+        mbedtls_free( cur );
+        cur = next;
+    }
+}
+#endif /* MBEDTLS_SSL_TRUSTED_CA_KEYS */
+
 void mbedtls_ssl_handshake_free( mbedtls_ssl_context *ssl )
 {
     mbedtls_ssl_handshake_params *handshake = ssl->handshake;
@@ -6323,6 +6408,11 @@ void mbedtls_ssl_config_free( mbedtls_ssl_config *conf )
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
     ssl_key_cert_free( conf->key_cert );
+#endif
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C) && \
+    defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+    ssl_trusted_auth_free( conf->trusted_auth );
 #endif
 
     mbedtls_platform_zeroize( conf, sizeof( mbedtls_ssl_config ) );

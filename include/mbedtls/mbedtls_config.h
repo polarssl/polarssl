@@ -1609,6 +1609,17 @@
 #define MBEDTLS_SSL_EXPORT_KEYS
 
 /**
+ * \def MBEDTLS_SSL_TRUSTED_CA_KEYS
+ *
+ * Enable support for RFC 6066 trusted CA keys in SSL.
+ *
+ * Requires: MBEDTLS_X509_CRT_PARSE_C
+ *
+ * Comment this macro to disable support for trusted CA keys in SSL
+ */
+#define MBEDTLS_SSL_TRUSTED_CA_KEYS
+
+/**
  * \def MBEDTLS_SSL_SERVER_NAME_INDICATION
  *
  * Enable support for RFC 6066 server name indication (SNI) in SSL.

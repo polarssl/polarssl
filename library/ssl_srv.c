@@ -543,6 +543,88 @@ static int ssl_parse_cid_ext( mbedtls_ssl_context *ssl,
 }
 #endif /* MBEDTLS_SSL_DTLS_CONNECTION_ID */
 
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+static int ssl_parse_trusted_ca_keys_ext( mbedtls_ssl_context *ssl,
+                                         const unsigned char *buf,
+                                         size_t len )
+{
+    size_t trusted_auth_list_size, trusted_auth_size;
+    uint8_t identifier_type;
+    const unsigned char *p;
+    const mbedtls_ssl_trusted_authority *own_trusted_auth;
+    mbedtls_ssl_key_cert *own_key_cert;
+    int selected_id;
+
+    MBEDTLS_SSL_DEBUG_MSG( 3, ( "parse trusted_ca_keys extension" ) );
+
+    if( len < 2 )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad client hello message" ) );
+        mbedtls_ssl_send_alert_message( ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                        MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR );
+        return( MBEDTLS_ERR_SSL_BAD_HS_CLIENT_HELLO );
+    }
+    trusted_auth_list_size = len;
+
+    p = buf;
+    ssl->handshake->trusted_ca_key_cert = NULL;
+
+    while( trusted_auth_list_size >  0 )
+    {
+        trusted_auth_size = ( ( *p << 8 ) | *( p + 1 ) );
+        identifier_type = *( p + 2 );
+        p += 3;
+        own_trusted_auth = ssl->conf->trusted_auth;
+        own_key_cert = ssl->conf->key_cert;
+
+        /* Check items of the received authority list */
+        if( ( identifier_type > MBEDTLS_SSL_CA_ID_TYPE_CERT_SHA1_HASH ) ||
+             ( ( trusted_auth_size - 1 ) > 20 ) )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad client hello message" ) );
+        }
+        else {
+            /* Check if received trusted auth is stored in own trusted auth list */
+            for( selected_id = 1; own_trusted_auth != NULL && own_key_cert != NULL;
+                 selected_id++ )
+            {
+                /* Check id */
+                if( identifier_type == own_trusted_auth->id_type &&
+                    ( trusted_auth_size - 1 ) == own_trusted_auth->len &&
+                    ( identifier_type == MBEDTLS_SSL_CA_ID_TYPE_PRE_AGREED ||
+                      memcmp( own_trusted_auth->id, p, trusted_auth_size - 1 ) == 0 ) )
+                {
+                    MBEDTLS_SSL_DEBUG_MSG( 3, ( "selected trusted id #%d",
+                                                selected_id ) );
+                    ssl->handshake->trusted_ca_key_cert = own_key_cert;
+                    break;
+                }
+                own_trusted_auth = own_trusted_auth->next;
+                own_key_cert = own_key_cert->next;
+            }
+        }
+
+        /* If id was not found, check next trusted auth list item */
+        if( ssl->handshake->trusted_ca_key_cert == NULL )
+        {
+            p += ( trusted_auth_size - 1 );
+            trusted_auth_list_size -= ( trusted_auth_size + 2 );
+        }
+        else
+            break;
+    }
+
+    if( ssl->conf->trusted_auth != NULL ) {
+        if( ssl->handshake->trusted_ca_key_cert == NULL )
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "no appropriate certificate chain found "
+                                        "in the trusted authorities list" ) );
+        ssl->session_negotiate->trusted_ca_keys = MBEDTLS_SSL_TRUSTED_CA_KEYS_ENABLED;
+    }
+
+    return( 0 );
+}
+#endif /* MBEDTLS_SSL_TRUSTED_CA_KEYS */
+
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
 static int ssl_parse_encrypt_then_mac_ext( mbedtls_ssl_context *ssl,
                                       const unsigned char *buf,
@@ -914,6 +996,11 @@ static int ssl_pick_cert( mbedtls_ssl_context *ssl,
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
     if( ssl->handshake->sni_key_cert != NULL )
         list = ssl->handshake->sni_key_cert;
+    else
+#endif
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+    if( ssl->handshake->trusted_ca_key_cert != NULL )
+        list = ssl->handshake->trusted_ca_key_cert;
     else
 #endif
         list = ssl->conf->key_cert;
@@ -1681,6 +1768,16 @@ read_record_header:
                 break;
 #endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
 
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+            case MBEDTLS_TLS_EXT_TRUSTED_CA_KEYS:
+                MBEDTLS_SSL_DEBUG_MSG( 3, ( "found trusted ca keys extension" ) );
+
+                ret = ssl_parse_trusted_ca_keys_ext( ssl, ext + 4, ext_size );
+                if( ret != 0 )
+                    return( ret );
+                break;
+#endif /* MBEDTLS_SSL_TRUSTED_CA_KEYS */
+
 #if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
             case MBEDTLS_TLS_EXT_CID:
                 MBEDTLS_SSL_DEBUG_MSG( 3, ( "found CID extension" ) );
@@ -1934,6 +2031,31 @@ have_ciphersuite:
 
     return( 0 );
 }
+
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+static void ssl_write_trusted_ca_keys_ext( mbedtls_ssl_context *ssl,
+                                           unsigned char *buf,
+                                           size_t *olen )
+{
+    unsigned char *p = buf;
+
+    if( ssl->session_negotiate->trusted_ca_keys == MBEDTLS_SSL_TRUSTED_CA_KEYS_DISABLED )
+    {
+        *olen = 0;
+        return;
+    }
+
+    MBEDTLS_SSL_DEBUG_MSG( 3, ( "server hello, adding trusted_ca_keys extension" ) );
+
+    *p++ = (unsigned char)( ( MBEDTLS_TLS_EXT_TRUSTED_CA_KEYS >> 8 ) & 0xFF );
+    *p++ = (unsigned char)( ( MBEDTLS_TLS_EXT_TRUSTED_CA_KEYS      ) & 0xFF );
+
+    *p++ = 0x00;
+    *p++ = 0x00;
+
+    *olen = 4;
+}
+#endif /* MBEDTLS_SSL_TRUSTED_CA_KEYS */
 
 #if defined(MBEDTLS_SSL_DTLS_CONNECTION_ID)
 static void ssl_write_cid_ext( mbedtls_ssl_context *ssl,
@@ -2594,6 +2716,11 @@ static int ssl_write_server_hello( mbedtls_ssl_context *ssl )
 
 #if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
     ssl_write_max_fragment_length_ext( ssl, p + 2 + ext_len, &olen );
+    ext_len += olen;
+#endif
+
+#if defined(MBEDTLS_SSL_TRUSTED_CA_KEYS)
+    ssl_write_trusted_ca_keys_ext( ssl, p + 2 + ext_len, &olen );
     ext_len += olen;
 #endif
 
