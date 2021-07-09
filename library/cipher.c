@@ -501,7 +501,7 @@ int mbedtls_cipher_update_ad( mbedtls_cipher_context_t *ctx,
     }
 #endif
 
-    return( 0 );
+    return( MBEDTLS_ERR_CIPHER_FEATURE_UNAVAILABLE );
 }
 #endif /* MBEDTLS_GCM_C || MBEDTLS_CHACHAPOLY_C */
 
@@ -1131,7 +1131,7 @@ int mbedtls_cipher_write_tag( mbedtls_cipher_context_t *ctx,
     }
 #endif
 
-    return( 0 );
+    return( MBEDTLS_ERR_CIPHER_FEATURE_UNAVAILABLE );
 }
 
 int mbedtls_cipher_check_tag( mbedtls_cipher_context_t *ctx,
@@ -1208,7 +1208,7 @@ int mbedtls_cipher_check_tag( mbedtls_cipher_context_t *ctx,
     }
 #endif /* MBEDTLS_CHACHAPOLY_C */
 
-    return( 0 );
+    return( MBEDTLS_ERR_CIPHER_FEATURE_UNAVAILABLE );
 }
 #endif /* MBEDTLS_GCM_C || MBEDTLS_CHACHAPOLY_C */
 
