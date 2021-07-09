@@ -103,18 +103,20 @@ int dev_random_entropy_poll( void *data, unsigned char *output,
 
 #define DFL_TYPE                MBEDTLS_PK_RSA
 #define DFL_RSA_KEYSIZE         4096
-#define DFL_FILENAME            "keyfile.key"
+#define DFL_PRIVATE_FILENAME    "private.key"
+#define DFL_PUBLIC_FILENAME     "public.key"
 #define DFL_FORMAT              FORMAT_PEM
 #define DFL_USE_DEV_RANDOM      0
 
 #define USAGE \
     "\n usage: gen_key param=<>...\n"                   \
     "\n acceptable parameters:\n"                       \
-    "    type=rsa|ec           default: rsa\n"          \
+    "    type=rsa|ec            default: rsa\n"         \
     "    rsa_keysize=%%d        default: 4096\n"        \
     "    ec_curve=%%s           see below\n"            \
-    "    filename=%%s           default: keyfile.key\n" \
-    "    format=pem|der        default: pem\n"          \
+    "    private_filename=%%s   default: private.key\n" \
+    "    public_filename=%%s    default: public.key\n"  \
+    "    format=pem|der         default: pem\n"         \
     USAGE_DEV_RANDOM                                    \
     "\n"
 
@@ -140,10 +142,50 @@ struct options
     int type;                   /* the type of key to generate          */
     int rsa_keysize;            /* length of key in bits                */
     int ec_curve;               /* curve identifier for EC keys         */
-    const char *filename;       /* filename of the key file             */
+    const char *private_key_filename;       /*private key filename of the key file             */
+    const char *public_key_filename;        /*public key filename of the key file              */
     int format;                 /* the output format to use             */
     int use_dev_random;         /* use /dev/random as entropy source    */
 } opt;
+
+static int write_public_key( mbedtls_pk_context *key, const char *output_file )
+{
+    int ret;
+    FILE *f;
+    unsigned char output_buf[16000];
+    unsigned char *c = output_buf;
+    size_t len = 0;
+
+    memset(output_buf, 0, 16000);
+    if( opt.format == FORMAT_PEM )
+    {
+        if( ( ret = mbedtls_pk_write_pubkey_pem( key, output_buf, 16000 ) ) != 0 )
+            return( ret );
+
+        len = strlen( (char *) output_buf );
+    }
+    else
+    {
+        if( ( ret = mbedtls_pk_write_pubkey_der( key, output_buf, 16000 ) ) < 0 )
+            return( ret );
+
+        len = ret;
+        c = output_buf + sizeof(output_buf) - len;
+    }
+
+    if( ( f = fopen( output_file, "wb" ) ) == NULL )
+        return( -1 );
+
+    if( fwrite( c, 1, len, f ) != len )
+    {
+        fclose( f );
+        return( -1 );
+    }
+
+    fclose( f );
+
+    return( 0 );
+}
 
 static int write_private_key( mbedtls_pk_context *key, const char *output_file )
 {
@@ -229,7 +271,8 @@ int main( int argc, char *argv[] )
     opt.type                = DFL_TYPE;
     opt.rsa_keysize         = DFL_RSA_KEYSIZE;
     opt.ec_curve            = DFL_EC_CURVE;
-    opt.filename            = DFL_FILENAME;
+    opt.private_key_filename= DFL_PRIVATE_FILENAME;
+    opt.public_key_filename = DFL_PUBLIC_FILENAME;
     opt.format              = DFL_FORMAT;
     opt.use_dev_random      = DFL_USE_DEV_RANDOM;
 
@@ -273,8 +316,10 @@ int main( int argc, char *argv[] )
             opt.ec_curve = curve_info->MBEDTLS_PRIVATE(grp_id);
         }
 #endif
-        else if( strcmp( p, "filename" ) == 0 )
-            opt.filename = q;
+        else if( strcmp( p, "private_filename" ) == 0 )
+            opt.private_key_filename = q;
+        else if( strcmp( p, "public_filename" ) == 0 )
+            opt.public_key_filename = q;
         else if( strcmp( p, "use_dev_random" ) == 0 )
         {
             opt.use_dev_random = atoi( q );
@@ -403,9 +448,19 @@ int main( int argc, char *argv[] )
     /*
      * 1.3 Export key
      */
-    mbedtls_printf( "  . Writing key to file..." );
+    mbedtls_printf( "  . Writing public key to file..." );
 
-    if( ( ret = write_private_key( &key, opt.filename ) ) != 0 )
+    if( ( ret = write_public_key( &key, opt.public_key_filename ) ) != 0 )
+    {
+        mbedtls_printf( " failed\n" );
+        goto exit;
+    }
+
+    mbedtls_printf( " ok\n" );
+
+    mbedtls_printf( "  . Writing private key to file..." );
+
+    if( ( ret = write_private_key( &key, opt.private_key_filename ) ) != 0 )
     {
         mbedtls_printf( " failed\n" );
         goto exit;
