@@ -38,6 +38,9 @@
 #include "mbedtls/oid.h"
 #include "mbedtls/platform_util.h"
 
+#include "x509_invasive.h"
+
+#include <ctype.h>
 #include <string.h>
 
 #if defined(MBEDTLS_PEM_PARSE_C)
@@ -2975,6 +2978,157 @@ find_parent:
 }
 
 /*
+ * parse ipv4 address from canonical string form into bytes.
+ *
+ * Arguments:
+ *  - [in] h: dotted-decimal ipv4 address, e.g. "192.168.12.88". Must be NUL-terminated.
+ *  - [in] hlen: length of the string at h.
+ *  - [out] addr: pointer to a char array with at least 4 bytes allocated.
+ *      Will be populated the bytes of the parsed IP address if return value is 0.
+ *      Only valid when return value is 0, may contain garbage otherwise!
+ *
+ * Return value:
+ *  - 0 if the string was parsed and address bytes are stored in addr
+ *  - -1 if the string could not be parsed
+ */
+MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv4( const char *h, size_t hlen, unsigned char *addr )
+{
+    int i;
+    const char *strt = h;
+    char *endp;
+    unsigned long v;
+
+    if( !isdigit( (unsigned char)*h ) || *(h + hlen + 1) != '\0')
+    {
+        return( -1 );
+    }
+
+    for( i = 0; i < 4; i++ )
+    {
+        v = strtoul( strt, &endp, 10 );
+        if( endp == strt || v > 255 )
+        {
+            return( -1 );
+        }
+
+        if( i < 3 && *endp != '.' )
+        {
+            return( -1 );
+        }
+        *( addr + i ) = ( unsigned char )( v & 0xFFU );
+        strt = endp + 1;
+    }
+
+    if( *endp != '\0' ) // trailing data
+    {
+        return( -1 );
+    }
+
+    return( 0 );
+}
+
+/*
+ * parse ipv6 address from canonical string form into bytes.
+ *
+ * Arguments:
+ *  - [in] h: colon-separated hextet ipv6 address, e.g. "2001:0db8:0000:0000:0000:ff00:0042:8329".
+ *      Must be NUL-terminated.
+ *  - [in] hlen: length of the string at h.
+ *  - [out] addr: pointer to a char array with at least 16 bytes allocated.
+ *      Will be populated the bytes of the parsed IP address if return value is 0.
+ *      Only valid when return value is 0, may contain garbage otherwise!
+ *
+ * Return value:
+ *  - 0 if the string was parsed and address bytes are stored in addr
+ *  - -1 if the string could not be parsed
+ */
+MBEDTLS_STATIC_TESTABLE int mbedtls_x509_parse_ipv6( const char *h, size_t hlen, unsigned char *addr )
+{
+    const char *hend = h + hlen;
+    unsigned char ip[16];
+    const char *strt = h;
+    char *endp = (char*)strt;
+    unsigned char *colonp = NULL;
+    unsigned char *ipp = ip;
+    unsigned long v;
+
+    /* verify we have a NUL-terminated string */
+    if( *(hend + 1) != '\0' )
+    {
+        return( -1 );
+    }
+
+    /* can only start with double colon when network part is all zeros */
+    if( *strt == ':' )
+    {
+        strt++;
+        if( *strt != ':' ) {
+            return( -1 );
+        }
+        strt++;
+        colonp = ipp;
+    }
+
+    while( endp < hend && ipp < ip + sizeof( ip ))
+    {
+        /* ended with a single colon */
+        if( strt == hend )
+        {
+            return( -1 );
+        }
+
+        if( *strt == ':')
+        {
+            if( colonp )
+            {
+                return( -1 );
+            }
+            colonp = ipp;
+            strt++;
+        }
+        v = strtoul( strt, &endp, 16 );
+        if( v > 0xFFFF)
+        {
+            return ( -1 );
+        }
+        *ipp++ = ( v >> 8U ) & 0xFFU;
+        *ipp++ = v & 0xFFU;
+
+        if( *endp == ':' )
+        {
+            strt = endp + 1;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    /* not enough digits without shorthand */
+    if( colonp == NULL && ipp < ip + sizeof( ip ) )
+    {
+        return( -1 );
+    }
+
+    /* did not consume the whole address */
+    if( endp != hend )
+    {
+        return( -1 );
+    }
+
+    memset( addr, 0, sizeof( ip ) );
+    if( colonp )
+    {
+        memcpy( addr, ip, colonp - ip );
+        memcpy( addr + sizeof(ip) - (ipp - colonp), colonp, ipp - colonp );
+    }
+    else
+    {
+        memcpy( addr, ip, sizeof( ip ) );
+    }
+    return( 0 );
+}
+/*
  * Check for CN match
  */
 static int x509_crt_check_cn( const mbedtls_x509_buf *name,
@@ -2989,6 +3143,28 @@ static int x509_crt_check_cn( const mbedtls_x509_buf *name,
 
     /* try wildcard match */
     if( x509_check_wildcard( cn, name ) == 0 )
+    {
+        return( 0 );
+    }
+
+
+    return( -1 );
+}
+
+static int x509_crt_check_ip( const mbedtls_x509_buf *name,
+                              const char *cn, size_t cn_len )
+{
+    unsigned char ip[16];
+
+    if ( name->len == 4 &&
+            mbedtls_x509_parse_ipv4( cn, cn_len, ip ) == 0 &&
+         memcmp( ip, name->p, name->len ) == 0 )
+    {
+        return( 0 );
+    }
+    else if ( name->len == 16 &&
+            mbedtls_x509_parse_ipv6( cn, cn_len, ip ) == 0 &&
+              memcmp( ip, name->p, name->len ) == 0 )
     {
         return( 0 );
     }
@@ -3009,6 +3185,8 @@ static int x509_crt_check_san( const mbedtls_x509_buf *name,
     if( san_type == MBEDTLS_X509_SAN_DNS_NAME )
         return( x509_crt_check_cn( name, cn, cn_len ) );
 
+    if( san_type == MBEDTLS_X509_SAN_IP_ADDRESS )
+        return( x509_crt_check_ip( name, cn, cn_len ) );
     /* (We may handle other types here later.) */
 
     /* Unrecognized type */
