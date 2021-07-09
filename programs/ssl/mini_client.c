@@ -277,6 +277,12 @@ int main( void )
         goto exit;
     }
 
+    if( mbedtls_ssl_flush( &ssl ) != 0 )
+    {
+        ret = ssl_write_failed;
+        goto exit;
+    }
+
     mbedtls_ssl_close_notify( &ssl );
 
 exit:

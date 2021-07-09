@@ -2419,6 +2419,19 @@ send_request:
     mbedtls_printf( " %d bytes written in %d fragments\n\n%s\n",
                     written, frags, (char *) buf );
 
+    /* Make sure all data is flushed. */
+    while( 1 )
+    {
+        ret = mbedtls_ssl_flush( &ssl );
+        if( ret != MBEDTLS_ERR_SSL_WANT_WRITE )
+            break;
+    }
+    if( ret < 0 )
+    {
+        mbedtls_printf( " failed\n  ! mbedtls_ssl_flush returned %d\n\n", ret );
+        goto exit;
+    }
+
     /* Send a non-empty request if request_size == 0 */
     if ( len == 0 )
     {

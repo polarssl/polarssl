@@ -3843,25 +3843,35 @@ int mbedtls_ssl_renegotiate( mbedtls_ssl_context *ssl );
 int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len );
 
 /**
- * \brief          Try to write exactly 'len' application data bytes
+ * \brief          Queue application data for dispatch
  *
- * \warning        This function will do partial writes in some cases. If the
- *                 return value is non-negative but less than length, the
- *                 function must be called again with updated arguments:
- *                 buf + ret, len - ret (if ret is the return value) until
- *                 it returns a value equal to the last 'len' argument.
+ * \warning        This function may queue less data for dispatch than requested.
+ *                 If the return value is non-negative but less than \p len,
+ *                 the function should be called again for the remaining data.
  *
- * \param ssl      SSL context
- * \param buf      buffer holding the data
- * \param len      how many bytes must be written
+ * \warning        This function does not send any of the application data
+ *                 provided by the user, but only prepares and queues the
+ *                 corresponding protected application data records. Dispatch to
+ *                 the underlying transport is only attempted when the user
+ *                 explicitly calls mbedtls_ssl_flush(), or when a subsequent
+ *                 call to mbedtls_ssl_write() can not make progress without
+ *                 dispatching some queued application records first.
  *
- * \return         The (non-negative) number of bytes actually written if
- *                 successful (may be less than \p len).
+ * \param ssl      The SSL context to use.
+ * \param buf      The buffer holding the applicatoin data to be queued.
+ * \param len      The size of \p buf in bytes.
+ *
+ * \return         The (non-negative) number of bytes queued for dispatch
+ *                 if successful (may be less than \p len). In this case,
+ *                 the user may call mbedtls_ssl_flush() to ensure dispatch
+ *                 to the underlying transport, or issue further calls to
+ *                 mbedtls_ssl_write() to queue more data first.
  * \return         #MBEDTLS_ERR_SSL_WANT_READ or #MBEDTLS_ERR_SSL_WANT_WRITE
- *                 if the handshake is incomplete and waiting for data to
- *                 be available for reading from or writing to the underlying
- *                 transport - in this case you must call this function again
- *                 when the underlying transport is ready for the operation.
+ *                 if progress towards preparing more application data for
+ *                 dispatch depends on the underlying transport being available
+ *                 for reading or writing. In this case, no data has been prepared,
+ *                 and the user may, but is not obliged to, retry this call at a
+ *                 later point.
  * \return         #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS if an asynchronous
  *                 operation is in progress (see
  *                 mbedtls_ssl_conf_async_private_cb()) - in this case you
@@ -3884,12 +3894,21 @@ int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len )
  *                 on it before re-using it for a new connection; the current
  *                 connection must be closed.
  *
- * \note           When this function returns #MBEDTLS_ERR_SSL_WANT_WRITE/READ,
- *                 it must be called later with the *same* arguments,
- *                 until it returns a value greater that or equal to 0. When
- *                 the function returns #MBEDTLS_ERR_SSL_WANT_WRITE there may be
- *                 some partial data in the output buffer, however this is not
- *                 yet sent.
+ * \note           When this function returns one of the negative values
+ *                 #MBEDTLS_ERR_SSL_WANT_READ,
+ *                 #MBEDTLS_ERR_SSL_WANT_WRITE,
+ *                 #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS or
+ *                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS,
+ *                 none of the data provided by the user has been internally
+ *                 queued for dispatch. In this case, the user may, but is not
+ *                 obliged to, retry the call at a later point.
+ *
+ * \note           A common situation for this function to return
+ *                 #MBEDTLS_ERR_SSL_WANT_WRITE is when earlier application
+ *                 hasn't yet been dispatched to the underlying transport.
+ *                 A situation for this function to return
+ *                 #MBEDTLS_ERR_SSL_WANT_READ is when a handshake is ongoing
+ *                 and we're currently awaiting handshake data from the peer.
  *
  * \note           If the requested length is greater than the maximum
  *                 fragment length (either the built-in limit or the one set
@@ -3900,9 +3919,43 @@ int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len )
  *                 query the active maximum fragment length.
  *
  * \note           Attempting to write 0 bytes will result in an empty TLS
- *                 application record being sent.
+ *                 application record being prepared.
  */
 int mbedtls_ssl_write( mbedtls_ssl_context *ssl, const unsigned char *buf, size_t len );
+
+/**
+ * \brief          Dispatch all previously queued application data
+ *
+ * \param ssl      The SSL context to use.
+ *
+ * \return         \c 0 if all data previously queued for dispatch via
+ *                 mbedtls_ssl_write() has been passed to the underlying
+ *                 transport.
+ * \return         #MBEDTLS_ERR_SSL_WANT_READ or #MBEDTLS_ERR_SSL_WANT_WRITE
+ *                 if the underlying transport was not available.
+ * \return         #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS if an asynchronous
+ *                 operation is in progress (see
+ *                 mbedtls_ssl_conf_async_private_cb()) - in this case you
+ *                 must call this function again when the operation is ready.
+ * \return         #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS if a cryptographic
+ *                 operation is in progress (see mbedtls_ecp_set_max_ops()) -
+ *                 in this case you must call this function again to complete
+ *                 the handshake when you're done attending other tasks.
+ * \return         Another SSL error code - in this case you must stop using
+ *                 the context (see below).
+ *
+ * \warning        If this function returns something other than
+ *                 a non-negative value,
+ *                 #MBEDTLS_ERR_SSL_WANT_READ,
+ *                 #MBEDTLS_ERR_SSL_WANT_WRITE,
+ *                 #MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS or
+ *                 #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS,
+ *                 you must stop using the SSL context for reading or writing,
+ *                 and either free it or call \c mbedtls_ssl_session_reset()
+ *                 on it before re-using it for a new connection; the current
+ *                 connection must be closed.
+ */
+int mbedtls_ssl_flush( mbedtls_ssl_context *ssl );
 
 /**
  * \brief           Send an alert message

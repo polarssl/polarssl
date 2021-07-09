@@ -1957,6 +1957,11 @@ int mbedtls_ssl_fetch_input( mbedtls_ssl_context *ssl, size_t nb_want )
 /*
  * Flush any data not yet written
  */
+int mbedtls_ssl_flush( mbedtls_ssl_context *ssl )
+{
+    return( mbedtls_ssl_flush_output( ssl ) );
+}
+
 int mbedtls_ssl_flush_output( mbedtls_ssl_context *ssl )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
@@ -2527,20 +2532,34 @@ int mbedtls_ssl_write_handshake_msg( mbedtls_ssl_context *ssl )
  */
 
 /*
- * Write current record.
+ * Prepare and queue a new outgoing record without sending it
  *
- * Uses:
- *  - ssl->out_msgtype: type of the message (AppData, Handshake, Alert, CCS)
- *  - ssl->out_msglen: length of the record content (excl headers)
- *  - ssl->out_msg: record content
+ * Initially:
+ *  - ssl->out_msgtype: The type of the record to be prepared.
+ *                      This should be prepared by the caller.
+ *  - ssl->out_msg: The start of the buffer holding the record plaintext.
+ *                  The caller should prepare the content in this buffer,
+ *                  but not modify the pointer itself.
+ *  - ssl->out_length: The length of the record plaintext content.
+ *                     This should be prepared by the caller.
+ *
+ * When this function finishes,
+ *  - ssl->out_left: The total number of bytes that are ready to be
+ *                   passed to the underlying transport.
+ *  - ssl->out_hdr: The first byte after the buffer holding the data
+ *                  ready to be passed to the underlying transport.
+ *
+ *  In particular, the buffer of data ready to be passed to the underlying
+ *  transport is [ssl->out_hdr - ssl->out_left, ssl->out_hdr).
+ *
+ *  This function does not interface with the underlying transport.
  */
-int mbedtls_ssl_write_record( mbedtls_ssl_context *ssl, uint8_t force_flush )
+int mbedtls_ssl_prepare_record( mbedtls_ssl_context *ssl )
 {
     int ret, done = 0;
     size_t len = ssl->out_msglen;
-    uint8_t flush = force_flush;
 
-    MBEDTLS_SSL_DEBUG_MSG( 2, ( "=> write record" ) );
+    MBEDTLS_SSL_DEBUG_MSG( 2, ( "=> prepare record" ) );
 
     if( !done )
     {
@@ -2647,6 +2666,44 @@ int mbedtls_ssl_write_record( mbedtls_ssl_context *ssl, uint8_t force_flush )
             MBEDTLS_SSL_DEBUG_MSG( 1, ( "outgoing message counter would wrap" ) );
             return( MBEDTLS_ERR_SSL_COUNTER_WRAPPING );
         }
+    }
+
+    MBEDTLS_SSL_DEBUG_MSG( 2, ( "<= prepare record" ) );
+    return( 0 );
+}
+
+/*
+ * Write and potentially dispatch the current record.
+ *
+ * Initially:
+ *  - ssl->out_msgtype: The type of the record to be prepared.
+ *                      This should be prepared by the caller.
+ *  - ssl->out_msg: The start of the buffer holding the record plaintext.
+ *                  The caller should prepare the content in this buffer,
+ *                  but not modify the pointer itself.
+ *  - ssl->out_length: The length of the record plaintext content.
+ *                     This should be prepared by the caller.
+ *
+ * This function prepares the current record for delivery to the underlying
+ * transport. If `force_flush` is set, it will attempt to send the record
+ * immediately. If `force_flush` is unset, it may attempt delivery.
+ *
+ * In either case, if this function returns with either 0 or
+ * MBEDTLS_ERR_SSL_WANT_WRITE, the record has at least been queued
+ * internally, and the caller can progress to writing the next record.
+ */
+int mbedtls_ssl_write_record( mbedtls_ssl_context *ssl, uint8_t force_flush )
+{
+    int ret;
+    uint8_t flush = force_flush;
+
+    MBEDTLS_SSL_DEBUG_MSG( 2, ( "=> write record" ) );
+
+    ret = mbedtls_ssl_prepare_record( ssl );
+    if( ret != 0 )
+    {
+        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_prepare_record()", ret );
+        return( ret );
     }
 
 #if defined(MBEDTLS_SSL_PROTO_DTLS)
@@ -5416,61 +5473,17 @@ int mbedtls_ssl_read( mbedtls_ssl_context *ssl, unsigned char *buf, size_t len )
 static int ssl_write_real( mbedtls_ssl_context *ssl,
                            const unsigned char *buf, size_t len )
 {
-    int ret = mbedtls_ssl_get_max_out_record_payload( ssl );
-    const size_t max_len = (size_t) ret;
+    int ret;
 
-    if( ret < 0 )
+    /* Prepare and queue new outgoing data, but don't attempt to dispatch. */
+    ssl->out_msglen  = len;
+    ssl->out_msgtype = MBEDTLS_SSL_MSG_APPLICATION_DATA;
+    memcpy( ssl->out_msg, buf, len );
+
+    if( ( ret = mbedtls_ssl_prepare_record( ssl ) ) != 0 )
     {
-        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_get_max_out_record_payload", ret );
+        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_write_record", ret );
         return( ret );
-    }
-
-    if( len > max_len )
-    {
-#if defined(MBEDTLS_SSL_PROTO_DTLS)
-        if( ssl->conf->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM )
-        {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "fragment larger than the (negotiated) "
-                                "maximum fragment length: %" MBEDTLS_PRINTF_SIZET
-                                " > %" MBEDTLS_PRINTF_SIZET,
-                                len, max_len ) );
-            return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
-        }
-        else
-#endif
-            len = max_len;
-    }
-
-    if( ssl->out_left != 0 )
-    {
-        /*
-         * The user has previously tried to send the data and
-         * MBEDTLS_ERR_SSL_WANT_WRITE or the message was only partially
-         * written. In this case, we expect the high-level write function
-         * (e.g. mbedtls_ssl_write()) to be called with the same parameters
-         */
-        if( ( ret = mbedtls_ssl_flush_output( ssl ) ) != 0 )
-        {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_flush_output", ret );
-            return( ret );
-        }
-    }
-    else
-    {
-        /*
-         * The user is trying to send a message the first time, so we need to
-         * copy the data into the internal buffers and setup the data structure
-         * to keep track of partial writes
-         */
-        ssl->out_msglen  = len;
-        ssl->out_msgtype = MBEDTLS_SSL_MSG_APPLICATION_DATA;
-        memcpy( ssl->out_msg, buf, len );
-
-        if( ( ret = mbedtls_ssl_write_record( ssl, SSL_FORCE_FLUSH ) ) != 0 )
-        {
-            MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_write_record", ret );
-            return( ret );
-        }
     }
 
     return( (int) len );
@@ -5482,6 +5495,7 @@ static int ssl_write_real( mbedtls_ssl_context *ssl,
 int mbedtls_ssl_write( mbedtls_ssl_context *ssl, const unsigned char *buf, size_t len )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    size_t max_len;
 
     MBEDTLS_SSL_DEBUG_MSG( 2, ( "=> write" ) );
 
@@ -5503,6 +5517,37 @@ int mbedtls_ssl_write( mbedtls_ssl_context *ssl, const unsigned char *buf, size_
             MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_handshake", ret );
             return( ret );
         }
+    }
+
+    /* Dispatch any pending outgoing data to the underlying transport. */
+    if( ( ret = mbedtls_ssl_flush_output( ssl ) ) != 0 )
+    {
+        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_flush_output", ret );
+        return( ret );
+    }
+
+    /* Truncate outgoing data to ensure that it fits in a record. */
+    ret = mbedtls_ssl_get_max_out_record_payload( ssl );
+    if( ret < 0 )
+    {
+        MBEDTLS_SSL_DEBUG_RET( 1, "mbedtls_ssl_get_max_out_record_payload", ret );
+        return( ret );
+    }
+    max_len = (size_t) ret;
+
+    if( len > max_len )
+    {
+#if defined(MBEDTLS_SSL_PROTO_DTLS)
+        if( ssl->conf->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "fragment larger than the (negotiated) "
+                                        "maximum fragment length: %zu > %zu",
+                                        len, max_len ) );
+            return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
+        }
+        else
+#endif
+            len = max_len;
     }
 
     ret = ssl_write_real( ssl, buf, len );

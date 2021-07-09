@@ -3498,7 +3498,7 @@ data_exchange:
         for( written = 0, frags = 0; written < len; written += ret, frags++ )
         {
             while( ( ret = mbedtls_ssl_write( &ssl, buf + written, len - written ) )
-                           <= 0 )
+                           < 0 )
             {
                 if( ret == MBEDTLS_ERR_NET_CONN_RESET )
                 {
@@ -3557,6 +3557,19 @@ data_exchange:
     buf[written] = '\0';
     mbedtls_printf( " %d bytes written in %d fragments\n\n%s\n", written, frags, (char *) buf );
     ret = 0;
+
+    /* Make sure all data is flushed. */
+    while( 1 )
+    {
+        ret = mbedtls_ssl_flush( &ssl );
+        if( ret != MBEDTLS_ERR_SSL_WANT_WRITE )
+            break;
+    }
+    if( ret < 0 )
+    {
+        mbedtls_printf( " failed\n  ! mbedtls_ssl_flush returned %d\n\n", ret );
+        goto reset;
+    }
 
     /*
      * 7b. Simulate serialize/deserialize and go back to data exchange

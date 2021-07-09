@@ -373,6 +373,19 @@ reset:
     len = ret;
     printf( " %d bytes written\n\n%s\n\n", len, buf );
 
+    /* Make sure all data is flushed. */
+    while( 1 )
+    {
+        ret = mbedtls_ssl_flush( &ssl );
+        if( ret != MBEDTLS_ERR_SSL_WANT_WRITE )
+            break;
+    }
+    if( ret < 0 )
+    {
+        mbedtls_printf( " failed\n  ! mbedtls_ssl_flush returned %d\n\n", ret );
+        goto exit;
+    }
+
     /*
      * 8. Done, cleanly close the connection
      */

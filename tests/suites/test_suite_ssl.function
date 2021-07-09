@@ -1597,6 +1597,11 @@ int mbedtls_exchange_data( mbedtls_ssl_context *ssl_1,
                 }
             }
 
+            /* Make sure that all data has been flushed. */
+            ret = mbedtls_ssl_flush( ssl_1 );
+            TEST_ASSERT( ret == 0 ||
+                         ret == MBEDTLS_ERR_SSL_WANT_WRITE );
+
             /* ssl_2 sending */
             if( msg_len_2 > written_2 )
             {
@@ -1615,6 +1620,11 @@ int mbedtls_exchange_data( mbedtls_ssl_context *ssl_1,
                     TEST_ASSERT( ret == 0 );
                 }
             }
+
+            /* Make sure that all data has been flushed. */
+            ret = mbedtls_ssl_flush( ssl_2 );
+            TEST_ASSERT( ret == 0 ||
+                         ret == MBEDTLS_ERR_SSL_WANT_WRITE );
 
             /* ssl_1 reading */
             if( read_1 < msg_len_2 )
