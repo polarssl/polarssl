@@ -188,7 +188,10 @@ if(CMAKE_COMPILER_IS_CLANG)
 endif(CMAKE_COMPILER_IS_CLANG)
 
 if(CMAKE_COMPILER_IS_IAR)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --warn_about_c_style_casts --warnings_are_errors -Ohz")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --warn_about_c_style_casts")
+    set(CMAKE_C_FLAGS_RELEASE     "-Ohz")
+    set(CMAKE_C_FLAGS_DEBUG       "--debug -On")
+    set(CMAKE_C_FLAGS_CHECK       "--warnings_are_errors")
 endif(CMAKE_COMPILER_IS_IAR)
 
 if(CMAKE_COMPILER_IS_MSVC)
