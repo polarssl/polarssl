@@ -1390,6 +1390,11 @@ Changes
 
 = mbed TLS 2.17.0 branch released 2019-03-19
 
+New deprecations
+   * Deprecate mbedtls_pkcs12_pbes2() in favor of a function
+     mbedtls_pkcs12_pbes2_ext() that writes to an output parameter the number
+     of bytes written to the output buffer.
+
 Features
    * Add a new X.509 API call `mbedtls_x509_parse_der_nocopy()`
      which allows copy-less parsing of DER encoded X.509 CRTs,

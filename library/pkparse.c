@@ -1106,7 +1106,7 @@ static int pk_parse_key_pkcs8_encrypted_der(
         int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
     int ret, decrypted = 0;
-    size_t len;
+    size_t len, olen;
     unsigned char *buf;
     unsigned char *p, *end;
     mbedtls_asn1_buf pbe_alg_oid, pbe_params;
@@ -1175,8 +1175,10 @@ static int pk_parse_key_pkcs8_encrypted_der(
 #if defined(MBEDTLS_PKCS5_C)
     if( MBEDTLS_OID_CMP( MBEDTLS_OID_PKCS5_PBES2, &pbe_alg_oid ) == 0 )
     {
-        if( ( ret = mbedtls_pkcs5_pbes2( &pbe_params, MBEDTLS_PKCS5_DECRYPT, pwd, pwdlen,
-                                  p, len, buf ) ) != 0 )
+        ret = mbedtls_pkcs5_pbes2_ext( &pbe_params,
+                                       MBEDTLS_PKCS5_DECRYPT,
+                                       pwd, pwdlen, p, len, buf, &olen );
+        if( ret != 0 )
         {
             if( ret == MBEDTLS_ERR_PKCS5_PASSWORD_MISMATCH )
                 return( MBEDTLS_ERR_PK_PASSWORD_MISMATCH );

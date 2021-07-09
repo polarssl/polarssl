@@ -34,11 +34,13 @@ exit:
 
 /* BEGIN_CASE depends_on:MBEDTLS_ASN1_PARSE_C */
 void mbedtls_pkcs5_pbes2( int params_tag, data_t *params_hex, data_t *pw,
-                  data_t *data, int ref_ret, data_t *ref_out )
+                          data_t *data, int ref_ret, data_t *ref_out,
+                          int ref_out_len )
 {
     int my_ret;
     mbedtls_asn1_buf params;
     unsigned char *my_out = NULL;
+    size_t my_out_len = 0;
 
     params.tag = params_tag;
     params.p = params_hex->x;
@@ -46,12 +48,30 @@ void mbedtls_pkcs5_pbes2( int params_tag, data_t *params_hex, data_t *pw,
 
     my_out = mbedtls_test_zero_alloc( ref_out->len );
 
+    /* Execute the test checking the length */
+    my_ret = mbedtls_pkcs5_pbes2_ext( &params, MBEDTLS_PKCS5_DECRYPT,
+                                      pw->x, pw->len, data->x, data->len,
+                                      my_out, &my_out_len );
+    TEST_ASSERT( my_ret == ref_ret );
+
+    if( ref_ret == 0 )
+    {
+        TEST_ASSERT( (size_t)ref_out_len == my_out_len );
+        TEST_ASSERT( memcmp( my_out, ref_out->x, ref_out->len ) == 0 );
+    }
+
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    /* Clear the output buffer */
+    memset( my_out, 0, my_out_len );
+
+    /* Execute the test without checking the length */
     my_ret = mbedtls_pkcs5_pbes2( &params, MBEDTLS_PKCS5_DECRYPT,
-                          pw->x, pw->len, data->x, data->len, my_out );
+                                  pw->x, pw->len, data->x, data->len, my_out );
     TEST_ASSERT( my_ret == ref_ret );
 
     if( ref_ret == 0 )
         TEST_ASSERT( memcmp( my_out, ref_out->x, ref_out->len ) == 0 );
+#endif /* MBEDTLS_DEPRECATED_REMOVED */
 
 exit:
     mbedtls_free( my_out );

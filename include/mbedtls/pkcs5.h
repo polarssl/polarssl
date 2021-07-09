@@ -46,23 +46,62 @@ extern "C" {
 
 #if defined(MBEDTLS_ASN1_PARSE_C)
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+#if defined(MBEDTLS_DEPRECATED_WARNING)
+#define MBEDTLS_DEPRECATED      __attribute__((deprecated))
+#else
+#define MBEDTLS_DEPRECATED
+#endif
 /**
- * \brief          PKCS#5 PBES2 function
+ * \brief           This function performs PKCS#5 with PBES2, and writes the
+ *                  result to the output buffer.
  *
- * \param pbe_params the ASN.1 algorithm parameters
- * \param mode       either MBEDTLS_PKCS5_DECRYPT or MBEDTLS_PKCS5_ENCRYPT
- * \param pwd        password to use when generating key
- * \param pwdlen     length of password
- * \param data       data to process
- * \param datalen    length of data
- * \param output     output buffer
+ * \deprecated      Superseded by mbedtls_pkcs5_pbes2_ext().
  *
- * \returns        0 on success, or a MBEDTLS_ERR_XXX code if verification fails.
+ * \param pbe_params The ASN.1 algorithm parameters.
+ * \param mode       The operation mode (either #MBEDTLS_PKCS5_DECRYPT or
+ *                   #MBEDTLS_PKCS5_ENCRYPT).
+ * \param pwd        The password to use when generating the key.
+ * \param pwdlen     The length of the password at \p pwd.
+ * \param data       The buffer with the input data to process.
+ * \param datalen    The length of the input data buffer at \p data.
+ * \param output     The buffer to hold the output data.
+ *
+ * \return          \c 0 on success.
+ * \return          A negative error code on failure.
  */
-int mbedtls_pkcs5_pbes2( const mbedtls_asn1_buf *pbe_params, int mode,
-                 const unsigned char *pwd,  size_t pwdlen,
-                 const unsigned char *data, size_t datalen,
-                 unsigned char *output );
+MBEDTLS_DEPRECATED int mbedtls_pkcs5_pbes2( const mbedtls_asn1_buf *pbe_params,
+                                            int mode,
+                                            const unsigned char *pwd,
+                                            size_t pwdlen,
+                                            const unsigned char *data,
+                                            size_t datalen,
+                                            unsigned char *output );
+#undef MBEDTLS_DEPRECATED
+#endif /* !MBEDTLS_DEPRECATED_REMOVED */
+
+/**
+ * \brief           This function performs PKCS#5 with PBES2, and writes the
+ *                  result to the output buffer.
+ *
+ * \param pbe_params The ASN.1 algorithm parameters.
+ * \param mode       The operation mode (either #MBEDTLS_PKCS5_DECRYPT or
+ *                   #MBEDTLS_PKCS5_ENCRYPT).
+ * \param pwd        The password to use when generating the key.
+ * \param pwdlen     The length of the password at \p pwd.
+ * \param data       The buffer with the input data to process.
+ * \param datalen    The length of the input data buffer at \p data.
+ * \param output     The buffer to hold the output data.
+ * \param olen       The number of bytes written to the output buffer
+ *                   \p output.
+ *
+ * \return          \c 0 on success.
+ * \return          A negative error code on failure.
+ */
+int mbedtls_pkcs5_pbes2_ext( const mbedtls_asn1_buf *pbe_params, int mode,
+                             const unsigned char *pwd,  size_t pwdlen,
+                             const unsigned char *data, size_t datalen,
+                             unsigned char *output, size_t *olen );
 
 #endif /* MBEDTLS_ASN1_PARSE_C */
 
