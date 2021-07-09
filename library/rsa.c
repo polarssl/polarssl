@@ -147,6 +147,19 @@ cleanup:
     return( 0 );
 }
 
+#if !defined(MBEDTLS_RSA_NO_CRT)
+static int rsa_check_crt_parameters( mbedtls_rsa_context const *ctx )
+{
+    int has_crt_parameters = 0;
+
+    has_crt_parameters = ( mbedtls_mpi_size( &ctx->P ) != 0 ) && \
+    ( mbedtls_mpi_size( &ctx->Q ) != 0) && ( mbedtls_mpi_size( &ctx->DP ) != 0 ) &&\
+    ( mbedtls_mpi_size( &ctx->DQ ) != 0 ) && ( mbedtls_mpi_size( &ctx->QP ) );
+
+    return has_crt_parameters;
+}
+#endif
+
 /*
  * Checks whether the context fields are set in such a way
  * that the RSA primitives will be able to execute without error.
@@ -183,13 +196,16 @@ static int rsa_check_context( mbedtls_rsa_context const *ctx, int is_priv,
     /* Modular exponentiation for P and Q is only
      * used for private key operations and if CRT
      * is used. */
-    if( is_priv &&
-        ( mbedtls_mpi_cmp_int( &ctx->P, 0 ) <= 0 ||
-          mbedtls_mpi_get_bit( &ctx->P, 0 ) == 0 ||
-          mbedtls_mpi_cmp_int( &ctx->Q, 0 ) <= 0 ||
-          mbedtls_mpi_get_bit( &ctx->Q, 0 ) == 0  ) )
+    if( rsa_check_crt_parameters( ctx ) )
     {
-        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        if( is_priv &&
+            ( mbedtls_mpi_cmp_int( &ctx->P, 0 ) <= 0 ||
+              mbedtls_mpi_get_bit( &ctx->P, 0 ) == 0 ||
+              mbedtls_mpi_cmp_int( &ctx->Q, 0 ) <= 0 ||
+              mbedtls_mpi_get_bit( &ctx->Q, 0 ) == 0  ) )
+        {
+            return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        }
     }
 #endif /* !MBEDTLS_RSA_NO_CRT */
 
@@ -207,11 +223,22 @@ static int rsa_check_context( mbedtls_rsa_context const *ctx, int is_priv,
     if( is_priv && mbedtls_mpi_cmp_int( &ctx->D, 0 ) <= 0 )
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
 #else
-    if( is_priv &&
-        ( mbedtls_mpi_cmp_int( &ctx->DP, 0 ) <= 0 ||
-          mbedtls_mpi_cmp_int( &ctx->DQ, 0 ) <= 0  ) )
+    if( rsa_check_crt_parameters( ctx ) )
     {
-        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        if( is_priv &&
+            ( mbedtls_mpi_cmp_int( &ctx->DP, 0 ) <= 0 ||
+              mbedtls_mpi_cmp_int( &ctx->DQ, 0 ) <= 0  ) )
+        {
+            return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        }
+    }
+    else
+    {
+         /* For private key operations, use D or DP & DQ
+         * as (unblinded) exponents. */
+        if( is_priv && mbedtls_mpi_cmp_int( &ctx->D, 0 ) <= 0 )
+            return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+
     }
 #endif /* MBEDTLS_RSA_NO_CRT */
 
@@ -220,7 +247,7 @@ static int rsa_check_context( mbedtls_rsa_context const *ctx, int is_priv,
      * done as part of 1. */
 #if defined(MBEDTLS_RSA_NO_CRT)
     if( is_priv && blinding_needed &&
-        ( mbedtls_mpi_cmp_int( &ctx->P, 0 ) <= 0 ||
+       ( mbedtls_mpi_cmp_int( &ctx->P, 0 ) <= 0 ||
           mbedtls_mpi_cmp_int( &ctx->Q, 0 ) <= 0 ) )
     {
         return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
@@ -230,10 +257,22 @@ static int rsa_check_context( mbedtls_rsa_context const *ctx, int is_priv,
     /* It wouldn't lead to an error if it wasn't satisfied,
      * but check for QP >= 1 nonetheless. */
 #if !defined(MBEDTLS_RSA_NO_CRT)
-    if( is_priv &&
-        mbedtls_mpi_cmp_int( &ctx->QP, 0 ) <= 0 )
+    if( rsa_check_crt_parameters( ctx ) )
     {
-        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        if( is_priv &&
+            mbedtls_mpi_cmp_int( &ctx->QP, 0 ) <= 0 )
+        {
+            return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        }
+    }
+    else
+    {
+        if( is_priv && blinding_needed &&
+           ( mbedtls_mpi_cmp_int( &ctx->P, 0 ) <= 0 ||
+              mbedtls_mpi_cmp_int( &ctx->Q, 0 ) <= 0 ) )
+        {
+            return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
+        }
     }
 #endif
 
@@ -901,6 +940,13 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
     mbedtls_mpi P1, Q1, R;
 
 #if !defined(MBEDTLS_RSA_NO_CRT)
+    /* Temporary holding the blinded exponent (if used). */
+    mbedtls_mpi D_blind;
+
+    /* Pointer to actual exponent to be used - either the unblinded
+     * or the blinded one, depending on the presence of a PRNG. */
+    mbedtls_mpi *D = &ctx->D;
+
     /* Temporaries holding the results mod p resp. mod q. */
     mbedtls_mpi TP, TQ;
 
@@ -953,8 +999,17 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
 #if defined(MBEDTLS_RSA_NO_CRT)
     mbedtls_mpi_init( &D_blind );
 #else
-    mbedtls_mpi_init( &DP_blind );
-    mbedtls_mpi_init( &DQ_blind );
+
+    if( rsa_check_crt_parameters( ctx ) )
+    {
+        mbedtls_mpi_init( &DP_blind );
+        mbedtls_mpi_init( &DQ_blind );
+    }
+    else
+    {
+        mbedtls_mpi_init( &D_blind );
+    }
+
 #endif
 
 #if !defined(MBEDTLS_RSA_NO_CRT)
@@ -1001,54 +1056,80 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
 
     D = &D_blind;
 #else
-    /*
-     * DP_blind = ( P - 1 ) * R + DP
-     */
-    MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &R, RSA_EXPONENT_BLINDING,
-                     f_rng, p_rng ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &DP_blind, &P1, &R ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &DP_blind, &DP_blind,
-                &ctx->DP ) );
 
-    DP = &DP_blind;
+    if( rsa_check_crt_parameters( ctx ) )
+    {
+        /*
+         * DP_blind = ( P - 1 ) * R + DP
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &R, RSA_EXPONENT_BLINDING,
+                        f_rng, p_rng ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &DP_blind, &P1, &R ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &DP_blind, &DP_blind,
+                        &ctx->DP ) );
 
-    /*
-     * DQ_blind = ( Q - 1 ) * R + DQ
-     */
-    MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &R, RSA_EXPONENT_BLINDING,
-                     f_rng, p_rng ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &DQ_blind, &Q1, &R ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &DQ_blind, &DQ_blind,
-                &ctx->DQ ) );
+        DP = &DP_blind;
 
-    DQ = &DQ_blind;
+        /*
+         * DQ_blind = ( Q - 1 ) * R + DQ
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &R, RSA_EXPONENT_BLINDING,
+                        f_rng, p_rng ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &DQ_blind, &Q1, &R ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &DQ_blind, &DQ_blind,
+                        &ctx->DQ ) );
+
+        DQ = &DQ_blind;
+    }
+    else
+    {
+        /*
+         * D_blind = ( P - 1 ) * ( Q - 1 ) * R + D
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( &R, RSA_EXPONENT_BLINDING,
+                         f_rng, p_rng ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &D_blind, &P1, &Q1 ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &D_blind, &D_blind, &R ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &D_blind, &D_blind, &ctx->D ) );
+
+        D = &D_blind;
+
+    }
+
 #endif /* MBEDTLS_RSA_NO_CRT */
 
 #if defined(MBEDTLS_RSA_NO_CRT)
     MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &T, &T, D, &ctx->N, &ctx->RN ) );
 #else
-    /*
-     * Faster decryption using the CRT
-     *
-     * TP = input ^ dP mod P
-     * TQ = input ^ dQ mod Q
-     */
+    if( rsa_check_crt_parameters( ctx ) )
+    {
+        /*
+         * Faster decryption using the CRT
+         *
+         * TP = input ^ dP mod P
+         * TQ = input ^ dQ mod Q
+         */
 
-    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &TP, &T, DP, &ctx->P, &ctx->RP ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &TQ, &T, DQ, &ctx->Q, &ctx->RQ ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &TP, &T, DP, &ctx->P, &ctx->RP ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &TQ, &T, DQ, &ctx->Q, &ctx->RQ ) );
 
-    /*
-     * T = (TP - TQ) * (Q^-1 mod P) mod P
-     */
-    MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &T, &TP, &TQ ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &TP, &T, &ctx->QP ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &T, &TP, &ctx->P ) );
+        /*
+         * T = (TP - TQ) * (Q^-1 mod P) mod P
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_sub_mpi( &T, &TP, &TQ ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &TP, &T, &ctx->QP ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mod_mpi( &T, &TP, &ctx->P ) );
 
-    /*
-     * T = TQ + T * Q
-     */
-    MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &TP, &T, &ctx->Q ) );
-    MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &T, &TQ, &TP ) );
+        /*
+         * T = TQ + T * Q
+         */
+        MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi( &TP, &T, &ctx->Q ) );
+        MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( &T, &TQ, &TP ) );
+    }
+    else
+    {
+        MBEDTLS_MPI_CHK( mbedtls_mpi_exp_mod( &T, &T, D, &ctx->N, &ctx->RN ) );
+    }
 #endif /* MBEDTLS_RSA_NO_CRT */
 
     /*
@@ -1083,8 +1164,17 @@ cleanup:
 #if defined(MBEDTLS_RSA_NO_CRT)
     mbedtls_mpi_free( &D_blind );
 #else
-    mbedtls_mpi_free( &DP_blind );
-    mbedtls_mpi_free( &DQ_blind );
+
+    if( rsa_check_crt_parameters( ctx ) )
+    {
+        mbedtls_mpi_free( &DP_blind );
+        mbedtls_mpi_free( &DQ_blind );
+    }
+    else
+    {
+        mbedtls_mpi_free( &D_blind );
+    }
+
 #endif
 
     mbedtls_mpi_free( &T );
