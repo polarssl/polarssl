@@ -23,12 +23,13 @@ set -eu
 
 if [ $# -ne 0 ] && [ "$1" = "--help" ]; then
     cat <<EOF
-$0 [-u]
+$0 [-l | -u]
 This script checks that all generated file are up-to-date. If some aren't, by
 default the scripts reports it and exits in error; with the -u option, it just
 updates them instead.
 
   -u    Update the files rather than return an error for out-of-date files.
+  -l    List generated files, but do not update them.
 EOF
     exit
 fi
@@ -39,10 +40,13 @@ if [ -d library -a -d include -a -d tests ]; then :; else
 fi
 
 UPDATE=
-if [ $# -ne 0 ] && [ "$1" = "-u" ]; then
-    shift
-    UPDATE='y'
-fi
+LIST=
+while getopts lu OPTLET; do
+    case $OPTLET in
+      l) LIST=1;;
+      u) UPDATE=1;;
+    esac
+done
 
 # check SCRIPT FILENAME[...]
 # check SCRIPT DIRECTORY
@@ -57,6 +61,11 @@ check()
 {
     SCRIPT=$1
     shift
+
+    if [ -n "$LIST" ]; then
+        printf '%s\n' "$@"
+        return
+    fi
 
     directory=
     if [ -d "$1" ]; then
