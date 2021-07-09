@@ -53,6 +53,24 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
+/** \def MBEDTLS_CHECK_RETURN
+ *
+ * This macro appearing at the beginning of the declaration of a function
+ * indicates that its return value should be checked.
+ *
+ * This should appear before most functions returning an error code
+ * (as \c int in the \c mbedtls_xxx API or
+ * as ::psa_status_t in the \c psa_xxx API).
+ */
+#if defined(__GNUC__)
+#define MBEDTLS_CHECK_RETURN __attribute__((warn_unused_result))
+#elif defined(_MSC_VER) && _MSC_VER >= 1700
+#include <sal.h>
+#define MBEDTLS_CHECK_RETURN _Check_return_
+#else
+#define MBEDTLS_CHECK_RETURN
+#endif
+
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/mbedtls_config.h"
 #else
