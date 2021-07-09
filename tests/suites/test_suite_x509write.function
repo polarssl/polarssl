@@ -108,7 +108,7 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
                      char *serial_str, char *not_before, char *not_after,
                      int md_type, int key_usage, int set_key_usage,
                      int cert_type, int set_cert_type, int auth_ident,
-                     int ver, char *cert_check_file, int rsa_alt )
+                     int ver, char *cert_check_file, int rsa_alt, int is_ca )
 {
     mbedtls_pk_context subject_key, issuer_key, issuer_key_alt;
     mbedtls_pk_context *key = &issuer_key;
@@ -171,7 +171,9 @@ void x509_crt_check( char *subject_key_file, char *subject_pwd,
 
     if( crt.version >= MBEDTLS_X509_CRT_VERSION_3 )
     {
-        TEST_ASSERT( mbedtls_x509write_crt_set_basic_constraints( &crt, 0, 0 ) == 0 );
+        /* For the CA case, a path length of -1 means unlimited. */
+        TEST_ASSERT( mbedtls_x509write_crt_set_basic_constraints( &crt, is_ca,
+                                                                  (is_ca ? -1 : 0) ) == 0 );
         TEST_ASSERT( mbedtls_x509write_crt_set_subject_key_identifier( &crt ) == 0 );
         if( auth_ident )
             TEST_ASSERT( mbedtls_x509write_crt_set_authority_key_identifier( &crt ) == 0 );
