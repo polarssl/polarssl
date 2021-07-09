@@ -236,13 +236,14 @@ class ChangeLog:
 
             self.categories[category.name] += category.body
 
-    def __init__(self, input_stream, changelog_format):
+    def __init__(self, input_stream, changelog_format, latest_only):
         """Create a changelog object.
 
         Populate the changelog object from the content of the file
         input_stream.
         """
         self.format = changelog_format
+        self.latest_only = latest_only
         whole_file = input_stream.read()
         (self.header,
          self.top_version_title, top_version_body,
@@ -265,13 +266,15 @@ class ChangeLog:
         """Write the changelog to the specified file.
         """
         with open(filename, 'w', encoding='utf-8') as out:
-            out.write(self.header)
-            out.write(self.top_version_title)
+            if not self.latest_only
+                out.write(self.header)
+                out.write(self.top_version_title)
             for title, body in self.categories.items():
                 if not body:
                     continue
                 out.write(self.format.format_category(title, body))
-            out.write(self.trailer)
+            if not self.latest_only:
+                out.write(self.trailer)
 
 
 @functools.total_ordering
@@ -416,7 +419,7 @@ def check_output(generated_output_file, main_input_file, merged_files):
             if line not in generated_output:
                 raise LostContent(merged_file, line)
 
-def finish_output(changelog, output_file, input_file, merged_files):
+def finish_output(changelog, output_file, input_file, merged_files, latest_only):
     """Write the changelog to the output file.
 
     The input file and the list of merged files are used only for sanity
@@ -430,7 +433,8 @@ def finish_output(changelog, output_file, input_file, merged_files):
         # then move it into place atomically.
         output_temp = output_file + '.tmp'
     changelog.write(output_temp)
-    check_output(output_temp, input_file, merged_files)
+    if not latest_only:
+        check_output(output_temp, input_file, merged_files)
     if output_temp != output_file:
         os.rename(output_temp, output_file)
 
@@ -456,7 +460,7 @@ def merge_entries(options):
     Remove the merged entries if options.keep_entries is false.
     """
     with open(options.input, 'r', encoding='utf-8') as input_file:
-        changelog = ChangeLog(input_file, TextChangelogFormat)
+        changelog = ChangeLog(input_file, TextChangelogFormat, options.latest_only)
     files_to_merge = list_files_to_merge(options)
     if not files_to_merge:
         sys.stderr.write('There are no pending changelog entries.\n')
@@ -464,7 +468,7 @@ def merge_entries(options):
     for filename in files_to_merge:
         with open(filename, 'r', encoding='utf-8') as input_file:
             changelog.add_file(input_file)
-    finish_output(changelog, options.output, options.input, files_to_merge)
+    finish_output(changelog, options.output, options.input, files_to_merge, options.latest_only)
     if not options.keep_entries:
         remove_merged_entries(files_to_merge)
 
@@ -512,6 +516,9 @@ def main():
                         action='store_true',
                         help=('Only list the files that would be processed '
                               '(with some debugging information)'))
+    parser.add_argument('--latest-only',
+                        action='store_true',
+                        help=('Only generate the changes for the latest version'))
     options = parser.parse_args()
     set_defaults(options)
     if options.list_files_only:
