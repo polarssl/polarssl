@@ -127,18 +127,30 @@ int mbedtls_pkcs12_pbe( mbedtls_asn1_buf *pbe_params, int mode,
                 const unsigned char *data, size_t len,
                 unsigned char *output )
 {
+    size_t olen = 0;
+    return mbedtls_pkcs12_pbe_ext(pbe_params, mode, cipher_type, md_type,
+            pwd, pwdlen, data, len, output, &olen);
+}
+
+int mbedtls_pkcs12_pbe_ext( mbedtls_asn1_buf *pbe_params, int mode,
+                mbedtls_cipher_type_t cipher_type, mbedtls_md_type_t md_type,
+                const unsigned char *pwd,  size_t pwdlen,
+                const unsigned char *data, size_t len,
+                unsigned char *output, size_t *olen )
+{
     int ret, keylen = 0;
     unsigned char key[32];
     unsigned char iv[16];
     const mbedtls_cipher_info_t *cipher_info;
     mbedtls_cipher_context_t cipher_ctx;
-    size_t olen = 0;
+    size_t enclen = 0;
 
     cipher_info = mbedtls_cipher_info_from_type( cipher_type );
     if( cipher_info == NULL )
         return( MBEDTLS_ERR_PKCS12_FEATURE_UNAVAILABLE );
 
     keylen = cipher_info->key_bitlen / 8;
+    *olen = 0;
 
     if( ( ret = pkcs12_pbe_derive_key_iv( pbe_params, md_type, pwd, pwdlen,
                                           key, keylen,
@@ -162,13 +174,15 @@ int mbedtls_pkcs12_pbe( mbedtls_asn1_buf *pbe_params, int mode,
         goto exit;
 
     if( ( ret = mbedtls_cipher_update( &cipher_ctx, data, len,
-                                output, &olen ) ) != 0 )
+                                output, &enclen ) ) != 0 )
     {
         goto exit;
     }
+    *olen += enclen;
 
-    if( ( ret = mbedtls_cipher_finish( &cipher_ctx, output + olen, &olen ) ) != 0 )
+    if( ( ret = mbedtls_cipher_finish( &cipher_ctx, output + enclen, &enclen ) ) != 0 )
         ret = MBEDTLS_ERR_PKCS12_PASSWORD_MISMATCH;
+    *olen += enclen;
 
 exit:
     mbedtls_platform_zeroize( key, sizeof( key ) );

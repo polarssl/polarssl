@@ -69,6 +69,31 @@ int mbedtls_pkcs12_pbe( mbedtls_asn1_buf *pbe_params, int mode,
                 const unsigned char *pwd,  size_t pwdlen,
                 const unsigned char *input, size_t len,
                 unsigned char *output );
+/**
+ * \brief            PKCS12 Password Based function (encryption / decryption)
+ *                   for cipher-based and mbedtls_md-based PBE's
+ *
+ *                   Added output parameter that return actual number of bytes
+ *                   written to the output buffer
+ *
+ * \param pbe_params an ASN1 buffer containing the pkcs-12PbeParams structure
+ * \param mode       either MBEDTLS_PKCS12_PBE_ENCRYPT or MBEDTLS_PKCS12_PBE_DECRYPT
+ * \param cipher_type the cipher used
+ * \param md_type     the mbedtls_md used
+ * \param pwd        the password used (may be NULL if no password is used)
+ * \param pwdlen     length of the password (may be 0)
+ * \param input      the input data
+ * \param len        data length
+ * \param output     the output buffer
+ * \param olen       actual number of bytes written to output
+ *
+ * \return           0 if successful, or a MBEDTLS_ERR_XXX code
+ */
+int mbedtls_pkcs12_pbe_ext( mbedtls_asn1_buf *pbe_params, int mode,
+                mbedtls_cipher_type_t cipher_type, mbedtls_md_type_t md_type,
+                const unsigned char *pwd,  size_t pwdlen,
+                const unsigned char *input, size_t len,
+                unsigned char *output, size_t *olen );
 
 #endif /* MBEDTLS_ASN1_PARSE_C */
 
