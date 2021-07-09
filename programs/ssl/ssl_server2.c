@@ -2829,7 +2829,7 @@ int main( int argc, char *argv[] )
     if( opt.min_version != DFL_MIN_VERSION )
         mbedtls_ssl_conf_min_version( &conf, MBEDTLS_SSL_MAJOR_VERSION_3, opt.min_version );
 
-    if( opt.max_version != DFL_MIN_VERSION )
+    if( opt.max_version != DFL_MAX_VERSION )
         mbedtls_ssl_conf_max_version( &conf, MBEDTLS_SSL_MAJOR_VERSION_3, opt.max_version );
 
     if( ( ret = mbedtls_ssl_setup( &ssl, &conf ) ) != 0 )
