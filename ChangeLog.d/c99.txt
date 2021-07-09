@@ -1,0 +1,3 @@
+Changes
+   * Pass standard c99 to compiler in CMakeLists.txt
+
