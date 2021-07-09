@@ -236,11 +236,17 @@ def full_adapter(name, active, section):
 
 # The baremetal configuration excludes options that require a library or
 # operating system feature that is typically not present on bare metal
-# systems. Features that are excluded from "full" won't be in "baremetal"
-# either (unless explicitly turned on in baremetal_adapter) so they don't
-# need to be repeated here.
+# systems.
+# It also excludes debugging features that increase the code size of other
+# modules since they would typically be disabled in production in environments
+# where code size is at a premium, in order to make `size library/*.o`
+# informative.
+# Features that are excluded from "full" won't be in "baremetal" either
+# (unless explicitly turned on in baremetal_adapter) so they don't need to
+# be repeated here.
 EXCLUDE_FROM_BAREMETAL = frozenset([
     #pylint: disable=line-too-long
+    'MBEDTLS_DEBUG_C', # large code size increase in TLS
     'MBEDTLS_ENTROPY_NV_SEED', # requires a filesystem and FS_IO or alternate NV seed hooks
     'MBEDTLS_FS_IO', # requires a filesystem
     'MBEDTLS_HAVE_TIME', # requires a clock
@@ -252,6 +258,7 @@ EXCLUDE_FROM_BAREMETAL = frozenset([
     'MBEDTLS_PSA_CRYPTO_SE_C', # requires a filesystem and PSA_CRYPTO_STORAGE_C
     'MBEDTLS_PSA_CRYPTO_STORAGE_C', # requires a filesystem
     'MBEDTLS_PSA_ITS_FILE_C', # requires a filesystem
+    'MBEDTLS_TEST_HOOKS', # only useful with the hosted test framework, increases code size
     'MBEDTLS_THREADING_C', # requires a threading interface
     'MBEDTLS_THREADING_PTHREAD', # requires pthread
     'MBEDTLS_TIMING_C', # requires a clock
