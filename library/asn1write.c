@@ -472,7 +472,7 @@ mbedtls_asn1_named_data *mbedtls_asn1_store_named_data(
         cur->val.len = val_len;
     }
 
-    if( val != NULL )
+    if( val != NULL && cur->val.p != NULL )
         memcpy( cur->val.p, val, val_len );
 
     return( cur );

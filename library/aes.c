@@ -1165,7 +1165,7 @@ int mbedtls_aes_crypt_xts( mbedtls_aes_xts_context *ctx,
     size_t blocks = length / 16;
     size_t leftover = length % 16;
     unsigned char tweak[16];
-    unsigned char prev_tweak[16];
+    unsigned char prev_tweak[16] = {0};
     unsigned char tmp[16];
 
     AES_VALIDATE_RET( ctx != NULL );

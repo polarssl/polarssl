@@ -2174,7 +2174,7 @@ int mbedtls_rsa_rsassa_pss_verify_ext( mbedtls_rsa_context *ctx,
     size_t observed_salt_len, msb;
     const mbedtls_md_info_t *md_info;
     mbedtls_md_context_t md_ctx;
-    unsigned char buf[MBEDTLS_MPI_MAX_SIZE];
+    unsigned char buf[MBEDTLS_MPI_MAX_SIZE] = {0};
 
     RSA_VALIDATE_RET( ctx != NULL );
     RSA_VALIDATE_RET( sig != NULL );
