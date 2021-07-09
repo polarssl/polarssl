@@ -507,6 +507,30 @@ add_openssl_ciphersuites()
             fi
             ;;
 
+        "ECDH")
+            if [ `minor_ver "$MODE"` -ge 3 ]
+            then
+                M_CIPHERS="$M_CIPHERS                       \
+                    TLS-ECDH-RSA-WITH-AES-256-GCM-SHA384    \
+                    TLS-ECDH-RSA-WITH-AES-256-CBC-SHA384    \
+                    TLS-ECDH-RSA-WITH-AES-256-CBC-SHA       \
+                    TLS-ECDH-RSA-WITH-AES-128-GCM-SHA256    \
+                    TLS-ECDH-RSA-WITH-AES-128-CBC-SHA256    \
+                    TLS-ECDH-RSA-WITH-AES-128-CBC-SHA       \
+                    TLS-ECDH-RSA-WITH-3DES-EDE-CBC-SHA      \
+                    "
+                O_CIPHERS="$O_CIPHERS               \
+                    ECDH-RSA-AES256-GCM-SHA384      \
+                    ECDH-RSA-AES256-SHA384          \
+                    ECDH-RSA-AES256-SHA             \
+                    ECDH-RSA-AES128-GCM-SHA256      \
+                    ECDH-RSA-AES128-SHA256          \
+                    ECDH-RSA-AES128-SHA             \
+                    ECDH-RSA-DES-CBC3-SHA           \
+                    "
+            fi
+            ;;
+
         "PSK")
             if [ `minor_ver "$MODE"` -ge 3 ]
             then
@@ -828,6 +852,17 @@ add_mbedtls_ciphersuites()
                     "
             fi
             ;;
+
+        "ECDH")
+            if [ `minor_ver "$MODE"` -ge 3 ]
+            then
+                M_CIPHERS="$M_CIPHERS
+                    TLS-ECDH-RSA-WITH-CAMELLIA-256-GCM-SHA384       \
+                    TLS-ECDH-RSA-WITH-CAMELLIA-256-CBC-SHA384       \
+                    TLS-ECDH-RSA-WITH-CAMELLIA-128-GCM-SHA256       \
+                    TLS-ECDH-RSA-WITH-CAMELLIA-128-CBC-SHA256       \
+                "
+            fi
     esac
 }
 
@@ -942,6 +977,21 @@ setup_arguments()
             M_CLIENT_ARGS="$M_CLIENT_ARGS psk=6162636465666768696a6b6c6d6e6f70 crt_file=none key_file=none"
             O_CLIENT_ARGS="$O_CLIENT_ARGS -psk 6162636465666768696a6b6c6d6e6f70"
             G_CLIENT_ARGS="$G_CLIENT_ARGS --pskusername Client_identity --pskkey=6162636465666768696a6b6c6d6e6f70"
+            ;;
+
+        "ECDH")
+            M_SERVER_ARGS="$M_SERVER_ARGS crt_file=data_files/ecdh-test.crt key_file=data_files/ec_256_prv.pem"
+            O_SERVER_ARGS="$O_SERVER_ARGS -cert data_files/ecdh-test.crt -key data_files/ec_256_prv.pem"
+
+            M_CLIENT_ARGS="$M_CLIENT_ARGS"
+            O_CLIENT_ARGS="$O_CLIENT_ARGS"
+
+            if [ "X$VERIFY" = "XYES" ]; then
+                M_CLIENT_ARGS="$M_CLIENT_ARGS crt_file=data_files/ecdh-test.crt key_file=data_files/ec_256_prv.pem"
+                O_CLIENT_ARGS="$O_CLIENT_ARGS -cert data_files/ecdh-test.crt -key data_files/ec_256_prv.pem"
+            else
+                M_CLIENT_ARGS="$M_CLIENT_ARGS crt_file=none key_file=none"
+            fi
             ;;
     esac
 }
