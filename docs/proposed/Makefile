@@ -7,6 +7,7 @@ all_markdown = \
 	       psa-driver-developer-guide.md \
 	       psa-driver-integration-guide.md \
 	       psa-driver-interface.md \
+	       psa-driver-tool-design.md \
 	       # This line is intentionally left blank
 
 html: $(all_markdown:.md=.html)
