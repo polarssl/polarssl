@@ -1,0 +1,3 @@
+Features
+   * The identifier of the CID TLS extension can be configured by defining
+     MBEDTLS_TLS_EXT_CID at compile time.

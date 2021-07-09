@@ -2762,6 +2762,14 @@ int query_config( const char *config )
     }
 #endif /* MBEDTLS_SSL_COOKIE_TIMEOUT */
 
+#if defined(MBEDTLS_TLS_EXT_CID)
+    if( strcmp( "MBEDTLS_TLS_EXT_CID", config ) == 0 )
+    {
+        MACRO_EXPANSION_TO_STR( MBEDTLS_TLS_EXT_CID );
+        return( 0 );
+    }
+#endif /* MBEDTLS_TLS_EXT_CID */
+
 #if defined(MBEDTLS_X509_MAX_INTERMEDIATE_CA)
     if( strcmp( "MBEDTLS_X509_MAX_INTERMEDIATE_CA", config ) == 0 )
     {
