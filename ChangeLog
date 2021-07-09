@@ -1445,6 +1445,7 @@ Bugfix
      extensions in CSRs and CRTs that caused these bitstrings to not be encoded
      correctly as trailing zeroes were not accounted for as unused bits in the
      leading content octet. Fixes #1610.
+   * Fix typo in config-no-entropy.h submitted by Jacob Schloss in #2479.
 
 Changes
    * Reduce RAM consumption during session renegotiation by not storing
