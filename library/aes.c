@@ -398,9 +398,15 @@ static int aes_init_done = 0;
 
 static void aes_gen_tables( void )
 {
-    int i, x, y, z;
-    int pow[256];
-    int log[256];
+    uint32_t i, x, y, z;
+#if !defined(MBEDTLS_AES_FEWER_TABLES)
+    uint32_t *pow = RT2;
+    uint32_t *log = RT3;
+#else
+    uint8_t pow[256];
+    uint8_t log[256];
+#endif /* !MBEDTLS_AES_FEWER_TABLES */
+
 
     /*
      * compute pow and log tables over GF(2^8)
@@ -417,7 +423,7 @@ static void aes_gen_tables( void )
      */
     for( i = 0, x = 1; i < 10; i++ )
     {
-        RCON[i] = (uint32_t) x;
+        RCON[i] = x;
         x = XTIME( x ) & 0xFF;
     }
 
@@ -437,8 +443,8 @@ static void aes_gen_tables( void )
         x ^= y; y = ( ( y << 1 ) | ( y >> 7 ) ) & 0xFF;
         x ^= y ^ 0x63;
 
-        FSb[i] = (unsigned char) x;
-        RSb[x] = (unsigned char) i;
+        FSb[i] = (uint8_t) x;
+        RSb[x] = (uint8_t) i;
     }
 
     /*
