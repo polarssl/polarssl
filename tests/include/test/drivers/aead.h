@@ -67,5 +67,60 @@ psa_status_t mbedtls_test_transparent_aead_decrypt(
     const uint8_t *ciphertext, size_t ciphertext_length,
     uint8_t *plaintext, size_t plaintext_size, size_t *plaintext_length );
 
+psa_status_t mbedtls_test_transparent_aead_encrypt_setup(
+    mbedtls_psa_aead_operation_t *operation,
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer, size_t key_buffer_size,
+    psa_algorithm_t alg );
+
+psa_status_t mbedtls_test_transparent_aead_decrypt_setup(
+    mbedtls_psa_aead_operation_t *operation,
+    const psa_key_attributes_t *attributes,
+    const uint8_t *key_buffer, size_t key_buffer_size,
+    psa_algorithm_t alg );
+
+psa_status_t mbedtls_test_transparent_aead_set_nonce(
+    mbedtls_psa_aead_operation_t *operation,
+    const uint8_t *nonce,
+    size_t nonce_length );
+
+psa_status_t mbedtls_test_transparent_aead_set_lengths(
+    mbedtls_psa_aead_operation_t *operation,
+    size_t ad_length,
+    size_t plaintext_length );
+
+psa_status_t mbedtls_test_transparent_aead_update_ad(
+    mbedtls_psa_aead_operation_t *operation,
+    const uint8_t *input,
+    size_t input_length );
+
+psa_status_t mbedtls_test_transparent_aead_update(
+   mbedtls_psa_aead_operation_t *operation,
+   const uint8_t *input,
+   size_t input_length,
+   uint8_t *output,
+   size_t output_size,
+   size_t *output_length );
+
+psa_status_t mbedtls_test_transparent_aead_finish(
+   mbedtls_psa_aead_operation_t *operation,
+   uint8_t *ciphertext,
+   size_t ciphertext_size,
+   size_t *ciphertext_length,
+   uint8_t *tag,
+   size_t tag_size,
+   size_t *tag_length );
+
+psa_status_t mbedtls_test_transparent_aead_verify(
+   mbedtls_psa_aead_operation_t *operation,
+   uint8_t *plaintext,
+   size_t plaintext_size,
+   size_t *plaintext_length,
+   const uint8_t *tag,
+   size_t tag_length );
+
+psa_status_t mbedtls_test_transparent_aead_abort(
+   mbedtls_psa_aead_operation_t *operation );
+
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 #endif /* PSA_CRYPTO_TEST_DRIVERS_AEAD_H */

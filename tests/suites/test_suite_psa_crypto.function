@@ -3458,6 +3458,862 @@ exit:
 /* END_CASE */
 
 /* BEGIN_CASE */
+void aead_multipart_encrypt( int key_type_arg, data_t *key_data,
+                             int alg_arg,
+                             data_t *nonce,
+                             data_t *additional_data,
+                             int ad_part_len,
+                             data_t *input_data,
+                             int data_part_len,
+                             data_t *expected_result )
+{
+    mbedtls_svc_key_id_t key = MBEDTLS_SVC_KEY_ID_INIT;
+    psa_key_type_t key_type = key_type_arg;
+    psa_algorithm_t alg = alg_arg;
+    psa_aead_operation_t operation;
+    unsigned char *output_data = NULL;
+    unsigned char *part_data = NULL;
+    unsigned char *final_data = NULL;
+    size_t output_size = 0;
+    size_t part_data_size = 0;
+    size_t output_length = 0;
+    size_t key_bits = 0;
+    size_t tag_length = 0;
+    size_t tag_size = 0;
+    size_t nonce_length = 0;
+    uint8_t nonce_buffer[16];
+    uint8_t tag_buffer[16];
+    uint32_t part_offset = 0;
+    size_t part_length = 0;
+    size_t output_part_length = 0;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
+
+    PSA_ASSERT( psa_crypto_init( ) );
+
+    psa_set_key_usage_flags( &attributes, PSA_KEY_USAGE_ENCRYPT  );
+    psa_set_key_algorithm( &attributes, alg );
+    psa_set_key_type( &attributes, key_type );
+
+    PSA_ASSERT( psa_import_key( &attributes, key_data->x, key_data->len,
+                                &key ) );
+
+    PSA_ASSERT( psa_get_key_attributes( key, &attributes ) );
+    key_bits = psa_get_key_bits( &attributes );
+
+    tag_length = PSA_AEAD_TAG_LENGTH( key_type, key_bits, alg );
+
+    TEST_ASSERT( tag_length <= 16 );
+
+    output_size = PSA_AEAD_UPDATE_OUTPUT_SIZE( key_type, alg,
+                                               ( input_data->len +
+                                                 tag_length ) );
+
+    ASSERT_ALLOC( output_data, output_size );
+
+    ASSERT_ALLOC( final_data, PSA_AEAD_FINISH_OUTPUT_MAX_SIZE );
+
+    operation = psa_aead_operation_init();
+
+    status = psa_aead_encrypt_setup( &operation, key, alg );
+
+    /* If the operation is not supported, just skip and not fail in case the
+     * encryption involves a common limitation of cryptography hardwares and
+     * an alternative implementation. */
+    if( status == PSA_ERROR_NOT_SUPPORTED )
+    {
+        MBEDTLS_TEST_PSA_SKIP_IF_ALT_AES_192( key_type, key_data->len * 8 );
+        MBEDTLS_TEST_PSA_SKIP_IF_ALT_GCM_NOT_12BYTES_NONCE( alg, nonce->len );
+    }
+
+    PSA_ASSERT( status );
+
+    if( nonce->len == 0 )
+    {
+        PSA_ASSERT( psa_aead_generate_nonce( &operation, nonce_buffer,
+                                             sizeof( nonce_buffer ),
+                                             &nonce_length ) );
+    }
+    else
+    {
+        nonce_length = nonce->len;
+        PSA_ASSERT( psa_aead_set_nonce( &operation, nonce->x, nonce->len ) );
+    }
+
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_GCM)
+    if( operation.alg == PSA_ALG_GCM )
+    {
+        PSA_ASSERT( psa_aead_set_lengths( &operation, additional_data->len,
+                                          input_data->len ) );
+    }
+#endif
+
+    if( ad_part_len != -1 )
+    {
+        /* Pass addtional data in parts */
+        part_offset = 0;
+
+        while( part_offset <= additional_data->len)
+        {
+            if( additional_data->len - part_offset < ( uint32_t ) ad_part_len )
+            {
+                part_length = additional_data->len - part_offset;
+            }
+            else
+            {
+                part_length = ad_part_len;
+            }
+
+            PSA_ASSERT( psa_aead_update_ad( &operation,
+                                            additional_data->x + part_offset,
+                                            part_length ) );
+
+            part_offset += part_length;
+        }
+    }
+    else
+    {
+        /* Pass additional data in one go. */
+        PSA_ASSERT( psa_aead_update_ad(&operation, additional_data->x,
+                                       additional_data->len) );
+    }
+
+    if( data_part_len != -1 )
+    {
+        /* Pass data in parts */
+        part_data_size = PSA_AEAD_UPDATE_OUTPUT_SIZE( key_type, alg,
+                                                     ( size_t ) data_part_len );
+
+        ASSERT_ALLOC( part_data, part_data_size );
+
+        part_offset = 0;
+
+        while( part_offset <= input_data->len)
+        {
+            if( input_data->len - part_offset < ( uint32_t ) data_part_len )
+            {
+                part_length = input_data->len - part_offset;
+            }
+            else
+            {
+                part_length = data_part_len;
+            }
+
+            PSA_ASSERT( psa_aead_update( &operation,
+                                         ( input_data->x + part_offset ),
+                                         part_length, part_data,
+                                         part_data_size,
+                                         &output_part_length ) );
+
+            if( output_data && output_part_length )
+            {
+                memcpy( ( output_data + part_offset ), part_data,
+                        output_part_length );
+            }
+
+            part_offset += part_length;
+            output_length += output_part_length;
+        }
+    }
+    else
+    {
+        /* Pass whole data in one go */
+        PSA_ASSERT( psa_aead_update( &operation, input_data->x,
+                                         input_data->len, output_data,
+                                         output_size, &output_length ) );
+    }
+
+    PSA_ASSERT( psa_aead_finish( &operation, final_data,
+                                 PSA_AEAD_FINISH_OUTPUT_MAX_SIZE,
+                                 &output_part_length,
+                                 tag_buffer, tag_length,
+                                 &tag_size ) );
+
+    if( output_data && output_part_length )
+    {
+        memcpy( ( output_data + output_length ), final_data,
+                output_part_length );
+    }
+
+    TEST_EQUAL(tag_length, tag_size);
+
+    output_length += output_part_length;
+
+    if( output_data && tag_length )
+    {
+        memcpy( ( output_data + output_length ), tag_buffer, tag_length );
+    }
+
+    output_length += tag_length;
+
+    /* For all currently defined algorithms, PSA_AEAD_ENCRYPT_OUTPUT_SIZE
+     * should be exact. */
+    TEST_EQUAL( output_length,
+                PSA_AEAD_ENCRYPT_OUTPUT_SIZE( key_type, alg,
+                                              input_data->len ) );
+    TEST_ASSERT( output_length <=
+                 PSA_AEAD_ENCRYPT_OUTPUT_MAX_SIZE( input_data->len ) );
+
+    ASSERT_COMPARE( expected_result->x, expected_result->len,
+                    output_data, output_length );
+
+exit:
+    psa_destroy_key( key );
+    psa_aead_abort( &operation );
+    mbedtls_free( output_data );
+    mbedtls_free( part_data );
+    mbedtls_free( final_data );
+    PSA_DONE( );
+}
+/* END_CASE */
+
+/* BEGIN_CASE */
+void aead_multipart_encrypt_decrypt( int key_type_arg, data_t *key_data,
+                                     int alg_arg,
+                                     data_t *nonce,
+                                     data_t *additional_data,
+                                     int ad_part_len,
+                                     data_t *input_data,
+                                     int data_part_len,
+                                     int expected_result_arg )
+{
+    mbedtls_svc_key_id_t key = MBEDTLS_SVC_KEY_ID_INIT;
+    psa_key_type_t key_type = key_type_arg;
+    psa_algorithm_t alg = alg_arg;
+    psa_aead_operation_t operation;
+    unsigned char *output_data = NULL;
+    unsigned char *part_data = NULL;
+    unsigned char *final_data = NULL;
+    size_t part_data_size;
+    size_t output_size = 0;
+    size_t output_length = 0;
+    unsigned char *output_data2 = NULL;
+    size_t output_size2 = 0;
+    size_t output_length2 = 0;
+    size_t key_bits = 0;
+    size_t tag_length = 0;
+    size_t tag_size = 0;
+    size_t nonce_length = 0;
+    uint8_t nonce_buffer[16];
+    uint8_t tag_buffer[16];
+    uint32_t part_offset = 0;
+    size_t part_length = 0;
+    size_t output_part_length = 0;
+    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
+    psa_status_t expected_result = expected_result_arg;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    PSA_ASSERT( psa_crypto_init( ) );
+
+    psa_set_key_usage_flags( &attributes,
+                             PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT );
+    psa_set_key_algorithm( &attributes, alg );
+    psa_set_key_type( &attributes, key_type );
+
+    PSA_ASSERT( psa_import_key( &attributes, key_data->x, key_data->len,
+                                &key ) );
+
+    PSA_ASSERT( psa_get_key_attributes( key, &attributes ) );
+    key_bits = psa_get_key_bits( &attributes );
+
+    tag_length = PSA_AEAD_TAG_LENGTH( key_type, key_bits, alg );
+
+    TEST_ASSERT( tag_length <= 16 );
+
+    output_size = PSA_AEAD_UPDATE_OUTPUT_SIZE( key_type, alg, input_data->len );
+
+    ASSERT_ALLOC( output_data, output_size );
+    ASSERT_ALLOC( final_data, PSA_AEAD_FINISH_OUTPUT_MAX_SIZE );
+
+    operation = psa_aead_operation_init();
+
+    status = psa_aead_encrypt_setup( &operation, key, alg );
+
+    /* If the operation is not supported, just skip and not fail in case the
+     * encryption involves a common limitation of cryptography hardwares and
+     * an alternative implementation. */
+    if( status == PSA_ERROR_NOT_SUPPORTED )
+    {
+        MBEDTLS_TEST_PSA_SKIP_IF_ALT_AES_192( key_type, key_data->len * 8 );
+        MBEDTLS_TEST_PSA_SKIP_IF_ALT_GCM_NOT_12BYTES_NONCE( alg, nonce->len );
+    }
+
+    if( status != PSA_SUCCESS )
+    {
+        TEST_EQUAL( status, expected_result_arg );
+        goto exit;
+    }
+
+    if( nonce->len == 0 )
+    {
+        status = psa_aead_generate_nonce( &operation, nonce_buffer,
+                                          sizeof( nonce_buffer ),
+                                          &nonce_length );
+    }
+    else
+    {
+        nonce_length = nonce->len;
+        status = psa_aead_set_nonce( &operation, nonce->x, nonce->len );
+    }
+
+    if( status != PSA_SUCCESS )
+    {
+        TEST_EQUAL( status, expected_result_arg );
+        goto exit;
+    }
+
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_GCM)
+    if( operation.alg == PSA_ALG_GCM )
+    {
+        status = psa_aead_set_lengths( &operation, additional_data->len,
+                                       input_data->len );
+
+        if( status != PSA_SUCCESS )
+        {
+            TEST_EQUAL( status, expected_result_arg );
+            goto exit;
+        }
+    }
+#endif
+
+    if( ad_part_len != -1 )
+    {
+        part_offset = 0;
+
+        while( part_offset <= additional_data->len)
+        {
+            if( additional_data->len - part_offset < ( uint32_t ) ad_part_len )
+            {
+                part_length = additional_data->len - part_offset;
+            }
+            else
+            {
+                part_length = ad_part_len;
+            }
+
+            status = psa_aead_update_ad( &operation,
+                                         additional_data->x + part_offset,
+                                         part_length );
+
+            if( status != PSA_SUCCESS )
+            {
+                TEST_EQUAL( status, expected_result_arg );
+                goto exit;
+            }
+
+            part_offset += part_length;
+        }
+    }
+    else
+    {
+        status = psa_aead_update_ad(&operation, additional_data->x,
+                                    additional_data->len);
+
+        if( status != PSA_SUCCESS )
+        {
+            TEST_EQUAL( status, expected_result_arg );
+            goto exit;
+        }
+    }
+
+    if( data_part_len != -1 )
+    {
+        /* Pass data in parts */
+        part_data_size = PSA_AEAD_UPDATE_OUTPUT_SIZE( key_type, alg,
+                                                     ( size_t ) data_part_len );
+
+        ASSERT_ALLOC( part_data, part_data_size );
+
+        part_offset = 0;
+
+        while( part_offset <= input_data->len)
+        {
+            if( input_data->len - part_offset < ( uint32_t ) data_part_len )
+            {
+                part_length = input_data->len - part_offset;
+            }
+            else
+            {
+                part_length = data_part_len;
+            }
+
+            status = psa_aead_update( &operation,
+                                      ( input_data->x + part_offset ),
+                                      part_length, part_data,
+                                      part_data_size, &output_part_length );
+
+            if( status != PSA_SUCCESS )
+            {
+                TEST_EQUAL( status, expected_result_arg );
+                goto exit;
+            }
+
+            if( output_data && output_part_length )
+            {
+                memcpy( ( output_data + part_offset ), part_data,
+                        output_part_length );
+            }
+
+            part_offset += part_length;
+            output_length += output_part_length;
+        }
+    }
+    else
+    {
+        status = psa_aead_update( &operation, input_data->x,
+                                         input_data->len, output_data,
+                                         output_size, &output_length );
+
+        if( status != PSA_SUCCESS )
+        {
+            TEST_EQUAL( status, expected_result_arg );
+            goto exit;
+        }
+    }
+
+    status = psa_aead_finish( &operation, final_data,
+                              PSA_AEAD_FINISH_OUTPUT_MAX_SIZE,
+                              &output_part_length,
+                              tag_buffer, tag_length,
+                              &tag_size );
+
+    if( status != PSA_SUCCESS )
+    {
+        TEST_EQUAL( status, expected_result_arg );
+        goto exit;
+    }
+
+    if( output_data &&output_part_length )
+    {
+        memcpy( ( output_data + output_length ), final_data,
+                output_part_length );
+    }
+
+    output_length += output_part_length;
+
+    /* For all currently defined algorithms, PSA_AEAD_ENCRYPT_OUTPUT_SIZE
+     * should be exact. */
+    if( expected_result != PSA_ERROR_INVALID_ARGUMENT )
+        TEST_EQUAL( ( output_length + tag_length ),
+                    PSA_AEAD_ENCRYPT_OUTPUT_SIZE( key_type, alg,
+                                                  input_data->len ) );
+
+    TEST_EQUAL(tag_length, tag_size);
+
+    if( PSA_SUCCESS == expected_result )
+    {
+        output_size2 = PSA_AEAD_UPDATE_OUTPUT_SIZE( key_type, alg,
+                                                    output_length );
+        ASSERT_ALLOC( output_data2, output_size2 );
+
+        /* For all currently defined algorithms, PSA_AEAD_DECRYPT_OUTPUT_SIZE
+         * should be exact. */
+        TEST_EQUAL( input_data->len,
+                    PSA_AEAD_DECRYPT_OUTPUT_SIZE( key_type, alg,
+                                                  ( output_length +
+                                                    tag_length ) ) );
+
+        TEST_ASSERT( input_data->len <=
+                     PSA_AEAD_DECRYPT_OUTPUT_MAX_SIZE( output_length +
+                                                       tag_length ) );
+
+        operation = psa_aead_operation_init();
+
+        status = psa_aead_decrypt_setup( &operation, key, alg );
+
+        /* If the operation is not supported, just skip and not fail in case the
+         * encryption involves a common limitation of cryptography hardwares and
+         * an alternative implementation. */
+        if( status == PSA_ERROR_NOT_SUPPORTED )
+        {
+            MBEDTLS_TEST_PSA_SKIP_IF_ALT_AES_192( key_type, key_data->len * 8 );
+            MBEDTLS_TEST_PSA_SKIP_IF_ALT_GCM_NOT_12BYTES_NONCE( alg,
+                                                                nonce->len );
+        }
+
+        TEST_EQUAL( status, expected_result );
+
+        if( nonce->len == 0 )
+        {
+            /* Use previously generated nonce. */
+            status = psa_aead_set_nonce( &operation, nonce_buffer,
+                                         nonce_length );
+        }
+        else
+        {
+            nonce_length = nonce->len;
+            status = psa_aead_set_nonce( &operation, nonce->x, nonce->len );
+        }
+
+        if( status != PSA_SUCCESS )
+        {
+            TEST_EQUAL( status, expected_result_arg );
+        }
+
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_GCM)
+        if( operation.alg == PSA_ALG_GCM )
+        {
+            status = psa_aead_set_lengths( &operation, additional_data->len,
+                                           output_length );
+
+            if( status != PSA_SUCCESS )
+            {
+                TEST_EQUAL( status, expected_result_arg );
+            }
+        }
+#endif
+
+        if( ad_part_len != -1 )
+        {
+            part_offset = 0;
+
+            while( part_offset <= additional_data->len)
+            {
+                if( additional_data->len - part_offset <
+                    ( uint32_t ) ad_part_len )
+                {
+                    part_length = additional_data->len - part_offset;
+                }
+                else
+                {
+                    part_length = ad_part_len;
+                }
+
+                PSA_ASSERT( psa_aead_update_ad( &operation,
+                                                additional_data->x +
+                                                part_offset,
+                                                part_length ) );
+
+                part_offset += part_length;
+            }
+        }
+        else
+        {
+            PSA_ASSERT( psa_aead_update_ad(&operation, additional_data->x,
+                                           additional_data->len) );
+        }
+
+        if( data_part_len != -1 )
+        {
+            /* Pass data in parts */
+            part_data_size = PSA_AEAD_UPDATE_OUTPUT_SIZE( key_type, alg,
+                                                     ( size_t ) data_part_len );
+
+            ASSERT_ALLOC( part_data, part_data_size );
+
+            part_offset = 0;
+
+            while( part_offset <= ( input_data->len - tag_length ) )
+            {
+                if( ( input_data->len - tag_length - part_offset ) <
+                    ( uint32_t ) data_part_len )
+                {
+                    part_length =
+                        ( input_data->len - tag_length - part_offset );
+                }
+                else
+                {
+                    part_length = data_part_len;
+                }
+
+                PSA_ASSERT( psa_aead_update( &operation,
+                                             ( input_data->x + part_offset ),
+                                             part_length, part_data,
+                                             part_data_size,
+                                             &output_part_length ) );
+
+                if( output_data2 && output_part_length )
+                {
+                    memcpy( ( output_data2 + part_offset ),
+                            part_data, output_part_length );
+                }
+
+                part_offset += part_length;
+                output_length2 += output_part_length;
+            }
+        }
+        else
+        {
+            PSA_ASSERT( psa_aead_update( &operation, output_data,
+                                             output_length, output_data2,
+                                             output_size2, &output_length2 ) );
+        }
+
+        PSA_ASSERT( psa_aead_verify( &operation, final_data,
+                                     PSA_AEAD_FINISH_OUTPUT_MAX_SIZE,
+                                     &output_part_length,
+                                     tag_buffer, tag_length ) );
+
+        if( output_data2 && output_part_length )
+        {
+            memcpy( ( output_data2 + output_length2 ), final_data,
+                    output_part_length);
+        }
+
+        output_length2 += output_part_length;
+
+        ASSERT_COMPARE( input_data->x, input_data->len,
+                        output_data2, output_length2 );
+    }
+
+exit:
+    psa_destroy_key( key );
+    psa_aead_abort( &operation );
+    mbedtls_free( output_data );
+    mbedtls_free( output_data2 );
+    mbedtls_free( part_data );
+    mbedtls_free( final_data );
+    PSA_DONE( );
+}
+/* END_CASE */
+
+/* BEGIN_CASE */
+void aead_multipart_decrypt( int key_type_arg, data_t *key_data,
+                             int alg_arg,
+                             data_t *nonce,
+                             data_t *additional_data,
+                             int ad_part_len,
+                             data_t *input_data,
+                             int data_part_len,
+                             data_t *expected_data,
+                             int expected_result_arg )
+{
+    mbedtls_svc_key_id_t key = MBEDTLS_SVC_KEY_ID_INIT;
+    psa_key_type_t key_type = key_type_arg;
+    psa_algorithm_t alg = alg_arg;
+    psa_aead_operation_t operation;
+    unsigned char *output_data = NULL;
+    unsigned char *part_data = NULL;
+    unsigned char *final_data = NULL;
+    size_t part_data_size;
+    size_t output_size = 0;
+    size_t output_length = 0;
+    size_t key_bits = 0;
+    size_t tag_length = 0;
+    size_t nonce_length = 0;
+    uint8_t nonce_buffer[16];
+    uint32_t part_offset = 0;
+    size_t part_length = 0;
+    size_t output_part_length = 0;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_status_t expected_result = expected_result_arg;
+    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
+
+    PSA_ASSERT( psa_crypto_init( ) );
+
+    psa_set_key_usage_flags( &attributes, PSA_KEY_USAGE_DECRYPT  );
+    psa_set_key_algorithm( &attributes, alg );
+    psa_set_key_type( &attributes, key_type );
+
+    PSA_ASSERT( psa_import_key( &attributes, key_data->x, key_data->len,
+                                &key ) );
+
+    PSA_ASSERT( psa_get_key_attributes( key, &attributes ) );
+    key_bits = psa_get_key_bits( &attributes );
+
+    tag_length = PSA_AEAD_TAG_LENGTH( key_type, key_bits, alg );
+
+    output_size = PSA_AEAD_UPDATE_OUTPUT_SIZE( key_type, alg,
+                                               ( input_data->len -
+                                                 tag_length ) );
+
+    ASSERT_ALLOC( output_data, output_size );
+    ASSERT_ALLOC( final_data, PSA_AEAD_VERIFY_OUTPUT_MAX_SIZE );
+
+    operation = psa_aead_operation_init();
+
+    status = psa_aead_decrypt_setup( &operation, key, alg );
+
+    /* If the operation is not supported, just skip and not fail in case the
+     * encryption involves a common limitation of cryptography hardwares and
+     * an alternative implementation. */
+    if( status == PSA_ERROR_NOT_SUPPORTED )
+    {
+        MBEDTLS_TEST_PSA_SKIP_IF_ALT_AES_192( key_type, key_data->len * 8 );
+        MBEDTLS_TEST_PSA_SKIP_IF_ALT_GCM_NOT_12BYTES_NONCE( alg, nonce->len );
+    }
+
+    if( status != PSA_SUCCESS )
+    {
+        TEST_EQUAL( status, expected_result_arg );
+        goto exit;
+    }
+
+    if( nonce->len == 0 )
+    {
+        status = psa_aead_generate_nonce( &operation, nonce_buffer,
+                                          sizeof( nonce_buffer ),
+                                          &nonce_length );
+    }
+    else
+    {
+        nonce_length = nonce->len;
+        status = psa_aead_set_nonce( &operation, nonce->x, nonce->len );
+    }
+
+    if( status != PSA_SUCCESS )
+    {
+        TEST_EQUAL( status, expected_result_arg );
+        goto exit;
+    }
+
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_GCM)
+    if( operation.alg == PSA_ALG_GCM )
+    {
+        status = psa_aead_set_lengths( &operation, additional_data->len,
+                                       ( input_data->len - tag_length ) );
+
+        if( status != PSA_SUCCESS )
+        {
+            TEST_EQUAL( status, expected_result_arg );
+            goto exit;
+        }
+    }
+#endif
+
+    if( ad_part_len != -1 )
+    {
+        part_offset = 0;
+
+        while( part_offset <= additional_data->len)
+        {
+            if( additional_data->len - part_offset < ( uint32_t ) ad_part_len )
+            {
+                part_length = additional_data->len - part_offset;
+            }
+            else
+            {
+                part_length = ad_part_len;
+            }
+
+            status = psa_aead_update_ad( &operation,
+                                         additional_data->x + part_offset,
+                                         part_length );
+
+            if( status != PSA_SUCCESS )
+            {
+                TEST_EQUAL( status, expected_result_arg );
+                goto exit;
+            }
+
+            part_offset += part_length;
+        }
+    }
+    else
+    {
+        status = psa_aead_update_ad( &operation, additional_data->x,
+                                     additional_data->len );
+
+        if( status != PSA_SUCCESS )
+        {
+            TEST_EQUAL( status, expected_result_arg );
+            goto exit;
+        }
+    }
+
+    if( data_part_len != -1 )
+    {
+        /* Pass data in parts */
+        part_data_size = PSA_AEAD_UPDATE_OUTPUT_SIZE( key_type, alg,
+                                                     ( size_t ) data_part_len );
+
+        ASSERT_ALLOC( part_data, part_data_size );
+
+        part_offset = 0;
+
+        while( part_offset <= input_data->len)
+        {
+            if( (input_data->len - tag_length - part_offset ) <
+                ( uint32_t ) data_part_len )
+            {
+                part_length = ( input_data->len - tag_length - part_offset );
+            }
+            else
+            {
+                part_length = data_part_len;
+            }
+
+            status = psa_aead_update( &operation,
+                                      ( input_data->x + part_offset ),
+                                      part_length, part_data,
+                                      part_data_size, &output_part_length );
+
+            if( status != PSA_SUCCESS )
+            {
+                TEST_EQUAL( status, expected_result_arg );
+                goto exit;
+            }
+
+            if( output_data && output_part_length )
+            {
+                memcpy( ( output_data + part_offset ), part_data,
+                        output_part_length );
+            }
+
+            part_offset += part_length;
+            output_length += output_part_length;
+        }
+    }
+    else
+    {
+        status = psa_aead_update( &operation, input_data->x,
+                                  ( input_data->len - tag_length ), output_data,
+                                  output_size, &output_length );
+
+        if( status != PSA_SUCCESS )
+        {
+            TEST_EQUAL( status, expected_result_arg );
+            goto exit;
+        }
+    }
+
+    status = psa_aead_verify( &operation, final_data,
+                                 PSA_AEAD_VERIFY_OUTPUT_MAX_SIZE,
+                                 &output_part_length,
+                                 ( input_data->x + input_data->len -
+                                   tag_length ),
+                                 tag_length );
+
+    if( status != PSA_SUCCESS )
+    {
+        TEST_EQUAL( status, expected_result_arg );
+        goto exit;
+    }
+
+    if( output_data && output_part_length )
+    {
+        memcpy( ( output_data + output_length ), final_data,
+                output_part_length );
+    }
+
+    output_length += output_part_length;
+
+    if( expected_result != PSA_ERROR_INVALID_ARGUMENT )
+    {
+        /* For all currently defined algorithms, PSA_AEAD_DECRYPT_OUTPUT_SIZE
+         * should be exact. */
+        TEST_EQUAL( output_length,
+                    PSA_AEAD_DECRYPT_OUTPUT_SIZE( key_type, alg,
+                                                  input_data->len ) );
+        TEST_ASSERT( output_length <=
+                     PSA_AEAD_DECRYPT_OUTPUT_MAX_SIZE( input_data->len ) );
+    }
+
+    if( expected_result == PSA_SUCCESS )
+        ASSERT_COMPARE( expected_data->x, expected_data->len,
+                        output_data, output_length );
+
+exit:
+    psa_destroy_key( key );
+    psa_aead_abort( &operation );
+    mbedtls_free( output_data );
+    mbedtls_free( part_data );
+    mbedtls_free( final_data );
+    PSA_DONE( );
+}
+/* END_CASE */
+
+/* BEGIN_CASE */
 void signature_size( int type_arg,
                      int bits,
                      int alg_arg,

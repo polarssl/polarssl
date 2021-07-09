@@ -1,0 +1,6 @@
+Features
+   * Added multipart AEAD API to the PSA Crypto API
+   * Added MbedTLS internal implementations of the PSA Crypto multipart AEAD API
+     supporting ChaChaPoly and GCM (with the restriction that all addition data
+     must be passed in in one call and all body data must be passed in in one
+     call). CCM is not as yet supported.
