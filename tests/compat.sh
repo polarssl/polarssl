@@ -213,17 +213,31 @@ filter()
 {
   LIST="$1"
   NEW_LIST=""
+  EXCLMODE=""
 
   if is_dtls "$MODE"; then
-      EXCLMODE="$EXCLUDE"'\|RC4\|ARCFOUR'
-  else
-      EXCLMODE="$EXCLUDE"
+    EXCLMODE='RC4\|ARCFOUR'
   fi
 
-  for i in $LIST;
-  do
-    NEW_LIST="$NEW_LIST $( echo "$i" | grep "$FILTER" | grep -v "$EXCLMODE" )"
-  done
+  if [ "X" != "X$EXCLUDE" ]; then
+    if [ "X" != "X$EXCLMODE" ]; then
+      EXCLMODE="$EXCLUDE"'\|'"$EXCLMODE"
+    else
+      EXCLMODE="$EXCLUDE"
+    fi
+  fi
+
+  if [ "X" != "X$EXCLMODE" ]; then
+    for i in $LIST;
+    do
+      NEW_LIST="$NEW_LIST $( echo "$i" | grep "$FILTER" | grep -v "$EXCLMODE" )"
+    done
+  else
+    for i in $LIST;
+    do
+      NEW_LIST="$NEW_LIST $( echo "$i" | grep "$FILTER" )"
+    done
+  fi
 
   # normalize whitespace
   echo "$NEW_LIST" | sed -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//'
