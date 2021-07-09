@@ -294,6 +294,7 @@ class MbedTlsTest(BaseHostTest):
             name, function_id, dependencies, args = self.tests[self.test_index]
             self.run_test(name, function_id, dependencies, args)
         else:
+            self.send_kv(self.int32_to_big_endian_bytes(1), '\0')
             self.notify_complete(self.suite_passed)
 
     def run_test(self, name, function_id, dependencies, args):

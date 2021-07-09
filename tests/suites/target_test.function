@@ -390,6 +390,12 @@ int execute_tests( int args, const char ** argv )
         data = receive_data( &data_len );
         if ( data == NULL )
             continue;
+        if ( data[0] == '\0' && data_len == 1 )
+        {
+            free( data );
+            data = NULL;
+            break;
+        }
         p = data;
 
         do
