@@ -50,6 +50,7 @@
 #include "mbedtls/timing.h"
 #include "mbedtls/nist_kw.h"
 
+#include <limits.h>
 #include <string.h>
 
 #if defined(MBEDTLS_PLATFORM_C)
@@ -359,6 +360,70 @@ int main( int argc, char *argv[] )
         mbedtls_printf( "all-bits-zero is not a NULL pointer\n" );
         mbedtls_exit( MBEDTLS_EXIT_FAILURE );
     }
+
+    /*
+     * The C standard allows padding bits in the representation
+     * of standard integer types, but our code does currently not
+     * support them.
+     *
+     * Here we check that the underlying C implementation doesn't
+     * use padding bits, and fail cleanly if it does.
+     *
+     * The check works by casting the maximum value representable
+     * by a given integer type into the unpadded integer type of the
+     * same bit-width and checking that it agrees with the maximum value
+     * of that unpadded type. For example, for a 4-byte int,
+     * MAX_INT should be 0x7fffffff in int32_t. This assumes that
+     * CHAR_BIT == 8, which is checked in check_config.h.
+     *
+     * We assume that [u]intxx_t exist and that they don't
+     * have padding bits, as the standard requires.
+     */
+
+#define CHECK_PADDING_SIGNED(TYPE, NAME)                                \
+    do                                                                  \
+    {                                                                   \
+        if( ( sizeof( TYPE ) == 2 &&                                    \
+              (int16_t) NAME ## _MAX != 0x7FFF )             ||         \
+            ( sizeof( TYPE ) == 4 &&                                    \
+              (int32_t) NAME ## _MAX != 0x7FFFFFFF )         ||         \
+            ( sizeof( TYPE ) == 8 &&                                    \
+              (int64_t) NAME ## _MAX != 0x7FFFFFFFFFFFFFFF ) )          \
+        {                                                               \
+            mbedtls_printf( "Type '" #TYPE "' has padding bits\n" );    \
+            mbedtls_exit( MBEDTLS_EXIT_FAILURE );                       \
+        }                                                               \
+    } while( 0 )
+
+#define CHECK_PADDING_UNSIGNED(TYPE, NAME)                              \
+    do                                                                  \
+    {                                                                   \
+        if( ( sizeof( TYPE ) == 2 &&                                    \
+              (uint16_t) NAME ## _MAX != 0xFFFF )             ||        \
+            ( sizeof( TYPE ) == 4 &&                                    \
+              (uint32_t) NAME ## _MAX != 0xFFFFFFFF )         ||        \
+            ( sizeof( TYPE ) == 8 &&                                    \
+              (uint64_t) NAME ## _MAX != 0xFFFFFFFFFFFFFFFF ) )         \
+        {                                                               \
+            mbedtls_printf( "Type '" #TYPE "' has padding bits\n" );    \
+            mbedtls_exit( MBEDTLS_EXIT_FAILURE );                       \
+        }                                                               \
+    } while( 0 )
+
+    CHECK_PADDING_SIGNED( short,        SHRT );
+    CHECK_PADDING_SIGNED( int,           INT );
+    CHECK_PADDING_SIGNED( long,         LONG );
+    CHECK_PADDING_SIGNED( long long,   LLONG );
+    CHECK_PADDING_SIGNED( ptrdiff_t, PTRDIFF );
+
+    CHECK_PADDING_UNSIGNED( unsigned short,      USHRT );
+    CHECK_PADDING_UNSIGNED( unsigned,             UINT );
+    CHECK_PADDING_UNSIGNED( unsigned long,       ULONG );
+    CHECK_PADDING_UNSIGNED( unsigned long long, ULLONG );
+    CHECK_PADDING_UNSIGNED( size_t,               SIZE );
+
+#undef CHECK_PADDING_SIGNED
+#undef CHECK_PADDING_UNSIGNED
 
     /*
      * Make sure we have a snprintf that correctly zero-terminates
