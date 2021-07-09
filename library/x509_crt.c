@@ -3183,6 +3183,62 @@ exit:
     return( 0 );
 }
 
+/*
+ * Sort the server cert chain o handle potentially extraneous certificates
+ * and arbitrary orderings.
+ * From https://tools.ietf.org/id/draft-ietf-tls-tls13-23.html#certificate
+ * Prior to TLS 1.3, "certificate_list" ordering required each certificate
+ * to certify the one immediately preceding it; however, some implementations
+ * allowed some flexibility. Servers sometimes send both a current and
+ * deprecated intermediate for transitional purposes, and others are simply
+ * configured incorrectly, but these cases can nonetheless be validated
+ * properly. For maximum compatibility, all implementations SHOULD be prepared
+ * to handle potentially extraneous certificates and arbitrary orderings from
+ * any TLS version, with the exception of the end-entity certificate which
+ * MUST be first.
+ */
+static void mbedtls_x509_crt_sort( mbedtls_x509_crt *chain )
+{
+    mbedtls_x509_crt *child = chain;
+
+    while ( child != NULL)
+    {
+        mbedtls_x509_crt *parent = child->next;
+        mbedtls_x509_crt *prev = NULL;
+        while ( parent != NULL )
+        {
+            if ( x509_name_cmp( &child->issuer, &parent->subject ) == 0 )
+            {
+                // Find the parent
+                if ( prev == NULL )
+                {
+                    child = parent;
+                }
+                else
+                {
+                    // Switch
+                    mbedtls_x509_crt *tmp = child->next;
+                    prev->next = parent->next;
+                    child->next = parent;
+                    parent->next = tmp;
+                }
+                break;
+            }
+            else
+            {
+                prev = parent;
+                parent = parent->next;
+            }
+        }
+        if ( parent == NULL )
+        {
+            // Can't find the parent, stop here
+            return;
+        }
+        // Next
+        child = child->next;
+    }
+}
 
 /*
  * Verify the certificate validity (default profile, not restartable)
@@ -3247,19 +3303,19 @@ int mbedtls_x509_crt_verify_restartable( mbedtls_x509_crt *crt,
                      void *p_vrfy,
                      mbedtls_x509_crt_restart_ctx *rs_ctx )
 {
+    mbedtls_x509_crt_sort( crt );
     return( x509_crt_verify_restartable_ca_cb( crt, trust_ca, ca_crl,
                                                  NULL, NULL,
                                                  profile, cn, flags,
                                                  f_vrfy, p_vrfy, rs_ctx ) );
 }
 
-
 /*
  * Initialize a certificate chain
  */
 void mbedtls_x509_crt_init( mbedtls_x509_crt *crt )
 {
-    memset( crt, 0, sizeof(mbedtls_x509_crt) );
+    memset( crt, 0, sizeof( mbedtls_x509_crt ) );
 }
 
 /*
