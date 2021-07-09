@@ -4658,6 +4658,42 @@ run_test    "Version check: all -> 1.2" \
             -s "Protocol is TLSv1.2" \
             -c "Protocol is TLSv1.2"
 
+run_test    "Not supported version check: cli TLS 1.0" \
+            "$P_SRV" \
+            "$G_CLI localhost --priority=NORMAL:-VERS-ALL:+VERS-TLS1.0" \
+            1 \
+            -s "Handshake protocol not within min/max boundaries" \
+            -c "Error in protocol version" \
+            -S "Protocol is TLSv1.0" \
+            -C "Handshake was completed"
+
+run_test    "Not supported version check: cli TLS 1.1" \
+            "$P_SRV" \
+            "$G_CLI localhost --priority=NORMAL:-VERS-ALL:+VERS-TLS1.1" \
+            1 \
+            -s "Handshake protocol not within min/max boundaries" \
+            -c "Error in protocol version" \
+            -S "Protocol is TLSv1.1" \
+            -C "Handshake was completed"
+
+run_test    "Not supported version check: srv max TLS 1.0" \
+            "$G_SRV --priority=NORMAL:-VERS-TLS-ALL:+VERS-TLS1.0" \
+            "$P_CLI" \
+            1 \
+            -s "Error in protocol version" \
+            -c "Handshake protocol not within min/max boundaries" \
+            -S "Version: TLS1.0" \
+            -C "Protocol is TLSv1.0"
+
+run_test    "Not supported version check: srv max TLS 1.1" \
+            "$G_SRV --priority=NORMAL:-VERS-TLS-ALL:+VERS-TLS1.1" \
+            "$P_CLI" \
+            1 \
+            -s "Error in protocol version" \
+            -c "Handshake protocol not within min/max boundaries" \
+            -S "Version: TLS1.1" \
+            -C "Protocol is TLSv1.1"
+
 # Tests for ALPN extension
 
 run_test    "ALPN: none" \

@@ -100,9 +100,7 @@ int mbedtls_ssl_check_record( mbedtls_ssl_context const *ssl,
     MBEDTLS_SSL_DEBUG_BUF( 3, "record buffer", buf, buflen );
 
     /* We don't support record checking in TLS because
-     * (a) there doesn't seem to be a usecase for it, and
-     * (b) In TLS 1.0, CBC record decryption has state
-     *     and we'd need to backup the transform here.
+     * there doesn't seem to be a usecase for it.
      */
     if( ssl->conf->transport == MBEDTLS_SSL_TRANSPORT_STREAM )
     {
@@ -645,28 +643,19 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
             return( MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL );
         }
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-        if( transform->minor_ver >= MBEDTLS_SSL_MINOR_VERSION_1 )
-        {
-            unsigned char mac[MBEDTLS_SSL_MAC_ADD];
+        unsigned char mac[MBEDTLS_SSL_MAC_ADD];
 
-            ssl_extract_add_data_from_record( add_data, &add_data_len, rec,
-                                              transform->minor_ver );
+        ssl_extract_add_data_from_record( add_data, &add_data_len, rec,
+                                          transform->minor_ver );
 
-            mbedtls_md_hmac_update( &transform->md_ctx_enc, add_data,
-                                    add_data_len );
-            mbedtls_md_hmac_update( &transform->md_ctx_enc,
-                                    data, rec->data_len );
-            mbedtls_md_hmac_finish( &transform->md_ctx_enc, mac );
-            mbedtls_md_hmac_reset( &transform->md_ctx_enc );
+        mbedtls_md_hmac_update( &transform->md_ctx_enc, add_data,
+                                add_data_len );
+        mbedtls_md_hmac_update( &transform->md_ctx_enc, data, rec->data_len );
+        mbedtls_md_hmac_finish( &transform->md_ctx_enc, mac );
+        mbedtls_md_hmac_reset( &transform->md_ctx_enc );
 
-            memcpy( data + rec->data_len, mac, transform->maclen );
-        }
-        else
+        memcpy( data + rec->data_len, mac, transform->maclen );
 #endif
-        {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
-            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
-        }
 
         MBEDTLS_SSL_DEBUG_BUF( 4, "computed mac", data + rec->data_len,
                                transform->maclen );
@@ -839,31 +828,26 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
          * Prepend per-record IV for block cipher in TLS v1.2 as per
          * Method 1 (6.2.3.2. in RFC4346 and RFC5246)
          */
-        if( transform->minor_ver >= MBEDTLS_SSL_MINOR_VERSION_3 )
+        if( f_rng == NULL )
         {
-            if( f_rng == NULL )
-            {
-                MBEDTLS_SSL_DEBUG_MSG( 1, ( "No PRNG provided to encrypt_record routine" ) );
-                return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
-            }
-
-            if( rec->data_offset < transform->ivlen )
-            {
-                MBEDTLS_SSL_DEBUG_MSG( 1, ( "Buffer provided for encrypted record not large enough" ) );
-                return( MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL );
-            }
-
-            /*
-             * Generate IV
-             */
-            ret = f_rng( p_rng, transform->iv_enc, transform->ivlen );
-            if( ret != 0 )
-                return( ret );
-
-            memcpy( data - transform->ivlen, transform->iv_enc,
-                    transform->ivlen );
-
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "No PRNG provided to encrypt_record routine" ) );
+            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
         }
+
+        if( rec->data_offset < transform->ivlen )
+        {
+            MBEDTLS_SSL_DEBUG_MSG( 1, ( "Buffer provided for encrypted record not large enough" ) );
+            return( MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL );
+        }
+
+        /*
+         * Generate IV
+         */
+        ret = f_rng( p_rng, transform->iv_enc, transform->ivlen );
+        if( ret != 0 )
+            return( ret );
+
+        memcpy( data - transform->ivlen, transform->iv_enc, transform->ivlen );
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 
         MBEDTLS_SSL_DEBUG_MSG( 3, ( "before encrypt: msglen = %" MBEDTLS_PRINTF_SIZET ", "
@@ -902,7 +886,7 @@ int mbedtls_ssl_encrypt_buf( mbedtls_ssl_context *ssl,
              *     TLSCipherText.type +
              *     TLSCipherText.version +
              *     length_of( (IV +) ENC(...) ) +
-             *     IV + // except for TLS 1.0
+             *     IV +
              *     ENC(content + padding + padding_length));
              */
 
@@ -1107,7 +1091,7 @@ MBEDTLS_STATIC_TESTABLE int mbedtls_ssl_cf_hmac(
      * Then we only need to compute HASH(okey + inner_hash) and we're done.
      */
     const mbedtls_md_type_t md_alg = mbedtls_md_get_type( ctx->md_info );
-    /* TLS 1.0-1.2 only support SHA-384, SHA-256, SHA-1, MD-5,
+    /* TLS 1.2 only supports SHA-384, SHA-256, SHA-1, MD-5,
      * all of which have the same block size except SHA-384. */
     const size_t block_size = md_alg == MBEDTLS_MD_SHA384 ? 128 : 64;
     const unsigned char * const ikey = ctx->hmac_ctx;
@@ -1371,11 +1355,8 @@ int mbedtls_ssl_decrypt_buf( mbedtls_ssl_context const *ssl,
          * Check immediate ciphertext sanity
          */
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-        if( transform->minor_ver >= MBEDTLS_SSL_MINOR_VERSION_3 )
-        {
-            /* The ciphertext is prefixed with the CBC IV. */
-            minlen += transform->ivlen;
-        }
+        /* The ciphertext is prefixed with the CBC IV. */
+        minlen += transform->ivlen;
 #endif
 
         /* Size considerations:
@@ -1480,15 +1461,12 @@ int mbedtls_ssl_decrypt_buf( mbedtls_ssl_context const *ssl,
         /*
          * Initialize for prepended IV for block cipher in TLS v1.2
          */
-        if( transform->minor_ver >= MBEDTLS_SSL_MINOR_VERSION_3 )
-        {
-            /* Safe because data_len >= minlen + ivlen = 2 * ivlen. */
-            memcpy( transform->iv_dec, data, transform->ivlen );
+        /* Safe because data_len >= minlen + ivlen = 2 * ivlen. */
+        memcpy( transform->iv_dec, data, transform->ivlen );
 
-            data += transform->ivlen;
-            rec->data_offset += transform->ivlen;
-            rec->data_len -= transform->ivlen;
-        }
+        data += transform->ivlen;
+        rec->data_offset += transform->ivlen;
+        rec->data_len -= transform->ivlen;
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 
         /* We still have data_len % ivlen == 0 and data_len >= ivlen here. */
@@ -5028,8 +5006,7 @@ int mbedtls_ssl_get_record_expansion( const mbedtls_ssl_context *ssl )
             /* For TLS 1.2 or higher, an explicit IV is added
              * after the record header. */
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-            if( ssl->minor_ver >= MBEDTLS_SSL_MINOR_VERSION_3 )
-                transform_expansion += block_size;
+            transform_expansion += block_size;
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 
             break;
@@ -5171,21 +5148,13 @@ static int ssl_handle_hs_message_post_handshake( mbedtls_ssl_context *ssl )
         MBEDTLS_SSL_DEBUG_MSG( 3, ( "refusing renegotiation, sending alert" ) );
 
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-        if( ssl->minor_ver >= MBEDTLS_SSL_MINOR_VERSION_1 )
+        if( ( ret = mbedtls_ssl_send_alert_message( ssl,
+                         MBEDTLS_SSL_ALERT_LEVEL_WARNING,
+                         MBEDTLS_SSL_ALERT_MSG_NO_RENEGOTIATION ) ) != 0 )
         {
-            if( ( ret = mbedtls_ssl_send_alert_message( ssl,
-                             MBEDTLS_SSL_ALERT_LEVEL_WARNING,
-                             MBEDTLS_SSL_ALERT_MSG_NO_RENEGOTIATION ) ) != 0 )
-            {
-                return( ret );
-            }
+            return( ret );
         }
-        else
 #endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
-        {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
-            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
-        }
     }
 
     return( 0 );
@@ -5601,7 +5570,6 @@ static void ssl_buffering_free_slot( mbedtls_ssl_context *ssl,
  *
  * For TLS this is the identity.
  * For DTLS, use 1's complement (v -> 255 - v, and then map as follows:
- * 1.0 <-> 3.2      (DTLS 1.0 is based on TLS 1.1)
  * 1.x <-> 3.x+1    for x != 0 (DTLS 1.2 based on TLS 1.2)
  */
 void mbedtls_ssl_write_version( int major, int minor, int transport,

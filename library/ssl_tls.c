@@ -854,7 +854,7 @@ static int ssl_populate_transform( mbedtls_ssl_transform *transform,
              * GenericBlockCipher:
              * 1. if EtM is in use: one block plus MAC
              *    otherwise: * first multiple of blocklen greater than maclen
-             * 2. IV except for TLS 1.0
+             * 2. IV
              */
 #if defined(MBEDTLS_SSL_ENCRYPT_THEN_MAC)
             if( encrypt_then_mac == MBEDTLS_SSL_ETM_ENABLED )
@@ -948,23 +948,14 @@ static int ssl_populate_transform( mbedtls_ssl_transform *transform,
 
 #if defined(MBEDTLS_SSL_SOME_SUITES_USE_MAC)
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-    if( minor_ver >= MBEDTLS_SSL_MINOR_VERSION_1 )
+    /* For HMAC-based ciphersuites, initialize the HMAC transforms.
+       For AEAD-based ciphersuites, there is nothing to do here. */
+    if( mac_key_len != 0 )
     {
-        /* For HMAC-based ciphersuites, initialize the HMAC transforms.
-           For AEAD-based ciphersuites, there is nothing to do here. */
-        if( mac_key_len != 0 )
-        {
-            mbedtls_md_hmac_starts( &transform->md_ctx_enc, mac_enc, mac_key_len );
-            mbedtls_md_hmac_starts( &transform->md_ctx_dec, mac_dec, mac_key_len );
-        }
+        mbedtls_md_hmac_starts( &transform->md_ctx_enc, mac_enc, mac_key_len );
+        mbedtls_md_hmac_starts( &transform->md_ctx_dec, mac_dec, mac_key_len );
     }
-    else
 #endif
-    {
-        MBEDTLS_SSL_DEBUG_MSG( 1, ( "should never happen" ) );
-        ret = MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-        goto end;
-    }
 #endif /* MBEDTLS_SSL_SOME_SUITES_USE_MAC */
 
     ((void) mac_dec);
@@ -4246,9 +4237,6 @@ const char *mbedtls_ssl_get_version( const mbedtls_ssl_context *ssl )
     {
         switch( ssl->minor_ver )
         {
-            case MBEDTLS_SSL_MINOR_VERSION_2:
-                return( "DTLSv1.0" );
-
             case MBEDTLS_SSL_MINOR_VERSION_3:
                 return( "DTLSv1.2" );
 
@@ -4260,12 +4248,6 @@ const char *mbedtls_ssl_get_version( const mbedtls_ssl_context *ssl )
 
     switch( ssl->minor_ver )
     {
-        case MBEDTLS_SSL_MINOR_VERSION_1:
-            return( "TLSv1.0" );
-
-        case MBEDTLS_SSL_MINOR_VERSION_2:
-            return( "TLSv1.1" );
-
         case MBEDTLS_SSL_MINOR_VERSION_3:
             return( "TLSv1.2" );
 

@@ -1868,21 +1868,18 @@ void perform_handshake( handshake_test_options* options )
 #if defined(MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH)
     if( options->resize_buffers != 0 )
     {
-        if( options->expected_negotiated_version != MBEDTLS_SSL_MINOR_VERSION_1 )
-        {
-            /* A server, when using DTLS, might delay a buffer resize to happen
-             * after it receives a message, so we force it. */
-            TEST_ASSERT( exchange_data( &(client.ssl), &(server.ssl) ) == 0 );
+        /* A server, when using DTLS, might delay a buffer resize to happen
+         * after it receives a message, so we force it. */
+        TEST_ASSERT( exchange_data( &(client.ssl), &(server.ssl) ) == 0 );
 
-            TEST_ASSERT( client.ssl.out_buf_len ==
-                         mbedtls_ssl_get_output_buflen( &client.ssl ) );
-            TEST_ASSERT( client.ssl.in_buf_len ==
-                         mbedtls_ssl_get_input_buflen( &client.ssl ) );
-            TEST_ASSERT( server.ssl.out_buf_len ==
-                         mbedtls_ssl_get_output_buflen( &server.ssl ) );
-            TEST_ASSERT( server.ssl.in_buf_len ==
-                         mbedtls_ssl_get_input_buflen( &server.ssl ) );
-        }
+        TEST_ASSERT( client.ssl.out_buf_len ==
+                     mbedtls_ssl_get_output_buflen( &client.ssl ) );
+        TEST_ASSERT( client.ssl.in_buf_len ==
+                     mbedtls_ssl_get_input_buflen( &client.ssl ) );
+        TEST_ASSERT( server.ssl.out_buf_len ==
+                     mbedtls_ssl_get_output_buflen( &server.ssl ) );
+        TEST_ASSERT( server.ssl.in_buf_len ==
+                     mbedtls_ssl_get_input_buflen( &server.ssl ) );
     }
 #endif
 
@@ -3467,9 +3464,9 @@ void ssl_decrypt_non_etm_cbc( int cipher_type, int hash_id, int trunc_hmac,
      * Test record decryption for CBC without EtM, focused on the verification
      * of padding and MAC.
      *
-     * Actually depends on TLS >= 1.0 and either AES, ARIA, Camellia or DES,
-     * but since the test framework doesn't support alternation in
-     * dependency statements, just depend on TLS 1.2 and AES.
+     * Actually depends on TLS 1.2 and either AES, ARIA or Camellia, but since
+     * the test framework doesn't support alternation in dependency statements,
+     * just depend on AES.
      *
      * The length_selector argument is interpreted as follows:
      * - if it's -1, the plaintext length is 0 and minimal padding is applied
@@ -4362,13 +4359,6 @@ void handshake_version( int dtls, int client_min_version, int client_max_version
     options.expected_negotiated_version = expected_negotiated_version;
 
     options.dtls = dtls;
-    /* By default, TLSv1.0 use 1/n-1 splitting when sending data, so
-     * the number of fragments will be twice as big. */
-    if( expected_negotiated_version == MBEDTLS_SSL_MINOR_VERSION_1 )
-    {
-        options.expected_cli_fragments = 2;
-        options.expected_srv_fragments = 2;
-    }
     perform_handshake( &options );
 
     /* The goto below is used to avoid an "unused label" warning.*/
