@@ -97,7 +97,7 @@ int mbedtls_hmac_drbg_update_ret( mbedtls_hmac_drbg_context *ctx,
     unsigned char rounds = ( additional != NULL && add_len != 0 ) ? 2 : 1;
     unsigned char sep[1];
     unsigned char K[MBEDTLS_MD_MAX_SIZE];
-    int ret;
+    int ret = 0;
 
     for( sep[0] = 0; sep[0] < rounds; sep[0]++ )
     {

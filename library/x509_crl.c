@@ -565,7 +565,7 @@ int mbedtls_x509_crl_parse( mbedtls_x509_crl *chain, const unsigned char *buf, s
 {
 #if defined(MBEDTLS_PEM_PARSE_C)
     int ret;
-    size_t use_len;
+    size_t use_len = 0;
     mbedtls_pem_context pem;
     int is_pem = 0;
 
