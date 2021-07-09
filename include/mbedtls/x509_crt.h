@@ -178,7 +178,7 @@ typedef struct mbedtls_x509_crt_profile
     uint32_t allowed_mds;       /**< MDs for signatures         */
     uint32_t allowed_pks;       /**< PK algs for signatures     */
     uint32_t allowed_curves;    /**< Elliptic curves for ECDSA  */
-    uint32_t rsa_min_bitlen;    /**< Minimum size for RSA keys  */
+    uint32_t rsa_min_bitlen;    /**< Minimum bit length for RSA signatures */
 }
 mbedtls_x509_crt_profile;
 
