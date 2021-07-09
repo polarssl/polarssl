@@ -5415,6 +5415,28 @@ run_test    "PSK callback: wrong key" \
             -S "SSL - Unknown identity received" \
             -s "SSL - Verification of the message MAC failed"
 
+run_test    "PSK identity hint callback" \
+            "$O_SRV -psk 1a2b3c4d -tls1_2 -psk_hint server_hint -nocert" \
+            "$P_CLI force_ciphersuite=TLS-PSK-WITH-AES-128-CBC-SHA \
+            psk=1a2b3c4d psk_identity=Client_identity psk_callback=1 psk_server_identity=server_hint" \
+            0 \
+            -c "Receieved server identity: server_hint"
+
+run_test    "PSK identity hint callback: wrong key" \
+            "$O_SRV -psk 1a2b3c4d -tls1_2 -psk_hint server_hint -nocert" \
+            "$P_CLI force_ciphersuite=TLS-PSK-WITH-AES-128-CBC-SHA \
+            psk=1234 psk_identity=Client_identity psk_callback=1 psk_server_identity=server_hint" \
+            1 \
+            -c "Receieved server identity: server_hint"
+
+run_test    "PSK identity hint callback: wrong server identity" \
+            "$O_SRV -psk 1a2b3c4d -tls1_2 -psk_hint server_hint -nocert" \
+            "$P_CLI force_ciphersuite=TLS-PSK-WITH-AES-128-CBC-SHA \
+            psk=1a2b3c4d psk_identity=Client_identity psk_callback=1 psk_server_identity=foo" \
+            1 \
+            -c "Receieved server identity: server_hint" \
+            -c "Unknown server identity"
+
 # Tests for EC J-PAKE
 
 requires_config_enabled MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED

@@ -1,0 +1,2 @@
+Features
+   * In (D)TLS, add client-side support for the PSK callback, allowing to select a key based on the identity hint sent by the server.
