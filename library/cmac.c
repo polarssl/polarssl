@@ -204,6 +204,7 @@ int mbedtls_cipher_cmac_starts( mbedtls_cipher_context_t *ctx,
         case MBEDTLS_CIPHER_AES_192_ECB:
         case MBEDTLS_CIPHER_AES_256_ECB:
         case MBEDTLS_CIPHER_DES_EDE3_ECB:
+        case MBEDTLS_CIPHER_DES_EDE_ECB:
             break;
         default:
             return( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
