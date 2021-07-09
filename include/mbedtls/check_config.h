@@ -23,6 +23,10 @@
 #ifndef MBEDTLS_CHECK_CONFIG_H
 #define MBEDTLS_CHECK_CONFIG_H
 
+#if defined(MBEDTLS_CONFIG_FILE) && defined(MBEDTLS_USER_CONFIG_FILE)
+#error "MBEDTLS_USER_CONFIG_FILE cannot be included if MBEDTLS_CONFIG_FILE is defined."
+#endif
+
 /*
  * We assume CHAR_BIT is 8 in many places. In practice, this is true on our
  * target platforms, so not an issue, but let's just be extra sure.
