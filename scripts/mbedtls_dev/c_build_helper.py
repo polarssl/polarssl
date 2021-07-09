@@ -135,8 +135,7 @@ def get_c_expression_values(
                                 stdout=subprocess.DEVNULL,
                                 stderr=subprocess.PIPE,
                                 universal_newlines=True)
-        cc_is_msvc = 'Microsoft (R) C/C++ Optimizing Compiler' in \
-                      proc.communicate()[1]
+        cc_is_msvc = 'Microsoft (R) C/C++' in proc.communicate()[1]
 
         cmd += ['-I' + dir for dir in include_path]
         if cc_is_msvc:
