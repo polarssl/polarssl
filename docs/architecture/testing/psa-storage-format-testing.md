@@ -20,15 +20,21 @@ An alternative, semi-direct approach consists of generating test data under vers
 
 ### Save-and-compare approach
 
-Importing and saving a key is deterministic. Therefore we can ensure the stability of the storage format by creating test cases under a version V of Mbed TLS, where the test case parameters include both the parameters to pass to key creation and the expected state of the storage after the key is created. The test case creates a key as indicated by the parameters, then compares the actual state of the storage with the expected state. In addition, the test case also loads the key and checks that it has the expected data and metadata.
+Importing and saving a key is deterministic. Therefore we can ensure the stability of the storage format by creating test cases under a version V of Mbed TLS, where the test case parameters include both the parameters to pass to key creation and the expected state of the storage after the key is created. The test case creates a key as indicated by the parameters, then compares the actual state of the storage with the expected state.
+
+In addition, the test case also loads the key and checks that it has the expected data and metadata. Import-and-save testing and load-and-check testing can be split into separate test functions with the same payloads.
 
 If the test passes with version V, this means that the test data is consistent with what the implementation does. When the test later runs under version W ≥ V, it creates and reads back a storage state which is known to be identical to the state that V would have produced. Thus, this approach validates that W can read storage states created by V.
+
+Note that it is the combination of import-and-save passing on version V and load-and-check passing on version W with the same data that proves that version W can read back what version V wrote. From the perspective of a particular version of the library, the import-and-save tests guarantee forward compatibility while the load-and-check tests guarantee backward compatibility.
 
 Use a similar approach for files other than keys where possible and relevant.
 
 ### Keeping up with storage format evolution
 
 Test cases should normally not be removed from the code base: if something has worked before, it should keep working in future versions, so we should keep testing it.
+
+This cannot be enforced solely by looking at a single version of Mbed TLS, since there would be no indication that more test cases used to exist. It can only be enforced through review of library changes. The review may be assisted by a tool that compares the old and the new version, in the same way that `abi-check.py` compares the library's API and ABI.
 
 If the way certain keys are stored changes, and we don't deliberately decide to stop supporting old keys (which should only be done by retiring a version of the storage format), then we should keep the corresponding test cases in load-only mode: create a file with the expected content, load it and check the data that it contains.
 
@@ -65,13 +71,18 @@ Method: Create a key with certain metadata with `psa_import_key`. Read the file 
 
 Objective: ensure that the coverage is sufficient to have assurance that all keys are stored correctly. This requires a sufficient selection of key types, sizes, policies, etc.
 
-In particular, the tests must validate that each `PSA_xxx` constant that is stored in a key is covered by at least once test case:
+In particular, the tests must validate that each `PSA_xxx` constant that is stored in a key is covered by at least one test case:
 
+* Lifetimes: `PSA_KEY_LIFETIME_xxx`, `PSA_KEY_PERSISTENCE_xxx`, `PSA_KEY_LOCATION_xxx`.
 * Usage flags: `PSA_KEY_USAGE_xxx`.
 * Algorithms in policies: `PSA_ALG_xxx`.
 * Key types: `PSA_KEY_TYPE_xxx`, `PSA_ECC_FAMILY_xxx`, `PSA_DH_FAMILY_xxx`.
 
-Method: Each test case creates a key with `psa_import_key`, purges it from memory, then reads it back and exercises it. Generate test cases automatically based on an enumeration of available constants and some knowledge of what attributes (sizes, algorithms, …) and content to use for keys of a certain type. Note that the generated test cases will be checked into the repository (generating test cases at runtime would not allow us to test the stability of the format, only that a given version is internally consistent).
+In addition, the coverage of key material must ensure that any variation in key representation is detected. See [“Considerations on key material representations”](#Considerations-on-key-material-representations) for considerations regarding key types.
+
+Method: Each test case creates a key with `psa_import_key`, purges it from memory, then reads it back and exercises it.
+
+Generate test cases automatically based on an enumeration of available constants and some knowledge of what attributes (sizes, algorithms, …) and content to use for keys of a certain type.
 
 ### Testing with alternative lifetime values
 
@@ -80,7 +91,20 @@ Objective: have test coverage for lifetimes other than the default persistent li
 Method:
 
 * For alternative locations: have tests conditional on the presence of a driver for that location.
-* For alternative persistence levels: TODO
+* For alternative persistence levels: have load-and-check tests for supported persistence levels. We may also want to have negative tests ensuring that keys with a not-supported persistence level are not accidentally created.
+
+### Considerations on key material representations
+
+The risks of incompatibilities in key representations depends on the key type and on the presence of drivers. Compatibility of and with drivers is currently out of scope of this document.
+
+Some types only have one plausible representation. Others admit alternative plausible representations (different encodings, or non-canonical representations).
+Here are some areas to watch for, with an identified risk of incompatibilities.
+
+* HMAC keys longer than the block size: pre-hashed or not?
+* DES keys: was parity enforced?
+* RSA keys: can invalid DER encodings (e.g. leading zeros, ignored sign bit) have been stored?
+* RSA private keys: can invalid CRT parameters have been stored?
+* Montgomery private keys: were they stored in masked form?
 
 ## Random generator state
 
