@@ -15,7 +15,7 @@ void mbedtls_cmac_self_test(  )
 }
 /* END_CASE */
 
-/* BEGIN_CASE */
+/* BEGIN_CASE depends_on:MBEDTLS_CHECK_PARAMS:!MBEDTLS_PARAM_FAILED_ALT */
 void mbedtls_cmac_null_args(  )
 {
     mbedtls_cipher_context_t ctx;
@@ -27,71 +27,77 @@ void mbedtls_cmac_null_args(  )
     mbedtls_cipher_init( &ctx );
 
     /* Test NULL cipher info */
-    TEST_ASSERT( mbedtls_cipher_cmac_update( &ctx, test_data, 16 ) ==
-                                         MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_starts( &ctx, test_key, 128 ) );
+    
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_update( &ctx, test_data, 16 ) );
 
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_finish( &ctx, test_output ) );
+    
     cipher_info = mbedtls_cipher_info_from_type( MBEDTLS_CIPHER_AES_128_ECB );
     TEST_ASSERT( mbedtls_cipher_setup( &ctx, cipher_info ) == 0 );
 
-    TEST_ASSERT( mbedtls_cipher_cmac_starts( NULL, test_key, 128 ) ==
-                                         MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_starts( NULL, test_key, 128 ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac_starts( &ctx, NULL, 128 ) ==
-                                         MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_starts( &ctx, NULL, 128 ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac_update( NULL, test_data, 16 ) ==
-                                         MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_update( NULL, test_data, 16 ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac_update( &ctx, NULL, 16 ) ==
-                                         MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_update( &ctx, NULL, 16 ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac_finish( NULL, test_output ) ==
-                                         MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_finish( NULL, test_output ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac_finish( &ctx, NULL ) ==
-                                         MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_finish( &ctx, NULL ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac_reset( NULL ) ==
-                                         MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac_reset( NULL ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac( NULL,
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac( NULL,
                                       test_key, 128,
                                       test_data, 16,
-                                      test_output ) ==
-                                            MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+                                      test_output ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac( cipher_info,
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac( cipher_info,
                                       NULL, 128,
                                       test_data, 16,
-                                      test_output ) ==
-                                            MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+                                      test_output ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac( cipher_info,
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac( cipher_info,
                                       test_key, 128,
                                       NULL, 16,
-                                      test_output ) ==
-                                            MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+                                      test_output ) );
 
-    TEST_ASSERT( mbedtls_cipher_cmac( cipher_info,
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_cipher_cmac( cipher_info,
                                       test_key, 128,
                                       test_data, 16,
-                                      NULL ) ==
-                                            MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+                                      NULL ) );
 
-    TEST_ASSERT( mbedtls_aes_cmac_prf_128( NULL, 16,
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_aes_cmac_prf_128( NULL, 16,
                                            test_data, 16,
-                                           test_output ) ==
-                                           MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+                                           test_output ) );
 
-    TEST_ASSERT( mbedtls_aes_cmac_prf_128( test_key, 16,
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_aes_cmac_prf_128( test_key, 16,
                                            NULL, 16,
-                                           test_output ) ==
-                                              MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+                                           test_output ) );
 
-    TEST_ASSERT( mbedtls_aes_cmac_prf_128( test_key, 16,
+    TEST_INVALID_PARAM_RET( MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA,
+                            mbedtls_aes_cmac_prf_128( test_key, 16,
                                            test_data, 16,
-                                           NULL ) ==
-                                              MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA );
+                                           NULL ) );
 
 exit:
     mbedtls_cipher_free( &ctx );
