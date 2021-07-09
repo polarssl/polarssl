@@ -131,6 +131,8 @@ if(LINK_WITH_PTHREAD)
     set(libs ${libs} pthread)
 endif()
 
+set(CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
+
 if (NOT USE_STATIC_MBEDTLS_LIBRARY AND NOT USE_SHARED_MBEDTLS_LIBRARY)
     message(FATAL_ERROR "Need to choose static or shared mbedtls build!")
 endif(NOT USE_STATIC_MBEDTLS_LIBRARY AND NOT USE_SHARED_MBEDTLS_LIBRARY)

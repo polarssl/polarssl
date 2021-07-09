@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0)
 if(TEST_CPP)
-    project("mbed TLS" C CXX)
+    project("mbed TLS" VERSION 2.16.0 LANGUAGES C CXX)
 else()
-    project("mbed TLS" C)
+    project("mbed TLS" VERSION 2.16.0 LANGUAGES C)
 endif()
 
 option(USE_PKCS11_HELPER_LIBRARY "Build mbed TLS with the pkcs11-helper library." OFF)
