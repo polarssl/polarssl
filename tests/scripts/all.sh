@@ -2511,6 +2511,12 @@ component_test_valgrind () {
     fi
 }
 
+component_test_error () {
+    msg "test: Errors makes CI fail"
+    err_msg "Nice error!"
+    false
+}
+
 component_test_cmake_out_of_source () {
     msg "build: cmake 'out-of-source' build"
     MBEDTLS_ROOT_DIR="$PWD"
