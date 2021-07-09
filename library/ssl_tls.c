@@ -3702,15 +3702,16 @@ static int ssl_conf_set_psk_identity( mbedtls_ssl_config *conf,
                                       size_t psk_identity_len )
 {
     /* Identity len will be encoded on two bytes */
-    if( psk_identity               == NULL ||
-        ( psk_identity_len >> 16 ) != 0    ||
+    if( ( psk_identity == NULL && psk_identity_len != 0 ) ||
+        ( psk_identity_len >> 16 ) != 0                   ||
         psk_identity_len > MBEDTLS_SSL_OUT_CONTENT_LEN )
     {
+
         return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
     }
 
     conf->psk_identity = mbedtls_calloc( 1, psk_identity_len );
-    if( conf->psk_identity == NULL )
+    if( psk_identity_len > 0 && conf->psk_identity == NULL )
         return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
 
     conf->psk_identity_len = psk_identity_len;

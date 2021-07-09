@@ -2749,7 +2749,7 @@ int main( int argc, char *argv[] )
 
 #if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
 
-    if( strlen( opt.psk ) != 0 && strlen( opt.psk_identity ) != 0 )
+    if( strlen( opt.psk ) != 0 )
     {
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
         if( opt.psk_opaque != 0 )

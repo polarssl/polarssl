@@ -150,7 +150,7 @@ static int ssl_conf_has_psk_or_cb( mbedtls_ssl_config const *conf )
     if( conf->f_psk != NULL )
         return( 1 );
 
-    if( conf->psk_identity_len == 0 || conf->psk_identity == NULL )
+    if( conf->psk_identity == NULL && conf->psk_identity_len != 0 )
         return( 0 );
 
     if( conf->psk != NULL && conf->psk_len != 0 )
@@ -3655,7 +3655,7 @@ static int ssl_parse_client_psk_identity( mbedtls_ssl_context *ssl, unsigned cha
     n = ( (*p)[0] << 8 ) | (*p)[1];
     *p += 2;
 
-    if( n == 0 || n > end - *p )
+    if( n > end - *p )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "bad client key exchange message" ) );
         return( MBEDTLS_ERR_SSL_DECODE_ERROR );

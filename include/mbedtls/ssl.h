@@ -1138,9 +1138,11 @@ struct mbedtls_ssl_config
     size_t         MBEDTLS_PRIVATE(psk_identity_len);/*!< The length of PSK identity.
                                      *   This field should only be set via
                                      *   mbedtls_ssl_conf_psk().
-                                     *   Its value is non-zero if and only if
-                                     *   \c psk is not \c NULL or \c psk_opaque
-                                     *   is not \c 0. */
+                                     *   If psk_identity is not \c NULL its
+                                     *   value can be zero to indicate an empty
+                                     *   identity has been set.
+                                     *   If psk_identity is \c NULL its value
+                                     *   must always be \c 0. */
 #endif /* MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED */
 
 #if defined(MBEDTLS_SSL_ALPN)

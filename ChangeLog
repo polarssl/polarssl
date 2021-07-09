@@ -1015,6 +1015,8 @@ Bugfix
      a warning with some compilers. Fix contributed by irwir in #2856.
    * Fix a function name in a debug message. Contributed by Ercan Ozturk in
      #3013.
+   * Allow empty psk_identity in both ssl_server2 and ssl_srv code. Found by
+     Jeremy Honl, jerhon. #614
 
 Changes
    * Mbed Crypto is no longer a Git submodule. The crypto part of the library
