@@ -25,7 +25,17 @@
 #if defined(PSA_CRYPTO_DRIVER_TEST)
 #include <psa/crypto_driver_common.h>
 
-size_t mbedtls_test_size_function(
+/*
+ * In order to convert the plain text keys to Opaque, the size of the key is
+ * padded up by PSA_CRYPTO_TEST_DRIVER_OPAQUE_PAD_PREFIX_SIZE in addition to xor mangling
+ * the key. The pad prefix needs to be accounted for while sizing for the key.
+ */
+#define PSA_CRYPTO_TEST_DRIVER_OPAQUE_PAD_PREFIX           0xBEEFED00U
+#define PSA_CRYPTO_TEST_DRIVER_OPAQUE_PAD_PREFIX_SIZE      sizeof( PSA_CRYPTO_TEST_DRIVER_OPAQUE_PAD_PREFIX )
+
+size_t mbedtls_test_opaque_get_base_size();
+
+size_t mbedtls_test_opaque_size_function(
     const psa_key_type_t key_type,
     const size_t key_bits );
 

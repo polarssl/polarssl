@@ -83,6 +83,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
 
 psa_status_t psa_driver_wrapper_get_key_buffer_size(
     const psa_key_attributes_t *attributes,
+    const size_t key_bits,
     size_t *key_buffer_size );
 
 psa_status_t psa_driver_wrapper_generate_key(
@@ -94,6 +95,10 @@ psa_status_t psa_driver_wrapper_get_builtin_key(
     psa_key_attributes_t *attributes,
     uint8_t *key_buffer, size_t key_buffer_size, size_t *key_buffer_length );
 
+psa_status_t psa_driver_wrapper_copy_key(
+    psa_key_attributes_t *attributes,
+    const uint8_t *source_key, size_t source_key_size,
+    uint8_t *target_key_buffer, size_t target_buffer_size, size_t *key_length );
 /*
  * Cipher functions
  */
