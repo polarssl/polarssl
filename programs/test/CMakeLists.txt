@@ -14,7 +14,17 @@ set(executables_mbedcrypto
 )
 
 if(TEST_CPP)
-    list(APPEND executables_mbedcrypto cpp_dummy_build)
+    set(cpp_dummy_build_cpp "${CMAKE_CURRENT_BINARY_DIR}/cpp_dummy_build.cpp")
+    set(generate_cpp_dummy_build "${CMAKE_CURRENT_SOURCE_DIR}/generate_cpp_dummy_build.sh")
+    add_custom_command(
+        OUTPUT "${cpp_dummy_build_cpp}"
+        COMMAND "${generate_cpp_dummy_build}" "${cpp_dummy_build_cpp}"
+        DEPENDS "${generate_cpp_dummy_build}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    add_executable(cpp_dummy_build "${cpp_dummy_build_cpp}")
+    target_include_directories(cpp_dummy_build PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+    target_link_libraries(cpp_dummy_build ${mbedcrypto_target})
 endif()
 
 foreach(exe IN LISTS executables_libs executables_mbedcrypto)
