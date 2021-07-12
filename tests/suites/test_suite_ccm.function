@@ -1,5 +1,64 @@
 /* BEGIN_HEADER */
 #include "mbedtls/ccm.h"
+
+/* Use the multipart interface to process the encrypted data in two parts
+ * and check that the output matches the expected output.
+ * The context must have been set up with the key. */
+static int check_multipart( mbedtls_ccm_context *ctx,
+                            int mode,
+                            const data_t *iv,
+                            const data_t *add,
+                            const data_t *input,
+                            const data_t *expected_output,
+                            const data_t *tag,
+                            size_t n1,
+                            size_t n1_add)
+{
+    int ok = 0;
+    uint8_t *output = NULL;
+    size_t n2 = input->len - n1;
+    size_t n2_add = add->len - n1_add;
+    size_t olen;
+
+    /* Sanity checks on the test data */
+    TEST_ASSERT( n1 <= input->len );
+    TEST_ASSERT( n1_add <= add->len );
+    TEST_EQUAL( input->len, expected_output->len );
+    TEST_EQUAL( 0, mbedtls_ccm_starts( ctx, mode, iv->x, iv->len ) );
+    TEST_EQUAL( 0, mbedtls_ccm_set_lengths( ctx, add->len, input->len, tag->len ) );
+    TEST_EQUAL( 0, mbedtls_ccm_update_ad( ctx, add->x, n1_add) );
+    TEST_EQUAL( 0, mbedtls_ccm_update_ad( ctx, add->x + n1_add, n2_add ) );
+
+    /* Allocate a tight buffer for each update call. This way, if the function
+     * tries to write beyond the advertised required buffer size, this will
+     * count as an overflow for memory sanitizers and static checkers. */
+    ASSERT_ALLOC( output, n1 );
+    olen = 0xdeadbeef;
+    TEST_EQUAL( 0, mbedtls_ccm_update( ctx, input->x, n1, output, n1, &olen ) );
+    TEST_EQUAL( n1, olen );
+    ASSERT_COMPARE( output, olen, expected_output->x, n1 );
+    mbedtls_free( output );
+    output = NULL;
+
+    ASSERT_ALLOC( output, n2 );
+    olen = 0xdeadbeef;
+    TEST_EQUAL( 0, mbedtls_ccm_update( ctx, input->x + n1, n2, output, n2, &olen ) );
+    TEST_EQUAL( n2, olen );
+    ASSERT_COMPARE( output, olen, expected_output->x + n1, n2 );
+    mbedtls_free( output );
+    output = NULL;
+
+    ASSERT_ALLOC( output, tag->len );
+    TEST_EQUAL( 0, mbedtls_ccm_finish( ctx, output, tag->len ) );
+    ASSERT_COMPARE( output, tag->len, tag->x, tag->len );
+    mbedtls_free( output );
+    output = NULL;
+
+    ok = 1;
+exit:
+    mbedtls_free( output );
+    return( ok );
+}
 /* END_HEADER */
 
 /* BEGIN_DEPENDENCIES
@@ -123,6 +182,7 @@ void mbedtls_ccm_encrypt_and_tag( int cipher_id, data_t * key,
 {
     mbedtls_ccm_context ctx;
     size_t tag_len;
+    size_t n1, n1_add;
     uint8_t * msg_n_tag = (uint8_t *)malloc( result->len + 2 );
 
     mbedtls_ccm_init( &ctx );
@@ -143,6 +203,25 @@ void mbedtls_ccm_encrypt_and_tag( int cipher_id, data_t * key,
     /* Check we didn't write past the end */
     TEST_ASSERT( msg_n_tag[result->len] == 0 && msg_n_tag[result->len + 1] == 0 );
 
+    const data_t encrypted_expected = { .x = result->x,
+                                        .len = msg->len };
+    const data_t tag_expected = { .x = result->x + msg->len,
+                                  .len = tag_len };
+
+    for( n1 = 0; n1 <= msg->len; n1 += 1 )
+    {
+        for( n1_add = 0; n1_add <= add->len; n1_add += 1 )
+        {
+            mbedtls_test_set_step( n1 * 10000 + n1_add );
+            if( !check_multipart( &ctx, MBEDTLS_CCM_ENCRYPT,
+                                  iv, add, msg,
+                                  &encrypted_expected,
+                                  &tag_expected,
+                                  n1, n1_add ) )
+                goto exit;
+        }
+    }
+
 exit:
     mbedtls_ccm_free( &ctx );
     free( msg_n_tag );
@@ -157,6 +236,7 @@ void mbedtls_ccm_auth_decrypt( int cipher_id, data_t * key,
 {
     unsigned char tag[16];
     mbedtls_ccm_context ctx;
+    size_t n1, n1_add;
 
     mbedtls_ccm_init( &ctx );
 
@@ -165,28 +245,50 @@ void mbedtls_ccm_auth_decrypt( int cipher_id, data_t * key,
     msg->len -= tag_len;
     memcpy( tag, msg->x + msg->len, tag_len );
 
+    uint8_t * io_msg = (uint8_t *)malloc( msg->len + 2 );
+    memset( io_msg, 0, msg->len + 2 );
+    memcpy( io_msg, msg->x, msg->len );
+
     TEST_ASSERT( mbedtls_ccm_setkey( &ctx, cipher_id, key->x, key->len * 8 ) == 0 );
 
     /* Test with input == output */
     TEST_ASSERT( mbedtls_ccm_auth_decrypt( &ctx, msg->len, iv->x, iv->len, add->x, add->len,
-                 msg->x, msg->x, msg->x + msg->len, tag_len ) == result );
+                 io_msg, io_msg, tag, tag_len ) == result );
+
+    /* Check we didn't write past the end */
+    TEST_ASSERT( io_msg[msg->len] == 0 && io_msg[msg->len + 1] == 0 );
 
     if( result == 0 )
     {
-        TEST_ASSERT( memcmp( msg->x, expected_msg->x, expected_msg->len ) == 0 );
+        TEST_ASSERT( memcmp( io_msg, expected_msg->x, expected_msg->len ) == 0 );
+
+        const data_t tag_expected = { .x = tag,
+                                      .len = tag_len };
+
+        for( n1 = 0; n1 <= msg->len; n1 += 1 )
+        {
+            for( n1_add = 0; n1_add <= add->len; n1_add += 1 )
+            {
+                mbedtls_test_set_step( n1 * 10000 + n1_add );
+                if( !check_multipart( &ctx, MBEDTLS_CCM_DECRYPT,
+                                iv, add, msg,
+                                expected_msg,
+                                &tag_expected,
+                                n1, n1_add ) )
+                    goto exit;
+           }
+        }
     }
     else
     {
         size_t i;
 
         for( i = 0; i < msg->len; i++ )
-            TEST_ASSERT( msg->x[i] == 0 );
+            TEST_ASSERT( io_msg[i] == 0 );
     }
 
-    /* Check we didn't write past the end (where the original tag is) */
-    TEST_ASSERT( memcmp( msg->x + msg->len, tag, tag_len ) == 0 );
-
 exit:
+    free(io_msg);
     mbedtls_ccm_free( &ctx );
 }
 /* END_CASE */
