@@ -75,7 +75,6 @@ extern "C" {
 typedef struct mbedtls_ccm_context
 {
     mbedtls_cipher_context_t MBEDTLS_PRIVATE(cipher_ctx);    /*!< The cipher context used. */
-    unsigned char MBEDTLS_PRIVATE(b)[16];    /*!< The B working buffer */
     unsigned char MBEDTLS_PRIVATE(y)[16];    /*!< The Y working buffer */
     unsigned char MBEDTLS_PRIVATE(ctr)[16];  /*!< The counter buffer */
     unsigned char MBEDTLS_PRIVATE(q);        /*!< The Q working value */

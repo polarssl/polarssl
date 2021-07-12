@@ -106,22 +106,6 @@ void mbedtls_ccm_free( mbedtls_ccm_context *ctx )
     mbedtls_platform_zeroize( ctx, sizeof( mbedtls_ccm_context ) );
 }
 
-/*
- * Update the CBC-MAC state in y using a block in b
- * (Always using b as the source helps the compiler optimise a bit better.)
- *
- * Macro results in smaller compiled code than static inline functions.
- */
-#define UPDATE_CBC_MAC                                                                        \
-    for( i = 0; i < 16; i++ )                                                                 \
-        ctx->y[i] ^= ctx->b[i];                                                               \
-                                                                                              \
-    if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->y, &olen ) ) != 0 ) \
-    {                                                                                         \
-        ctx->state |= CCM_STATE__ERROR;                                                       \
-        return( ret );                                                                        \
-    }                                                                                         \
-
 #define CCM_STATE__CLEAR                0
 #define CCM_STATE__STARTED              0x0001
 #define CCM_STATE__LENGHTS_SET          0x0002
@@ -155,7 +139,6 @@ static int mbedtls_ccm_crypt( mbedtls_ccm_context *ctx,
 
 static void mbedtls_ccm_clear_state(mbedtls_ccm_context *ctx) {
     ctx->state = CCM_STATE__CLEAR;
-    memset( ctx->b, 0, 16);
     memset( ctx->y, 0, 16);
     memset( ctx->ctr, 0, 16);
 }
@@ -177,7 +160,7 @@ static int mbedtls_ccm_calculate_first_block(mbedtls_ccm_context *ctx)
         return( MBEDTLS_ERR_CCM_BAD_INPUT );
 
     /*
-     * First block B_0:
+     * First block:
      * 0        .. 0        flags
      * 1        .. iv_len   nonce (aka iv)  - set by: mbedtls_ccm_starts()
      * iv_len+1 .. 15       length
@@ -188,12 +171,12 @@ static int mbedtls_ccm_calculate_first_block(mbedtls_ccm_context *ctx)
      * 5 .. 3   (t - 2) / 2
      * 2 .. 0   q - 1
      */
-    ctx->b[0] |= ( ctx->add_len > 0 ) << 6;
-    ctx->b[0] |= ( ( ctx->tag_len - 2 ) / 2 ) << 3;
-    ctx->b[0] |= ctx->q - 1;
+    ctx->y[0] |= ( ctx->add_len > 0 ) << 6;
+    ctx->y[0] |= ( ( ctx->tag_len - 2 ) / 2 ) << 3;
+    ctx->y[0] |= ctx->q - 1;
 
     for( i = 0, len_left = ctx->plaintext_len; i < ctx->q; i++, len_left >>= 8 )
-        ctx->b[15-i] = (unsigned char)( len_left & 0xFF );
+        ctx->y[15-i] = (unsigned char)( len_left & 0xFF );
 
     if( len_left > 0 )
     {
@@ -202,7 +185,11 @@ static int mbedtls_ccm_calculate_first_block(mbedtls_ccm_context *ctx)
     }
 
     /* Start CBC-MAC with first block*/
-    UPDATE_CBC_MAC;
+    if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->y, &olen ) ) != 0 )
+    {
+        ctx->state |= CCM_STATE__ERROR;
+        return( ret );
+    }
 
     return (0);
 }
@@ -248,9 +235,9 @@ int mbedtls_ccm_starts( mbedtls_ccm_context *ctx,
     ctx->ctr[15] = 1;
 
     /*
-     * See mbedtls_ccm_calculate_first_block() for B block layout description
+     * See mbedtls_ccm_calculate_first_block() for block layout description
      */
-    memcpy( ctx->b + 1, iv, iv_len );
+    memcpy( ctx->y + 1, iv, iv_len );
 
     ctx->state |= CCM_STATE__STARTED;
     return mbedtls_ccm_calculate_first_block(ctx);
@@ -304,9 +291,8 @@ int mbedtls_ccm_update_ad( mbedtls_ccm_context *ctx,
     {
         if( ctx->processed == 0 )
         {
-            memset( ctx->b, 0, 16 );
-            ctx->b[0] = (unsigned char)( ( ctx->add_len >> 8 ) & 0xFF );
-            ctx->b[1] = (unsigned char)( ( ctx->add_len      ) & 0xFF );
+            ctx->y[0] ^= (unsigned char)( ( ctx->add_len >> 8 ) & 0xFF );
+            ctx->y[1] ^= (unsigned char)( ( ctx->add_len      ) & 0xFF );
 
             ctx->processed += 2;
         }
@@ -320,15 +306,20 @@ int mbedtls_ccm_update_ad( mbedtls_ccm_context *ctx,
             if( use_len > add_len )
                 use_len = add_len;
 
-            memcpy( ctx->b + offset, add, use_len );
+            for( i = 0; i < use_len; i++ )
+                ctx->y[i + offset] ^= add[i];
+
             ctx->processed += use_len;
             add_len -= use_len;
             add += use_len;
 
             if( use_len + offset == 16 || ctx->processed - 2 == ctx->add_len )
             {
-                UPDATE_CBC_MAC;
-                memset( ctx->b, 0, 16 );
+                if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->y, &olen ) ) != 0 )
+                {
+                    ctx->state |= CCM_STATE__ERROR;
+                    return( ret );
+                }
             }
         }
     }
@@ -356,11 +347,6 @@ int mbedtls_ccm_update( mbedtls_ccm_context *ctx,
     CCM_VALIDATE_RET( output_length != NULL );
     *output_len = input_len;
 
-    if( ctx->processed == 0 )
-    {
-        memset( ctx->b, 0, 16 );
-    }
-
     while ( input_len > 0 )
     {
         offset = ctx->processed % 16;
@@ -371,16 +357,23 @@ int mbedtls_ccm_update( mbedtls_ccm_context *ctx,
             use_len = input_len;
 
         ctx->processed += use_len;
-        memcpy( ctx->b + offset, input, use_len );
 
         if( ctx->mode == MBEDTLS_CCM_ENCRYPT || \
             ctx->mode == MBEDTLS_CCM_STAR_ENCRYPT )
         {
+            for( i = 0; i < use_len; i++ )
+                ctx->y[i + offset] ^= input[i];
+
             if( use_len + offset == 16 || ctx->processed == ctx->plaintext_len )
             {
-                UPDATE_CBC_MAC;
+                if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->y, &olen ) ) != 0 )
+                {
+                    ctx->state |= CCM_STATE__ERROR;
+                    return( ret );
+                }
             }
-            ret = mbedtls_ccm_crypt( ctx, offset, use_len, ctx->b + offset, output );
+
+            ret = mbedtls_ccm_crypt( ctx, offset, use_len, input, output );
             if( ret != 0 )
                 return ret;
         }
@@ -388,7 +381,7 @@ int mbedtls_ccm_update( mbedtls_ccm_context *ctx,
         if( ctx->mode == MBEDTLS_CCM_DECRYPT || \
             ctx->mode == MBEDTLS_CCM_STAR_DECRYPT )
         {
-            ret = mbedtls_ccm_crypt( ctx, offset, use_len, ctx->b + offset, output );
+            ret = mbedtls_ccm_crypt( ctx, offset, use_len, input, output );
             if( ret != 0 )
                 return ret;
 
@@ -410,7 +403,6 @@ int mbedtls_ccm_update( mbedtls_ccm_context *ctx,
             for( i = 0; i < ctx->q; i++ )
             if( ++(ctx->ctr)[15-i] != 0 )
                 break;
-            memset( ctx->b, 0, 16 );
         }
 
         input_len -= use_len;
