@@ -373,42 +373,49 @@ int mbedtls_ccm_update( mbedtls_ccm_context *ctx,
         ctx->processed += use_len;
         memcpy( ctx->b + offset, input, use_len );
 
+        if( ctx->mode == MBEDTLS_CCM_ENCRYPT || \
+            ctx->mode == MBEDTLS_CCM_STAR_ENCRYPT )
+        {
+            if( use_len + offset == 16 || ctx->processed == ctx->plaintext_len )
+            {
+                UPDATE_CBC_MAC;
+            }
+            ret = mbedtls_ccm_crypt( ctx, offset, use_len, ctx->b + offset, output );
+            if( ret != 0 )
+                return ret;
+        }
+
+        if( ctx->mode == MBEDTLS_CCM_DECRYPT || \
+            ctx->mode == MBEDTLS_CCM_STAR_DECRYPT )
+        {
+            ret = mbedtls_ccm_crypt( ctx, offset, use_len, ctx->b + offset, output );
+            if( ret != 0 )
+                return ret;
+
+            for( i = 0; i < use_len; i++ )
+                ctx->y[i + offset] ^= output[i];
+
+            if( use_len + offset == 16 || ctx->processed == ctx->plaintext_len )
+            {
+                if( ( ret = mbedtls_cipher_update( &ctx->cipher_ctx, ctx->y, 16, ctx->y, &olen ) ) != 0 )
+                {
+                    ctx->state |= CCM_STATE__ERROR;
+                    return( ret );
+                }
+            }
+        }
+
         if( use_len + offset == 16 || ctx->processed == ctx->plaintext_len )
         {
-            if( ctx->mode == MBEDTLS_CCM_ENCRYPT || \
-                ctx->mode == MBEDTLS_CCM_STAR_ENCRYPT )
-            {
-                UPDATE_CBC_MAC;
-                ret = mbedtls_ccm_crypt( ctx, 0, use_len, ctx->b, output );
-                if( ret != 0 )
-                    return ret;
-                memset( ctx->b, 0, 16 );
-            }
-
-            if( ctx->mode == MBEDTLS_CCM_DECRYPT || \
-                ctx->mode == MBEDTLS_CCM_STAR_DECRYPT )
-            {
-                ret = mbedtls_ccm_crypt( ctx, 0, use_len, ctx->b, output );
-                if( ret != 0 )
-                    return ret;
-                memset( ctx->b, 0, 16 );
-                memcpy( ctx->b, output, use_len );
-                UPDATE_CBC_MAC;
-                memset( ctx->b, 0, 16 );
-            }
-
-            input_len -= use_len;
-            input += use_len;
-            output += use_len;
-
-            /*
-            * Increment counter.
-            * No need to check for overflow thanks to the length check above.
-            */
             for( i = 0; i < ctx->q; i++ )
-                if( ++(ctx->ctr)[15-i] != 0 )
-                    break;
+            if( ++(ctx->ctr)[15-i] != 0 )
+                break;
+            memset( ctx->b, 0, 16 );
         }
+
+        input_len -= use_len;
+        input += use_len;
+        output += use_len;
     }
 
     return 0;
