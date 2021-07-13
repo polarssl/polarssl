@@ -1,0 +1,4 @@
+Bugfix
+   * The GNU makefiles invoke python3 in preference to python except on Windows.
+     The check was accidentally not performed when cross-compiling for Windows
+     on Linux. Fix this. Fixes #4774.
