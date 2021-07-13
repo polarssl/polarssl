@@ -304,6 +304,7 @@ void mbedtls_ccm_star_encrypt_and_tag( int cipher_id,
     unsigned char result[50];
     mbedtls_ccm_context ctx;
     size_t iv_len, tag_len;
+    size_t n1, n1_add;
     int ret;
 
     mbedtls_ccm_init( &ctx );
@@ -338,6 +339,31 @@ void mbedtls_ccm_star_encrypt_and_tag( int cipher_id,
     TEST_ASSERT( result[expected_result->len] == 0 &&
                  result[expected_result->len + 1] == 0 );
 
+    if( ret == 0 )
+    {
+        const data_t iv_data = { .x = iv,
+                                 .len = iv_len };
+
+        const data_t encrypted_expected = { .x = expected_result->x,
+                                            .len = msg->len };
+        const data_t tag_expected = { .x = expected_result->x + msg->len,
+                                      .len = tag_len };
+
+        for( n1 = 0; n1 <= msg->len; n1 += 1 )
+        {
+            for( n1_add = 0; n1_add <= add->len; n1_add += 1 )
+            {
+                mbedtls_test_set_step( n1 * 10000 + n1_add );
+                if( !check_multipart( &ctx, MBEDTLS_CCM_STAR_ENCRYPT,
+                                      &iv_data, add, msg,
+                                      &encrypted_expected,
+                                      &tag_expected,
+                                      n1, n1_add ) )
+                    goto exit;
+            }
+        }
+    }
+
 exit:
     mbedtls_ccm_free( &ctx );
 }
@@ -354,6 +380,7 @@ void mbedtls_ccm_star_auth_decrypt( int cipher_id,
     unsigned char result[50];
     mbedtls_ccm_context ctx;
     size_t iv_len, tag_len;
+    size_t n1, n1_add;
     int ret;
 
     mbedtls_ccm_init( &ctx );
@@ -388,6 +415,31 @@ void mbedtls_ccm_star_auth_decrypt( int cipher_id,
     TEST_ASSERT( ( msg->len + 2 ) <= sizeof( result ) );
     TEST_EQUAL( result[msg->len], '+' );
     TEST_EQUAL( result[msg->len + 1], '+' );
+
+    if( ret == 0 )
+    {
+        msg->len -= tag_len;
+
+        const data_t iv_data = { .x = iv,
+                                 .len = iv_len };
+
+        const data_t tag_expected = { .x = msg->x + msg->len,
+                                      .len = tag_len };
+
+        for( n1 = 0; n1 <= msg->len; n1 += 1 )
+        {
+            for( n1_add = 0; n1_add <= add->len; n1_add += 1 )
+            {
+                mbedtls_test_set_step( n1 * 10000 + n1_add );
+                if( !check_multipart( &ctx, MBEDTLS_CCM_STAR_DECRYPT,
+                                &iv_data, add, msg,
+                                expected_result,
+                                &tag_expected,
+                                n1, n1_add ) )
+                    goto exit;
+           }
+        }
+    }
 
 exit:
     mbedtls_ccm_free( &ctx );
