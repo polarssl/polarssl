@@ -78,12 +78,12 @@
 #define MBEDTLS_CHAR_7( x ) ( (unsigned char) ( ( ( x ) >> 56 ) & 0xff ) )
 
 /**
- * Get the unsigned 32 bits integer corresponding to four bytes in 
+ * Get the unsigned 32 bits integer corresponding to four bytes in
  * big-endian order (MSB first).
  *
  * \param   data    Base address of the memory to get the four bytes from.
- * \param   offset  Offset from \p base of the first and most significant 
- *                  byte of the four bytes to build the 32 bits unsigned 
+ * \param   offset  Offset from \p base of the first and most significant
+ *                  byte of the four bytes to build the 32 bits unsigned
  *                  integer from.
  */
 #ifndef MBEDTLS_GET_UINT32_BE
@@ -99,10 +99,10 @@
 /**
  * Put in memory a 32 bits unsigned integer in big-endian order.
  *
- * \param   n       32 bits unsigned integer to put in memory
- * \param   data    Base address of the memory where to put the 32 
+ * \param   n       32 bits unsigned integer to put in memory.
+ * \param   data    Base address of the memory where to put the 32
  *                  bits unsigned integer in.
- * \param   offset  Offset from \p base where to put the most significant 
+ * \param   offset  Offset from \p base where to put the most significant
  *                  byte of the 32 bits unsigned integer \p n.
  */
 #ifndef MBEDTLS_PUT_UINT32_BE
@@ -116,12 +116,12 @@
 #endif
 
 /**
- * Get the unsigned 32 bits integer corresponding to four bytes in 
+ * Get the unsigned 32 bits integer corresponding to four bytes in
  * little-endian order (LSB first).
  *
  * \param   data    Base address of the memory to get the four bytes from.
- * \param   offset  Offset from \p base of the first and least significant 
- *                  byte of the four bytes to build the 32 bits unsigned 
+ * \param   offset  Offset from \p base of the first and least significant
+ *                  byte of the four bytes to build the 32 bits unsigned
  *                  integer from.
  */
 #ifndef MBEDTLS_GET_UINT32_LE
@@ -137,10 +137,10 @@
 /**
  * Put in memory a 32 bits unsigned integer in little-endian order.
  *
- * \param   n       32 bits unsigned integer to put in memory
- * \param   data    Base address of the memory where to put the 32 
+ * \param   n       32 bits unsigned integer to put in memory.
+ * \param   data    Base address of the memory where to put the 32
  *                  bits unsigned integer in.
- * \param   offset  Offset from \p base where to put the least significant 
+ * \param   offset  Offset from \p base where to put the least significant
  *                  byte of the 32 bits unsigned integer \p n.
  */
 #ifndef MBEDTLS_PUT_UINT32_LE
@@ -154,12 +154,12 @@
 #endif
 
 /**
- * Get the unsigned 16 bits integer corresponding to four bytes in 
+ * Get the unsigned 16 bits integer corresponding to four bytes in
  * little-endian order (LSB first).
  *
  * \param   data    Base address of the memory to get the four bytes from.
- * \param   offset  Offset from \p base of the first and least significant 
- *                  byte of the four bytes to build the 16 bits unsigned 
+ * \param   offset  Offset from \p base of the first and least significant
+ *                  byte of the four bytes to build the 16 bits unsigned
  *                  integer from.
  */
 #ifndef MBEDTLS_GET_UINT16_LE
@@ -173,10 +173,10 @@
 /**
  * Put in memory a 16 bits unsigned integer in little-endian order.
  *
- * \param   n       16 bits unsigned integer to put in memory
- * \param   data    Base address of the memory where to put the 16 
+ * \param   n       16 bits unsigned integer to put in memory.
+ * \param   data    Base address of the memory where to put the 16
  *                  bits unsigned integer in.
- * \param   offset  Offset from \p base where to put the least significant 
+ * \param   offset  Offset from \p base where to put the least significant
  *                  byte of the 16 bits unsigned integer \p n.
  */
 #ifndef MBEDTLS_PUT_UINT16_LE
