@@ -62,6 +62,11 @@ fi
 : ${SEED:=1}
 export SEED
 
+# if MAKEFLAGS is not set add the -j option to speed up invocations of make
+if [ -z "${MAKEFLAGS+set}" ]; then
+    export MAKEFLAGS="-j"
+fi
+
 # To avoid setting OpenSSL and GnuTLS for each call to compat.sh and ssl-opt.sh
 # we just export the variables they require
 export OPENSSL_CMD="$OPENSSL"
@@ -87,7 +92,7 @@ export LDFLAGS=' --coverage'
 make clean
 cp "$CONFIG_H" "$CONFIG_BAK"
 scripts/config.py full
-make -j
+make
 
 
 # Step 2 - Execute the tests
@@ -107,6 +112,7 @@ echo
 # Step 2b - System Tests (keep going even if some tests fail)
 echo
 echo '################ ssl-opt.sh ################'
+echo "ssl-opt.sh will use SEED=$SEED for udp_proxy"
 sh ssl-opt.sh |tee sys-test-$TEST_OUTPUT
 echo '^^^^^^^^^^^^^^^^ ssl-opt.sh ^^^^^^^^^^^^^^^^'
 echo
@@ -150,116 +156,125 @@ echo "========================================================================="
 echo "Test Report Summary"
 echo
 
-cd tests
+{
 
-# Step 4a - Unit tests
-echo "Unit tests - tests/scripts/run-test-suites.pl"
+    cd tests
 
-PASSED_TESTS=$(tail -n6 unit-test-$TEST_OUTPUT|sed -n -e 's/test cases passed :[\t]*\([0-9]*\)/\1/p'| tr -d ' ')
-SKIPPED_TESTS=$(tail -n6 unit-test-$TEST_OUTPUT|sed -n -e 's/skipped :[ \t]*\([0-9]*\)/\1/p'| tr -d ' ')
-TOTAL_SUITES=$(tail -n6 unit-test-$TEST_OUTPUT|sed -n -e 's/.* (\([0-9]*\) .*, [0-9]* tests run)/\1/p'| tr -d ' ')
-FAILED_TESTS=$(tail -n6 unit-test-$TEST_OUTPUT|sed -n -e 's/failed :[\t]*\([0-9]*\)/\1/p' |tr -d ' ')
+    # Step 4a - Unit tests
+    echo "Unit tests - tests/scripts/run-test-suites.pl"
 
-echo "No test suites     : $TOTAL_SUITES"
-echo "Passed             : $PASSED_TESTS"
-echo "Failed             : $FAILED_TESTS"
-echo "Skipped            : $SKIPPED_TESTS"
-echo "Total exec'd tests : $(($PASSED_TESTS + $FAILED_TESTS))"
-echo "Total avail tests  : $(($PASSED_TESTS + $FAILED_TESTS + $SKIPPED_TESTS))"
-echo
+    PASSED_TESTS=$(tail -n6 unit-test-$TEST_OUTPUT|sed -n -e 's/test cases passed :[\t]*\([0-9]*\)/\1/p'| tr -d ' ')
+    SKIPPED_TESTS=$(tail -n6 unit-test-$TEST_OUTPUT|sed -n -e 's/skipped :[ \t]*\([0-9]*\)/\1/p'| tr -d ' ')
+    TOTAL_SUITES=$(tail -n6 unit-test-$TEST_OUTPUT|sed -n -e 's/.* (\([0-9]*\) .*, [0-9]* tests run)/\1/p'| tr -d ' ')
+    FAILED_TESTS=$(tail -n6 unit-test-$TEST_OUTPUT|sed -n -e 's/failed :[\t]*\([0-9]*\)/\1/p' |tr -d ' ')
 
-TOTAL_PASS=$PASSED_TESTS
-TOTAL_FAIL=$FAILED_TESTS
-TOTAL_SKIP=$SKIPPED_TESTS
-TOTAL_AVAIL=$(($PASSED_TESTS + $FAILED_TESTS + $SKIPPED_TESTS))
-TOTAL_EXED=$(($PASSED_TESTS + $FAILED_TESTS))
+    echo "No test suites     : $TOTAL_SUITES"
+    echo "Passed             : $PASSED_TESTS"
+    echo "Failed             : $FAILED_TESTS"
+    echo "Skipped            : $SKIPPED_TESTS"
+    echo "Total exec'd tests : $(($PASSED_TESTS + $FAILED_TESTS))"
+    echo "Total avail tests  : $(($PASSED_TESTS + $FAILED_TESTS + $SKIPPED_TESTS))"
+    echo
 
-# Step 4b - TLS Options tests
-echo "TLS Options tests - tests/ssl-opt.sh"
+    TOTAL_PASS=$PASSED_TESTS
+    TOTAL_FAIL=$FAILED_TESTS
+    TOTAL_SKIP=$SKIPPED_TESTS
+    TOTAL_AVAIL=$(($PASSED_TESTS + $FAILED_TESTS + $SKIPPED_TESTS))
+    TOTAL_EXED=$(($PASSED_TESTS + $FAILED_TESTS))
 
-PASSED_TESTS=$(tail -n5 sys-test-$TEST_OUTPUT|sed -n -e 's/.* (\([0-9]*\) \/ [0-9]* tests ([0-9]* skipped))$/\1/p')
-SKIPPED_TESTS=$(tail -n5 sys-test-$TEST_OUTPUT|sed -n -e 's/.* ([0-9]* \/ [0-9]* tests (\([0-9]*\) skipped))$/\1/p')
-TOTAL_TESTS=$(tail -n5 sys-test-$TEST_OUTPUT|sed -n -e 's/.* ([0-9]* \/ \([0-9]*\) tests ([0-9]* skipped))$/\1/p')
-FAILED_TESTS=$(($TOTAL_TESTS - $PASSED_TESTS))
+    # Step 4b - TLS Options tests
+    echo "TLS Options tests - tests/ssl-opt.sh"
 
-echo "Passed             : $PASSED_TESTS"
-echo "Failed             : $FAILED_TESTS"
-echo "Skipped            : $SKIPPED_TESTS"
-echo "Total exec'd tests : $TOTAL_TESTS"
-echo "Total avail tests  : $(($TOTAL_TESTS + $SKIPPED_TESTS))"
-echo
+    PASSED_TESTS=$(tail -n5 sys-test-$TEST_OUTPUT|sed -n -e 's/.* (\([0-9]*\) \/ [0-9]* tests ([0-9]* skipped))$/\1/p')
+    SKIPPED_TESTS=$(tail -n5 sys-test-$TEST_OUTPUT|sed -n -e 's/.* ([0-9]* \/ [0-9]* tests (\([0-9]*\) skipped))$/\1/p')
+    TOTAL_TESTS=$(tail -n5 sys-test-$TEST_OUTPUT|sed -n -e 's/.* ([0-9]* \/ \([0-9]*\) tests ([0-9]* skipped))$/\1/p')
+    FAILED_TESTS=$(($TOTAL_TESTS - $PASSED_TESTS))
 
-TOTAL_PASS=$(($TOTAL_PASS+$PASSED_TESTS))
-TOTAL_FAIL=$(($TOTAL_FAIL+$FAILED_TESTS))
-TOTAL_SKIP=$(($TOTAL_SKIP+$SKIPPED_TESTS))
-TOTAL_AVAIL=$(($TOTAL_AVAIL + $TOTAL_TESTS + $SKIPPED_TESTS))
-TOTAL_EXED=$(($TOTAL_EXED + $TOTAL_TESTS))
+    echo "Passed             : $PASSED_TESTS"
+    echo "Failed             : $FAILED_TESTS"
+    echo "Skipped            : $SKIPPED_TESTS"
+    echo "Total exec'd tests : $TOTAL_TESTS"
+    echo "Total avail tests  : $(($TOTAL_TESTS + $SKIPPED_TESTS))"
+    echo
 
-
-# Step 4c - System Compatibility tests
-echo "System/Compatibility tests - tests/compat.sh"
-
-PASSED_TESTS=$(cat compat-test-$TEST_OUTPUT | sed -n -e 's/.* (\([0-9]*\) \/ [0-9]* tests ([0-9]* skipped))$/\1/p' | awk 'BEGIN{ s = 0 } { s += $1 } END{ print s }')
-SKIPPED_TESTS=$(cat compat-test-$TEST_OUTPUT | sed -n -e 's/.* ([0-9]* \/ [0-9]* tests (\([0-9]*\) skipped))$/\1/p' | awk 'BEGIN{ s = 0 } { s += $1 } END{ print s }')
-EXED_TESTS=$(cat compat-test-$TEST_OUTPUT | sed -n -e 's/.* ([0-9]* \/ \([0-9]*\) tests ([0-9]* skipped))$/\1/p' | awk 'BEGIN{ s = 0 } { s += $1 } END{ print s }')
-FAILED_TESTS=$(($EXED_TESTS - $PASSED_TESTS))
-
-echo "Passed             : $PASSED_TESTS"
-echo "Failed             : $FAILED_TESTS"
-echo "Skipped            : $SKIPPED_TESTS"
-echo "Total exec'd tests : $EXED_TESTS"
-echo "Total avail tests  : $(($EXED_TESTS + $SKIPPED_TESTS))"
-echo
-
-TOTAL_PASS=$(($TOTAL_PASS+$PASSED_TESTS))
-TOTAL_FAIL=$(($TOTAL_FAIL+$FAILED_TESTS))
-TOTAL_SKIP=$(($TOTAL_SKIP+$SKIPPED_TESTS))
-TOTAL_AVAIL=$(($TOTAL_AVAIL + $EXED_TESTS + $SKIPPED_TESTS))
-TOTAL_EXED=$(($TOTAL_EXED + $EXED_TESTS))
+    TOTAL_PASS=$(($TOTAL_PASS+$PASSED_TESTS))
+    TOTAL_FAIL=$(($TOTAL_FAIL+$FAILED_TESTS))
+    TOTAL_SKIP=$(($TOTAL_SKIP+$SKIPPED_TESTS))
+    TOTAL_AVAIL=$(($TOTAL_AVAIL + $TOTAL_TESTS + $SKIPPED_TESTS))
+    TOTAL_EXED=$(($TOTAL_EXED + $TOTAL_TESTS))
 
 
-# Step 4d - Grand totals
-echo "-------------------------------------------------------------------------"
-echo "Total tests"
+    # Step 4c - System Compatibility tests
+    echo "System/Compatibility tests - tests/compat.sh"
 
-echo "Total Passed       : $TOTAL_PASS"
-echo "Total Failed       : $TOTAL_FAIL"
-echo "Total Skipped      : $TOTAL_SKIP"
-echo "Total exec'd tests : $TOTAL_EXED"
-echo "Total avail tests  : $TOTAL_AVAIL"
-echo
+    PASSED_TESTS=$(cat compat-test-$TEST_OUTPUT | sed -n -e 's/.* (\([0-9]*\) \/ [0-9]* tests ([0-9]* skipped))$/\1/p' | awk 'BEGIN{ s = 0 } { s += $1 } END{ print s }')
+    SKIPPED_TESTS=$(cat compat-test-$TEST_OUTPUT | sed -n -e 's/.* ([0-9]* \/ [0-9]* tests (\([0-9]*\) skipped))$/\1/p' | awk 'BEGIN{ s = 0 } { s += $1 } END{ print s }')
+    EXED_TESTS=$(cat compat-test-$TEST_OUTPUT | sed -n -e 's/.* ([0-9]* \/ \([0-9]*\) tests ([0-9]* skipped))$/\1/p' | awk 'BEGIN{ s = 0 } { s += $1 } END{ print s }')
+    FAILED_TESTS=$(($EXED_TESTS - $PASSED_TESTS))
+
+    echo "Passed             : $PASSED_TESTS"
+    echo "Failed             : $FAILED_TESTS"
+    echo "Skipped            : $SKIPPED_TESTS"
+    echo "Total exec'd tests : $EXED_TESTS"
+    echo "Total avail tests  : $(($EXED_TESTS + $SKIPPED_TESTS))"
+    echo
+
+    TOTAL_PASS=$(($TOTAL_PASS+$PASSED_TESTS))
+    TOTAL_FAIL=$(($TOTAL_FAIL+$FAILED_TESTS))
+    TOTAL_SKIP=$(($TOTAL_SKIP+$SKIPPED_TESTS))
+    TOTAL_AVAIL=$(($TOTAL_AVAIL + $EXED_TESTS + $SKIPPED_TESTS))
+    TOTAL_EXED=$(($TOTAL_EXED + $EXED_TESTS))
 
 
-# Step 4e - Coverage
-echo "Coverage"
+    # Step 4d - Grand totals
+    echo "-------------------------------------------------------------------------"
+    echo "Total tests"
 
-LINES_TESTED=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  lines......: [0-9]*.[0-9]% (\([0-9]*\) of [0-9]* lines)/\1/p')
-LINES_TOTAL=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  lines......: [0-9]*.[0-9]% ([0-9]* of \([0-9]*\) lines)/\1/p')
-FUNCS_TESTED=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  functions..: [0-9]*.[0-9]% (\([0-9]*\) of [0-9]* functions)$/\1/p')
-FUNCS_TOTAL=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  functions..: [0-9]*.[0-9]% ([0-9]* of \([0-9]*\) functions)$/\1/p')
-BRANCHES_TESTED=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  branches...: [0-9]*.[0-9]% (\([0-9]*\) of [0-9]* branches)$/\1/p')
-BRANCHES_TOTAL=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  branches...: [0-9]*.[0-9]% ([0-9]* of \([0-9]*\) branches)$/\1/p')
+    echo "Total Passed       : $TOTAL_PASS"
+    echo "Total Failed       : $TOTAL_FAIL"
+    echo "Total Skipped      : $TOTAL_SKIP"
+    echo "Total exec'd tests : $TOTAL_EXED"
+    echo "Total avail tests  : $TOTAL_AVAIL"
+    echo
 
-LINES_PERCENT=$((1000*$LINES_TESTED/$LINES_TOTAL))
-LINES_PERCENT="$(($LINES_PERCENT/10)).$(($LINES_PERCENT-($LINES_PERCENT/10)*10))"
 
-FUNCS_PERCENT=$((1000*$FUNCS_TESTED/$FUNCS_TOTAL))
-FUNCS_PERCENT="$(($FUNCS_PERCENT/10)).$(($FUNCS_PERCENT-($FUNCS_PERCENT/10)*10))"
+    # Step 4e - Coverage
+    echo "Coverage"
 
-BRANCHES_PERCENT=$((1000*$BRANCHES_TESTED/$BRANCHES_TOTAL))
-BRANCHES_PERCENT="$(($BRANCHES_PERCENT/10)).$(($BRANCHES_PERCENT-($BRANCHES_PERCENT/10)*10))"
+    LINES_TESTED=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  lines......: [0-9]*.[0-9]% (\([0-9]*\) of [0-9]* lines)/\1/p')
+    LINES_TOTAL=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  lines......: [0-9]*.[0-9]% ([0-9]* of \([0-9]*\) lines)/\1/p')
+    FUNCS_TESTED=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  functions..: [0-9]*.[0-9]% (\([0-9]*\) of [0-9]* functions)$/\1/p')
+    FUNCS_TOTAL=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  functions..: [0-9]*.[0-9]% ([0-9]* of \([0-9]*\) functions)$/\1/p')
+    BRANCHES_TESTED=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  branches...: [0-9]*.[0-9]% (\([0-9]*\) of [0-9]* branches)$/\1/p')
+    BRANCHES_TOTAL=$(tail -n4 cov-$TEST_OUTPUT|sed -n -e 's/  branches...: [0-9]*.[0-9]% ([0-9]* of \([0-9]*\) branches)$/\1/p')
 
-echo "Lines Tested       : $LINES_TESTED of $LINES_TOTAL $LINES_PERCENT%"
-echo "Functions Tested   : $FUNCS_TESTED of $FUNCS_TOTAL $FUNCS_PERCENT%"
-echo "Branches Tested    : $BRANCHES_TESTED of $BRANCHES_TOTAL $BRANCHES_PERCENT%"
-echo
+    LINES_PERCENT=$((1000*$LINES_TESTED/$LINES_TOTAL))
+    LINES_PERCENT="$(($LINES_PERCENT/10)).$(($LINES_PERCENT-($LINES_PERCENT/10)*10))"
 
-rm unit-test-$TEST_OUTPUT
-rm sys-test-$TEST_OUTPUT
-rm compat-test-$TEST_OUTPUT
-rm cov-$TEST_OUTPUT
+    FUNCS_PERCENT=$((1000*$FUNCS_TESTED/$FUNCS_TOTAL))
+    FUNCS_PERCENT="$(($FUNCS_PERCENT/10)).$(($FUNCS_PERCENT-($FUNCS_PERCENT/10)*10))"
 
-cd ..
+    BRANCHES_PERCENT=$((1000*$BRANCHES_TESTED/$BRANCHES_TOTAL))
+    BRANCHES_PERCENT="$(($BRANCHES_PERCENT/10)).$(($BRANCHES_PERCENT-($BRANCHES_PERCENT/10)*10))"
+
+    rm unit-test-$TEST_OUTPUT
+    rm sys-test-$TEST_OUTPUT
+    rm compat-test-$TEST_OUTPUT
+    rm cov-$TEST_OUTPUT
+
+    echo "Lines Tested       : $LINES_TESTED of $LINES_TOTAL $LINES_PERCENT%"
+    echo "Functions Tested   : $FUNCS_TESTED of $FUNCS_TOTAL $FUNCS_PERCENT%"
+    echo "Branches Tested    : $BRANCHES_TESTED of $BRANCHES_TOTAL $BRANCHES_PERCENT%"
+    echo
+
+    # If there was a failure, remind the reader here. This also ensures that
+    # the coverage summary ends with a distinctive mark so that this script
+    # knows to exit with a failure status.
+    if [ $TOTAL_FAIL -ne 0 ]; then
+        echo "Note: $TOTAL_FAIL failures."
+    fi
+
+} | tee coverage-summary.txt
 
 make clean
 
@@ -267,6 +282,13 @@ if [ -f "$CONFIG_BAK" ]; then
     mv "$CONFIG_BAK" "$CONFIG_H"
 fi
 
-if [ $TOTAL_FAIL -ne 0 ]; then
-    exit 1
-fi
+# If the coverage summary doesn't end with the expected last two lines
+# ("Branches Tested" and a blank line), either there was an error while
+# creating the coverage summary or the coverage summary reported failures.
+newline='
+'
+case "$(tail -n2 coverage-summary.txt)" in
+    *"$newline"*) exit 1;;
+    "Branches Tested"*) :;;
+    *) exit 1;;
+esac
