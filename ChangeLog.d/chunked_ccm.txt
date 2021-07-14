@@ -1,0 +1,8 @@
+Changes
+   * Implement multi-part CCM API.
+     The multi-part functions: mbedtls_ccm_starts(), mbedtls_ccm_set_lengths(),
+     mbedtls_ccm_update_ad(), mbedtls_ccm_update(), mbedtls_ccm_finish()
+     were introduced in mbedTLS 3.0 release, however their implementation was
+     postponed util now.
+     Implemented functions support chunked data input for both CCM and CCM*
+     algorithms.
