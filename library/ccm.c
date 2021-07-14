@@ -200,7 +200,7 @@ static int ccm_auth_crypt( mbedtls_ccm_context *ctx, int mode, size_t length,
     memcpy( b + 1, iv, iv_len );
 
     for( i = 0, len_left = length; i < q; i++, len_left >>= 8 )
-        b[15-i] = (unsigned char)( len_left & 0xFF );
+        b[15-i] = MBEDTLS_BYTE_0( len_left );
 
     if( len_left > 0 )
         return( MBEDTLS_ERR_CCM_BAD_INPUT );
@@ -221,8 +221,8 @@ static int ccm_auth_crypt( mbedtls_ccm_context *ctx, int mode, size_t length,
         src = add;
 
         memset( b, 0, 16 );
-        b[0] = (unsigned char)( ( add_len >> 8 ) & 0xFF );
-        b[1] = (unsigned char)( ( add_len      ) & 0xFF );
+        b[0] = MBEDTLS_BYTE_1( add_len );
+        b[1] = MBEDTLS_BYTE_0( add_len );
 
         use_len = len_left < 16 - 2 ? len_left : 16 - 2;
         memcpy( b + 2, src, use_len );

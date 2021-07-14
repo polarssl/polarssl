@@ -52,13 +52,6 @@
 
 #define POLY1305_BLOCK_SIZE_BYTES ( 16U )
 
-#define BYTES_TO_U32_LE( data, offset )                           \
-    ( (uint32_t) (data)[offset]                                     \
-          | (uint32_t) ( (uint32_t) (data)[( offset ) + 1] << 8 )   \
-          | (uint32_t) ( (uint32_t) (data)[( offset ) + 2] << 16 )  \
-          | (uint32_t) ( (uint32_t) (data)[( offset ) + 3] << 24 )  \
-    )
-
 /*
  * Our implementation is tuned for 32-bit platforms with a 64-bit multiplier.
  * However we provided an alternative for platforms without such a multiplier.
@@ -129,10 +122,10 @@ static void poly1305_process( mbedtls_poly1305_context *ctx,
     for( i = 0U; i < nblocks; i++ )
     {
         /* The input block is treated as a 128-bit little-endian integer */
-        d0   = BYTES_TO_U32_LE( input, offset + 0  );
-        d1   = BYTES_TO_U32_LE( input, offset + 4  );
-        d2   = BYTES_TO_U32_LE( input, offset + 8  );
-        d3   = BYTES_TO_U32_LE( input, offset + 12 );
+        d0   = MBEDTLS_GET_UINT32_LE( input, offset + 0  );
+        d1   = MBEDTLS_GET_UINT32_LE( input, offset + 4  );
+        d2   = MBEDTLS_GET_UINT32_LE( input, offset + 8  );
+        d3   = MBEDTLS_GET_UINT32_LE( input, offset + 12 );
 
         /* Compute: acc += (padded) block as a 130-bit integer */
         d0  += (uint64_t) acc0;
@@ -297,15 +290,15 @@ int mbedtls_poly1305_starts( mbedtls_poly1305_context *ctx,
     POLY1305_VALIDATE_RET( key != NULL );
 
     /* r &= 0x0ffffffc0ffffffc0ffffffc0fffffff */
-    ctx->r[0] = BYTES_TO_U32_LE( key, 0 )  & 0x0FFFFFFFU;
-    ctx->r[1] = BYTES_TO_U32_LE( key, 4 )  & 0x0FFFFFFCU;
-    ctx->r[2] = BYTES_TO_U32_LE( key, 8 )  & 0x0FFFFFFCU;
-    ctx->r[3] = BYTES_TO_U32_LE( key, 12 ) & 0x0FFFFFFCU;
+    ctx->r[0] = MBEDTLS_GET_UINT32_LE( key, 0 )  & 0x0FFFFFFFU;
+    ctx->r[1] = MBEDTLS_GET_UINT32_LE( key, 4 )  & 0x0FFFFFFCU;
+    ctx->r[2] = MBEDTLS_GET_UINT32_LE( key, 8 )  & 0x0FFFFFFCU;
+    ctx->r[3] = MBEDTLS_GET_UINT32_LE( key, 12 ) & 0x0FFFFFFCU;
 
-    ctx->s[0] = BYTES_TO_U32_LE( key, 16 );
-    ctx->s[1] = BYTES_TO_U32_LE( key, 20 );
-    ctx->s[2] = BYTES_TO_U32_LE( key, 24 );
-    ctx->s[3] = BYTES_TO_U32_LE( key, 28 );
+    ctx->s[0] = MBEDTLS_GET_UINT32_LE( key, 16 );
+    ctx->s[1] = MBEDTLS_GET_UINT32_LE( key, 20 );
+    ctx->s[2] = MBEDTLS_GET_UINT32_LE( key, 24 );
+    ctx->s[3] = MBEDTLS_GET_UINT32_LE( key, 28 );
 
     /* Initial accumulator state */
     ctx->acc[0] = 0U;
