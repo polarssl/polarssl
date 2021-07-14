@@ -29,6 +29,8 @@
 #include "mbedtls/config.h"
 #endif
 
+#include <stdint.h>
+
 /** Helper to define a function as static except when building invasive tests.
  *
  * If a function is only used inside its own source file and should be
@@ -63,19 +65,14 @@
  * Using MBEDTLS_BYTE_a will shift a*8 bits
  * to retrieve the next byte of information
  */
-#define MBEDTLS_BYTE_0( x ) ( (uint8_t) ( ( x ) & 0xff ) )
+#define MBEDTLS_BYTE_0( x ) ( (uint8_t) (   ( x )         & 0xff ) )
 #define MBEDTLS_BYTE_1( x ) ( (uint8_t) ( ( ( x ) >> 8  ) & 0xff ) )
 #define MBEDTLS_BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
 #define MBEDTLS_BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
-
-#define MBEDTLS_CHAR_0( x ) ( (unsigned char) (   ( x )         & 0xff ) )
-#define MBEDTLS_CHAR_1( x ) ( (unsigned char) ( ( ( x ) >> 8  ) & 0xff ) )
-#define MBEDTLS_CHAR_2( x ) ( (unsigned char) ( ( ( x ) >> 16 ) & 0xff ) )
-#define MBEDTLS_CHAR_3( x ) ( (unsigned char) ( ( ( x ) >> 24 ) & 0xff ) )
-#define MBEDTLS_CHAR_4( x ) ( (unsigned char) ( ( ( x ) >> 32 ) & 0xff ) )
-#define MBEDTLS_CHAR_5( x ) ( (unsigned char) ( ( ( x ) >> 40 ) & 0xff ) )
-#define MBEDTLS_CHAR_6( x ) ( (unsigned char) ( ( ( x ) >> 48 ) & 0xff ) )
-#define MBEDTLS_CHAR_7( x ) ( (unsigned char) ( ( ( x ) >> 56 ) & 0xff ) )
+#define MBEDTLS_BYTE_4( x ) ( (uint8_t) ( ( ( x ) >> 32 ) & 0xff ) )
+#define MBEDTLS_BYTE_5( x ) ( (uint8_t) ( ( ( x ) >> 40 ) & 0xff ) )
+#define MBEDTLS_BYTE_6( x ) ( (uint8_t) ( ( ( x ) >> 48 ) & 0xff ) )
+#define MBEDTLS_BYTE_7( x ) ( (uint8_t) ( ( ( x ) >> 56 ) & 0xff ) )
 
 /**
  * Get the unsigned 32 bits integer corresponding to four bytes in
