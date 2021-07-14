@@ -56,6 +56,12 @@
 
 #include <string.h>
 
+/* Byte reading macros */
+#define BYTE_0( x ) ( (unsigned char) (   ( x )         & 0xFF))
+#define BYTE_1( x ) ( (unsigned char) ( ( ( x ) >> 8  ) & 0xFF))
+#define BYTE_2( x ) ( (unsigned char) ( ( ( x ) >> 16 ) & 0xFF))
+#define BYTE_3( x ) ( (unsigned char) ( ( ( x ) >> 24 ) & 0xFF))
+
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
 #else
@@ -90,8 +96,8 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start, size_t len 
         if( *p - start < 3 )
             return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
-        *--(*p) = ( len       ) & 0xFF;
-        *--(*p) = ( len >>  8 ) & 0xFF;
+        *--(*p) = BYTE_0( len );
+        *--(*p) = BYTE_1( len );
         *--(*p) = 0x82;
         return( 3 );
     }
@@ -101,9 +107,9 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start, size_t len 
         if( *p - start < 4 )
             return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
-        *--(*p) = ( len       ) & 0xFF;
-        *--(*p) = ( len >>  8 ) & 0xFF;
-        *--(*p) = ( len >> 16 ) & 0xFF;
+        *--(*p) = BYTE_0( len );
+        *--(*p) = BYTE_1( len );
+        *--(*p) = BYTE_2( len );
         *--(*p) = 0x83;
         return( 4 );
     }
@@ -115,10 +121,10 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start, size_t len 
         if( *p - start < 5 )
             return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
-        *--(*p) = ( len       ) & 0xFF;
-        *--(*p) = ( len >>  8 ) & 0xFF;
-        *--(*p) = ( len >> 16 ) & 0xFF;
-        *--(*p) = ( len >> 24 ) & 0xFF;
+        *--(*p) = BYTE_0( len );
+        *--(*p) = BYTE_1( len );
+        *--(*p) = BYTE_2( len );
+        *--(*p) = BYTE_3( len );
         *--(*p) = 0x84;
         return( 5 );
     }

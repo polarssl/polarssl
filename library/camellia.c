@@ -63,6 +63,12 @@
 
 #include <string.h>
 
+/* Byte reading macros */
+#define BYTE_0( x ) ( (uint8_t) (   ( x )         & 0xff ) )
+#define BYTE_1( x ) ( (uint8_t) ( ( ( x ) >>  8 ) & 0xff ) )
+#define BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
+#define BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
+
 #if defined(MBEDTLS_SELF_TEST)
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
@@ -332,14 +338,14 @@ static void camellia_feistel( const uint32_t x[2], const uint32_t k[2],
     I0 = x[0] ^ k[0];
     I1 = x[1] ^ k[1];
 
-    I0 = ((uint32_t) SBOX1((I0 >> 24) & 0xFF) << 24) |
-         ((uint32_t) SBOX2((I0 >> 16) & 0xFF) << 16) |
-         ((uint32_t) SBOX3((I0 >>  8) & 0xFF) <<  8) |
-         ((uint32_t) SBOX4((I0      ) & 0xFF)      );
-    I1 = ((uint32_t) SBOX2((I1 >> 24) & 0xFF) << 24) |
-         ((uint32_t) SBOX3((I1 >> 16) & 0xFF) << 16) |
-         ((uint32_t) SBOX4((I1 >>  8) & 0xFF) <<  8) |
-         ((uint32_t) SBOX1((I1      ) & 0xFF)      );
+    I0 = ((uint32_t) SBOX1( BYTE_3( I0 ) ) << 24 ) |
+         ((uint32_t) SBOX2( BYTE_2( I0 ) ) << 16 ) |
+         ((uint32_t) SBOX3( BYTE_1( I0 ) ) <<  8 ) |
+         ((uint32_t) SBOX4( BYTE_0( I0 ) )       );
+    I1 = ((uint32_t) SBOX2( BYTE_3( I1 ) ) << 24 ) |
+         ((uint32_t) SBOX3( BYTE_2( I1 ) ) << 16 ) |
+         ((uint32_t) SBOX4( BYTE_1( I1 ) ) <<  8 ) |
+         ((uint32_t) SBOX1( BYTE_0( I1 ) )       );
 
     I0 ^= (I1 << 8) | (I1 >> 24);
     I1 ^= (I0 << 16) | (I0 >> 16);

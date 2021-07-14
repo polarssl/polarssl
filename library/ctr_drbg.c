@@ -75,6 +75,12 @@
 #endif /* MBEDTLS_PLATFORM_C */
 #endif /* MBEDTLS_SELF_TEST */
 
+/* Byte reading macros */
+#define BYTE_0( x ) ( (uint8_t) ( ( x ) & 0xff )  )
+#define BYTE_1( x ) ( (uint8_t) ( ( ( x ) >> 8 ) & 0xff )  )
+#define BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
+#define BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
+
 /*
  * CTR_DRBG context initialization
  */
@@ -147,10 +153,10 @@ static int block_cipher_df( unsigned char *output,
      *     (Total is padded to a multiple of 16-bytes with zeroes)
      */
     p = buf + MBEDTLS_CTR_DRBG_BLOCKSIZE;
-    *p++ = ( data_len >> 24 ) & 0xff;
-    *p++ = ( data_len >> 16 ) & 0xff;
-    *p++ = ( data_len >> 8  ) & 0xff;
-    *p++ = ( data_len       ) & 0xff;
+    *p++ = BYTE_3( data_len );
+    *p++ = BYTE_2( data_len );
+    *p++ = BYTE_1( data_len );
+    *p++ = BYTE_0( data_len );
     p += 3;
     *p++ = MBEDTLS_CTR_DRBG_SEEDLEN;
     memcpy( p, data, data_len );

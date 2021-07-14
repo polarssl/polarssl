@@ -73,6 +73,12 @@
 #define inline __inline
 #endif
 
+/* Byte reading macros */
+#define BYTE_0( x ) ( (uint8_t) ( ( x ) & 0xff )  )
+#define BYTE_1( x ) ( (uint8_t) ( ( ( x ) >> 8 ) & 0xff )  )
+#define BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
+#define BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
+
 #define DEBUG_BUF_SIZE      512
 
 static int debug_threshold = 0;
@@ -292,7 +298,7 @@ void mbedtls_debug_print_mpi( const mbedtls_ssl_context *ssl, int level,
             size_t limb_offset = n / sizeof( mbedtls_mpi_uint );
             size_t offset_in_limb = n % sizeof( mbedtls_mpi_uint );
             unsigned char octet =
-                ( X->p[limb_offset] >> ( offset_in_limb * 8 ) ) & 0xff;
+                BYTE_0( X->p[limb_offset] >> ( offset_in_limb * 8 ) );
             mbedtls_snprintf( str + idx, sizeof( str ) - idx, " %02x", octet );
             idx += 3;
             /* Wrap lines after 16 octets that each take 3 columns */

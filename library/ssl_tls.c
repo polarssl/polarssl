@@ -79,6 +79,11 @@
 #include "mbedtls/oid.h"
 #endif
 
+/* Byte reading macros */
+#define BYTE_0( x ) ( (uint8_t) (   ( x )         & 0xff ) )
+#define BYTE_1( x ) ( (uint8_t) ( ( ( x ) >> 8  ) & 0xff ) )
+#define BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
+
 static void ssl_reset_in_out_pointers( mbedtls_ssl_context *ssl );
 static uint32_t ssl_get_hs_total_len( mbedtls_ssl_context const *ssl );
 
@@ -1569,8 +1574,8 @@ static int ssl_encrypt_buf( mbedtls_ssl_context *ssl )
         add_data[8]  = ssl->out_msgtype;
         mbedtls_ssl_write_version( ssl->major_ver, ssl->minor_ver,
                            ssl->conf->transport, add_data + 9 );
-        add_data[11] = ( ssl->out_msglen >> 8 ) & 0xFF;
-        add_data[12] = ssl->out_msglen & 0xFF;
+        add_data[11] = BYTE_1( ssl->out_msglen );
+        add_data[12] = BYTE_0( ssl->out_msglen );
 
         MBEDTLS_SSL_DEBUG_BUF( 4, "additional data for AEAD", add_data, 13 );
 
@@ -1744,8 +1749,8 @@ static int ssl_encrypt_buf( mbedtls_ssl_context *ssl )
 
             memcpy( pseudo_hdr +  0, ssl->out_ctr, 8 );
             memcpy( pseudo_hdr +  8, ssl->out_hdr, 3 );
-            pseudo_hdr[11] = (unsigned char)( ( ssl->out_msglen >> 8 ) & 0xFF );
-            pseudo_hdr[12] = (unsigned char)( ( ssl->out_msglen      ) & 0xFF );
+            pseudo_hdr[11] = BYTE_1( ssl->out_msglen );
+            pseudo_hdr[12] = BYTE_0( ssl->out_msglen );
 
             MBEDTLS_SSL_DEBUG_BUF( 4, "MAC'd meta-data", pseudo_hdr, 13 );
 
@@ -2027,8 +2032,8 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
         add_data[8]  = ssl->in_msgtype;
         mbedtls_ssl_write_version( ssl->major_ver, ssl->minor_ver,
                            ssl->conf->transport, add_data + 9 );
-        add_data[11] = ( ssl->in_msglen >> 8 ) & 0xFF;
-        add_data[12] = ssl->in_msglen & 0xFF;
+        add_data[11] = BYTE_1( ssl->in_msglen );
+        add_data[12] = BYTE_0( ssl->in_msglen );
 
         MBEDTLS_SSL_DEBUG_BUF( 4, "additional data for AEAD", add_data, 13 );
 
@@ -2140,8 +2145,8 @@ static int ssl_decrypt_buf( mbedtls_ssl_context *ssl )
 
             memcpy( pseudo_hdr +  0, ssl->in_ctr, 8 );
             memcpy( pseudo_hdr +  8, ssl->in_hdr, 3 );
-            pseudo_hdr[11] = (unsigned char)( ( ssl->in_msglen >> 8 ) & 0xFF );
-            pseudo_hdr[12] = (unsigned char)( ( ssl->in_msglen      ) & 0xFF );
+            pseudo_hdr[11] = BYTE_1( ssl->in_msglen );
+            pseudo_hdr[12] = BYTE_0( ssl->in_msglen );
 
             MBEDTLS_SSL_DEBUG_BUF( 4, "MAC'd meta-data", pseudo_hdr, 13 );
 
@@ -3146,13 +3151,13 @@ int mbedtls_ssl_flight_transmit( mbedtls_ssl_context *ssl )
              * Handshake headers: type(1) len(3) seq(2) f_off(3) f_len(3) */
             memcpy( ssl->out_msg, cur->p, 6 );
 
-            ssl->out_msg[6] = ( ( frag_off >> 16 ) & 0xff );
-            ssl->out_msg[7] = ( ( frag_off >>  8 ) & 0xff );
-            ssl->out_msg[8] = ( ( frag_off       ) & 0xff );
+            ssl->out_msg[6] = BYTE_2( frag_off );
+            ssl->out_msg[7] = BYTE_1( frag_off );
+            ssl->out_msg[8] = BYTE_0( frag_off );
 
-            ssl->out_msg[ 9] = ( ( cur_hs_frag_len >> 16 ) & 0xff );
-            ssl->out_msg[10] = ( ( cur_hs_frag_len >>  8 ) & 0xff );
-            ssl->out_msg[11] = ( ( cur_hs_frag_len       ) & 0xff );
+            ssl->out_msg[ 9] = BYTE_2( cur_hs_frag_len );
+            ssl->out_msg[10] = BYTE_1( cur_hs_frag_len );
+            ssl->out_msg[11] = BYTE_0( cur_hs_frag_len );
 
             MBEDTLS_SSL_DEBUG_BUF( 3, "handshake header", ssl->out_msg, 12 );
 
@@ -3378,8 +3383,8 @@ int mbedtls_ssl_write_handshake_msg( mbedtls_ssl_context *ssl )
             /* Write message_seq and update it, except for HelloRequest */
             if( hs_type != MBEDTLS_SSL_HS_HELLO_REQUEST )
             {
-                ssl->out_msg[4] = ( ssl->handshake->out_msg_seq >> 8 ) & 0xFF;
-                ssl->out_msg[5] = ( ssl->handshake->out_msg_seq      ) & 0xFF;
+                ssl->out_msg[4] = BYTE_1( ssl->handshake->out_msg_seq );
+                ssl->out_msg[5] = BYTE_0( ssl->handshake->out_msg_seq );
                 ++( ssl->handshake->out_msg_seq );
             }
             else

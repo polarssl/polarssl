@@ -81,11 +81,18 @@
 
 #if !defined(MBEDTLS_AES_ALT)
 
+/* Byte reading macros */
+#define BYTE_0( x ) ( (uint8_t) (   ( x )         & 0xff ) )
+#define BYTE_1( x ) ( (uint8_t) ( ( ( x ) >>  8 ) & 0xff ) )
+#define BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
+#define BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
+
 /* Parameter validation macros based on platform_util.h */
 #define AES_VALIDATE_RET( cond )    \
     MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_AES_BAD_INPUT_DATA )
 #define AES_VALIDATE( cond )        \
     MBEDTLS_INTERNAL_VALIDATE( cond )
+
 
 /*
  * 32-bit integer manipulation macros (little endian)
@@ -439,7 +446,7 @@ static void aes_gen_tables( void )
     {
         pow[i] = x;
         log[x] = i;
-        x = ( x ^ XTIME( x ) ) & 0xFF;
+        x = BYTE_0( x ^ XTIME( x ) );
     }
 
     /*
@@ -448,7 +455,7 @@ static void aes_gen_tables( void )
     for( i = 0, x = 1; i < 10; i++ )
     {
         RCON[i] = (uint32_t) x;
-        x = XTIME( x ) & 0xFF;
+        x = BYTE_0( XTIME( x ) );
     }
 
     /*
@@ -461,10 +468,10 @@ static void aes_gen_tables( void )
     {
         x = pow[255 - log[i]];
 
-        y  = x; y = ( ( y << 1 ) | ( y >> 7 ) ) & 0xFF;
-        x ^= y; y = ( ( y << 1 ) | ( y >> 7 ) ) & 0xFF;
-        x ^= y; y = ( ( y << 1 ) | ( y >> 7 ) ) & 0xFF;
-        x ^= y; y = ( ( y << 1 ) | ( y >> 7 ) ) & 0xFF;
+        y  = x; y = BYTE_0( ( y << 1 ) | ( y >> 7 ) );
+        x ^= y; y = BYTE_0( ( y << 1 ) | ( y >> 7 ) );
+        x ^= y; y = BYTE_0( ( y << 1 ) | ( y >> 7 ) );
+        x ^= y; y = BYTE_0( ( y << 1 ) | ( y >> 7 ) );
         x ^= y ^ 0x63;
 
         FSb[i] = (unsigned char) x;
@@ -477,8 +484,8 @@ static void aes_gen_tables( void )
     for( i = 0; i < 256; i++ )
     {
         x = FSb[i];
-        y = XTIME( x ) & 0xFF;
-        z =  ( y ^ x ) & 0xFF;
+        y = BYTE_0( XTIME( x ) );
+        z = BYTE_0( y ^ x );
 
         FT0[i] = ( (uint32_t) y       ) ^
                  ( (uint32_t) x <<  8 ) ^
@@ -630,10 +637,10 @@ int mbedtls_aes_setkey_enc( mbedtls_aes_context *ctx, const unsigned char *key,
             for( i = 0; i < 10; i++, RK += 4 )
             {
                 RK[4]  = RK[0] ^ RCON[i] ^
-                ( (uint32_t) FSb[ ( RK[3] >>  8 ) & 0xFF ]       ) ^
-                ( (uint32_t) FSb[ ( RK[3] >> 16 ) & 0xFF ] <<  8 ) ^
-                ( (uint32_t) FSb[ ( RK[3] >> 24 ) & 0xFF ] << 16 ) ^
-                ( (uint32_t) FSb[ ( RK[3]       ) & 0xFF ] << 24 );
+                ( (uint32_t) FSb[ BYTE_1( RK[3] ) ]       ) ^
+                ( (uint32_t) FSb[ BYTE_2( RK[3] ) ] <<  8 ) ^
+                ( (uint32_t) FSb[ BYTE_3( RK[3] ) ] << 16 ) ^
+                ( (uint32_t) FSb[ BYTE_0( RK[3] ) ] << 24 );
 
                 RK[5]  = RK[1] ^ RK[4];
                 RK[6]  = RK[2] ^ RK[5];
@@ -646,10 +653,10 @@ int mbedtls_aes_setkey_enc( mbedtls_aes_context *ctx, const unsigned char *key,
             for( i = 0; i < 8; i++, RK += 6 )
             {
                 RK[6]  = RK[0] ^ RCON[i] ^
-                ( (uint32_t) FSb[ ( RK[5] >>  8 ) & 0xFF ]       ) ^
-                ( (uint32_t) FSb[ ( RK[5] >> 16 ) & 0xFF ] <<  8 ) ^
-                ( (uint32_t) FSb[ ( RK[5] >> 24 ) & 0xFF ] << 16 ) ^
-                ( (uint32_t) FSb[ ( RK[5]       ) & 0xFF ] << 24 );
+                ( (uint32_t) FSb[ BYTE_1( RK[5] ) ]       ) ^
+                ( (uint32_t) FSb[ BYTE_2( RK[5] ) ] <<  8 ) ^
+                ( (uint32_t) FSb[ BYTE_3( RK[5] ) ] << 16 ) ^
+                ( (uint32_t) FSb[ BYTE_0( RK[5] ) ] << 24 );
 
                 RK[7]  = RK[1] ^ RK[6];
                 RK[8]  = RK[2] ^ RK[7];
@@ -664,20 +671,20 @@ int mbedtls_aes_setkey_enc( mbedtls_aes_context *ctx, const unsigned char *key,
             for( i = 0; i < 7; i++, RK += 8 )
             {
                 RK[8]  = RK[0] ^ RCON[i] ^
-                ( (uint32_t) FSb[ ( RK[7] >>  8 ) & 0xFF ]       ) ^
-                ( (uint32_t) FSb[ ( RK[7] >> 16 ) & 0xFF ] <<  8 ) ^
-                ( (uint32_t) FSb[ ( RK[7] >> 24 ) & 0xFF ] << 16 ) ^
-                ( (uint32_t) FSb[ ( RK[7]       ) & 0xFF ] << 24 );
+                ( (uint32_t) FSb[ BYTE_1( RK[7] ) ]       ) ^
+                ( (uint32_t) FSb[ BYTE_2( RK[7] ) ] <<  8 ) ^
+                ( (uint32_t) FSb[ BYTE_3( RK[7] ) ] << 16 ) ^
+                ( (uint32_t) FSb[ BYTE_0( RK[7] ) ] << 24 );
 
                 RK[9]  = RK[1] ^ RK[8];
                 RK[10] = RK[2] ^ RK[9];
                 RK[11] = RK[3] ^ RK[10];
 
                 RK[12] = RK[4] ^
-                ( (uint32_t) FSb[ ( RK[11]       ) & 0xFF ]       ) ^
-                ( (uint32_t) FSb[ ( RK[11] >>  8 ) & 0xFF ] <<  8 ) ^
-                ( (uint32_t) FSb[ ( RK[11] >> 16 ) & 0xFF ] << 16 ) ^
-                ( (uint32_t) FSb[ ( RK[11] >> 24 ) & 0xFF ] << 24 );
+                ( (uint32_t) FSb[ BYTE_0( RK[11] ) ]       ) ^
+                ( (uint32_t) FSb[ BYTE_1( RK[11] ) ] <<  8 ) ^
+                ( (uint32_t) FSb[ BYTE_2( RK[11] ) ] << 16 ) ^
+                ( (uint32_t) FSb[ BYTE_3( RK[11] ) ] << 24 );
 
                 RK[13] = RK[5] ^ RK[12];
                 RK[14] = RK[6] ^ RK[13];
@@ -743,10 +750,10 @@ int mbedtls_aes_setkey_dec( mbedtls_aes_context *ctx, const unsigned char *key,
     {
         for( j = 0; j < 4; j++, SK++ )
         {
-            *RK++ = AES_RT0( FSb[ ( *SK       ) & 0xFF ] ) ^
-                    AES_RT1( FSb[ ( *SK >>  8 ) & 0xFF ] ) ^
-                    AES_RT2( FSb[ ( *SK >> 16 ) & 0xFF ] ) ^
-                    AES_RT3( FSb[ ( *SK >> 24 ) & 0xFF ] );
+            *RK++ = AES_RT0( FSb[ BYTE_0( *SK ) ] ) ^
+                    AES_RT1( FSb[ BYTE_1( *SK ) ] ) ^
+                    AES_RT2( FSb[ BYTE_2( *SK ) ] ) ^
+                    AES_RT3( FSb[ BYTE_3( *SK ) ] );
         }
     }
 
@@ -842,49 +849,49 @@ int mbedtls_aes_xts_setkey_dec( mbedtls_aes_xts_context *ctx,
 #define AES_FROUND(X0,X1,X2,X3,Y0,Y1,Y2,Y3)                     \
     do                                                          \
     {                                                           \
-        (X0) = *RK++ ^ AES_FT0( ( (Y0)       ) & 0xFF ) ^       \
-                       AES_FT1( ( (Y1) >>  8 ) & 0xFF ) ^       \
-                       AES_FT2( ( (Y2) >> 16 ) & 0xFF ) ^       \
-                       AES_FT3( ( (Y3) >> 24 ) & 0xFF );        \
-                                                                \
-        (X1) = *RK++ ^ AES_FT0( ( (Y1)       ) & 0xFF ) ^       \
-                       AES_FT1( ( (Y2) >>  8 ) & 0xFF ) ^       \
-                       AES_FT2( ( (Y3) >> 16 ) & 0xFF ) ^       \
-                       AES_FT3( ( (Y0) >> 24 ) & 0xFF );        \
-                                                                \
-        (X2) = *RK++ ^ AES_FT0( ( (Y2)       ) & 0xFF ) ^       \
-                       AES_FT1( ( (Y3) >>  8 ) & 0xFF ) ^       \
-                       AES_FT2( ( (Y0) >> 16 ) & 0xFF ) ^       \
-                       AES_FT3( ( (Y1) >> 24 ) & 0xFF );        \
-                                                                \
-        (X3) = *RK++ ^ AES_FT0( ( (Y3)       ) & 0xFF ) ^       \
-                       AES_FT1( ( (Y0) >>  8 ) & 0xFF ) ^       \
-                       AES_FT2( ( (Y1) >> 16 ) & 0xFF ) ^       \
-                       AES_FT3( ( (Y2) >> 24 ) & 0xFF );        \
+        (X0) = *RK++ ^ AES_FT0( BYTE_0( Y0 ) ) ^    \
+                       AES_FT1( BYTE_1( Y1 ) ) ^    \
+                       AES_FT2( BYTE_2( Y2 ) ) ^    \
+                       AES_FT3( BYTE_3( Y3 ) );     \
+                                                    \
+        (X1) = *RK++ ^ AES_FT0( BYTE_0( Y1 ) ) ^    \
+                       AES_FT1( BYTE_1( Y2 ) ) ^    \
+                       AES_FT2( BYTE_2( Y3 ) ) ^    \
+                       AES_FT3( BYTE_3( Y0 ) );     \
+                                                    \
+        (X2) = *RK++ ^ AES_FT0( BYTE_0( Y2 ) ) ^    \
+                       AES_FT1( BYTE_1( Y3 ) ) ^    \
+                       AES_FT2( BYTE_2( Y0 ) ) ^    \
+                       AES_FT3( BYTE_3( Y1 ) );     \
+                                                    \
+        (X3) = *RK++ ^ AES_FT0( BYTE_0( Y3 ) ) ^    \
+                       AES_FT1( BYTE_1( Y0 ) ) ^    \
+                       AES_FT2( BYTE_2( Y1 ) ) ^    \
+                       AES_FT3( BYTE_3( Y2 ) );     \
     } while( 0 )
 
 #define AES_RROUND(X0,X1,X2,X3,Y0,Y1,Y2,Y3)                 \
     do                                                      \
     {                                                       \
-        (X0) = *RK++ ^ AES_RT0( ( (Y0)       ) & 0xFF ) ^   \
-                       AES_RT1( ( (Y3) >>  8 ) & 0xFF ) ^   \
-                       AES_RT2( ( (Y2) >> 16 ) & 0xFF ) ^   \
-                       AES_RT3( ( (Y1) >> 24 ) & 0xFF );    \
-                                                            \
-        (X1) = *RK++ ^ AES_RT0( ( (Y1)       ) & 0xFF ) ^   \
-                       AES_RT1( ( (Y0) >>  8 ) & 0xFF ) ^   \
-                       AES_RT2( ( (Y3) >> 16 ) & 0xFF ) ^   \
-                       AES_RT3( ( (Y2) >> 24 ) & 0xFF );    \
-                                                            \
-        (X2) = *RK++ ^ AES_RT0( ( (Y2)       ) & 0xFF ) ^   \
-                       AES_RT1( ( (Y1) >>  8 ) & 0xFF ) ^   \
-                       AES_RT2( ( (Y0) >> 16 ) & 0xFF ) ^   \
-                       AES_RT3( ( (Y3) >> 24 ) & 0xFF );    \
-                                                            \
-        (X3) = *RK++ ^ AES_RT0( ( (Y3)       ) & 0xFF ) ^   \
-                       AES_RT1( ( (Y2) >>  8 ) & 0xFF ) ^   \
-                       AES_RT2( ( (Y1) >> 16 ) & 0xFF ) ^   \
-                       AES_RT3( ( (Y0) >> 24 ) & 0xFF );    \
+        (X0) = *RK++ ^ AES_RT0( BYTE_0( Y0 ) ) ^    \
+                       AES_RT1( BYTE_1( Y3 ) ) ^    \
+                       AES_RT2( BYTE_2( Y2 ) ) ^    \
+                       AES_RT3( BYTE_3( Y1 ) );     \
+                                                    \
+        (X1) = *RK++ ^ AES_RT0( BYTE_0( Y1 ) ) ^    \
+                       AES_RT1( BYTE_1( Y0 ) ) ^    \
+                       AES_RT2( BYTE_2( Y3 ) ) ^    \
+                       AES_RT3( BYTE_3( Y2 ) );     \
+                                                    \
+        (X2) = *RK++ ^ AES_RT0( BYTE_0( Y2 ) ) ^    \
+                       AES_RT1( BYTE_1( Y1 ) ) ^    \
+                       AES_RT2( BYTE_2( Y0 ) ) ^    \
+                       AES_RT3( BYTE_3( Y3 ) );     \
+                                                    \
+        (X3) = *RK++ ^ AES_RT0( BYTE_0( Y3 ) ) ^    \
+                       AES_RT1( BYTE_1( Y2 ) ) ^    \
+                       AES_RT2( BYTE_2( Y1 ) ) ^    \
+                       AES_RT3( BYTE_3( Y0 ) );     \
     } while( 0 )
 
 /*
@@ -917,28 +924,28 @@ int mbedtls_internal_aes_encrypt( mbedtls_aes_context *ctx,
     AES_FROUND( t.Y[0], t.Y[1], t.Y[2], t.Y[3], t.X[0], t.X[1], t.X[2], t.X[3] );
 
     t.X[0] = *RK++ ^ \
-            ( (uint32_t) FSb[ ( t.Y[0]       ) & 0xFF ]       ) ^
-            ( (uint32_t) FSb[ ( t.Y[1] >>  8 ) & 0xFF ] <<  8 ) ^
-            ( (uint32_t) FSb[ ( t.Y[2] >> 16 ) & 0xFF ] << 16 ) ^
-            ( (uint32_t) FSb[ ( t.Y[3] >> 24 ) & 0xFF ] << 24 );
+            ( (uint32_t) FSb[ BYTE_0( t.Y[0] ) ]       ) ^
+            ( (uint32_t) FSb[ BYTE_1( t.Y[1] ) ] <<  8 ) ^
+            ( (uint32_t) FSb[ BYTE_2( t.Y[2] ) ] << 16 ) ^
+            ( (uint32_t) FSb[ BYTE_3( t.Y[3] ) ] << 24 );
 
     t.X[1] = *RK++ ^ \
-            ( (uint32_t) FSb[ ( t.Y[1]       ) & 0xFF ]       ) ^
-            ( (uint32_t) FSb[ ( t.Y[2] >>  8 ) & 0xFF ] <<  8 ) ^
-            ( (uint32_t) FSb[ ( t.Y[3] >> 16 ) & 0xFF ] << 16 ) ^
-            ( (uint32_t) FSb[ ( t.Y[0] >> 24 ) & 0xFF ] << 24 );
+            ( (uint32_t) FSb[ BYTE_0( t.Y[1] ) ]       ) ^
+            ( (uint32_t) FSb[ BYTE_1( t.Y[2] ) ] <<  8 ) ^
+            ( (uint32_t) FSb[ BYTE_2( t.Y[3] ) ] << 16 ) ^
+            ( (uint32_t) FSb[ BYTE_3( t.Y[0] ) ] << 24 );
 
     t.X[2] = *RK++ ^ \
-            ( (uint32_t) FSb[ ( t.Y[2]       ) & 0xFF ]       ) ^
-            ( (uint32_t) FSb[ ( t.Y[3] >>  8 ) & 0xFF ] <<  8 ) ^
-            ( (uint32_t) FSb[ ( t.Y[0] >> 16 ) & 0xFF ] << 16 ) ^
-            ( (uint32_t) FSb[ ( t.Y[1] >> 24 ) & 0xFF ] << 24 );
+            ( (uint32_t) FSb[ BYTE_0( t.Y[2] ) ]       ) ^
+            ( (uint32_t) FSb[ BYTE_1( t.Y[3] ) ] <<  8 ) ^
+            ( (uint32_t) FSb[ BYTE_2( t.Y[0] ) ] << 16 ) ^
+            ( (uint32_t) FSb[ BYTE_3( t.Y[1] ) ] << 24 );
 
     t.X[3] = *RK++ ^ \
-            ( (uint32_t) FSb[ ( t.Y[3]       ) & 0xFF ]       ) ^
-            ( (uint32_t) FSb[ ( t.Y[0] >>  8 ) & 0xFF ] <<  8 ) ^
-            ( (uint32_t) FSb[ ( t.Y[1] >> 16 ) & 0xFF ] << 16 ) ^
-            ( (uint32_t) FSb[ ( t.Y[2] >> 24 ) & 0xFF ] << 24 );
+            ( (uint32_t) FSb[ BYTE_0( t.Y[3] ) ]       ) ^
+            ( (uint32_t) FSb[ BYTE_1( t.Y[0] ) ] <<  8 ) ^
+            ( (uint32_t) FSb[ BYTE_2( t.Y[1] ) ] << 16 ) ^
+            ( (uint32_t) FSb[ BYTE_3( t.Y[2] ) ] << 24 );
 
     PUT_UINT32_LE( t.X[0], output,  0 );
     PUT_UINT32_LE( t.X[1], output,  4 );
@@ -990,28 +997,28 @@ int mbedtls_internal_aes_decrypt( mbedtls_aes_context *ctx,
     AES_RROUND( t.Y[0], t.Y[1], t.Y[2], t.Y[3], t.X[0], t.X[1], t.X[2], t.X[3] );
 
     t.X[0] = *RK++ ^ \
-            ( (uint32_t) RSb[ ( t.Y[0]       ) & 0xFF ]       ) ^
-            ( (uint32_t) RSb[ ( t.Y[3] >>  8 ) & 0xFF ] <<  8 ) ^
-            ( (uint32_t) RSb[ ( t.Y[2] >> 16 ) & 0xFF ] << 16 ) ^
-            ( (uint32_t) RSb[ ( t.Y[1] >> 24 ) & 0xFF ] << 24 );
+            ( (uint32_t) RSb[ BYTE_0( t.Y[0] ) ]       ) ^
+            ( (uint32_t) RSb[ BYTE_1( t.Y[3] ) ] <<  8 ) ^
+            ( (uint32_t) RSb[ BYTE_2( t.Y[2] ) ] << 16 ) ^
+            ( (uint32_t) RSb[ BYTE_3( t.Y[1] ) ] << 24 );
 
     t.X[1] = *RK++ ^ \
-            ( (uint32_t) RSb[ ( t.Y[1]       ) & 0xFF ]       ) ^
-            ( (uint32_t) RSb[ ( t.Y[0] >>  8 ) & 0xFF ] <<  8 ) ^
-            ( (uint32_t) RSb[ ( t.Y[3] >> 16 ) & 0xFF ] << 16 ) ^
-            ( (uint32_t) RSb[ ( t.Y[2] >> 24 ) & 0xFF ] << 24 );
+            ( (uint32_t) RSb[ BYTE_0( t.Y[1] ) ]       ) ^
+            ( (uint32_t) RSb[ BYTE_1( t.Y[0] ) ] <<  8 ) ^
+            ( (uint32_t) RSb[ BYTE_2( t.Y[3] ) ] << 16 ) ^
+            ( (uint32_t) RSb[ BYTE_3( t.Y[2] ) ] << 24 );
 
     t.X[2] = *RK++ ^ \
-            ( (uint32_t) RSb[ ( t.Y[2]       ) & 0xFF ]       ) ^
-            ( (uint32_t) RSb[ ( t.Y[1] >>  8 ) & 0xFF ] <<  8 ) ^
-            ( (uint32_t) RSb[ ( t.Y[0] >> 16 ) & 0xFF ] << 16 ) ^
-            ( (uint32_t) RSb[ ( t.Y[3] >> 24 ) & 0xFF ] << 24 );
+            ( (uint32_t) RSb[ BYTE_0( t.Y[2] ) ]       ) ^
+            ( (uint32_t) RSb[ BYTE_1( t.Y[1] ) ] <<  8 ) ^
+            ( (uint32_t) RSb[ BYTE_2( t.Y[0] ) ] << 16 ) ^
+            ( (uint32_t) RSb[ BYTE_3( t.Y[3] ) ] << 24 );
 
     t.X[3] = *RK++ ^ \
-            ( (uint32_t) RSb[ ( t.Y[3]       ) & 0xFF ]       ) ^
-            ( (uint32_t) RSb[ ( t.Y[2] >>  8 ) & 0xFF ] <<  8 ) ^
-            ( (uint32_t) RSb[ ( t.Y[1] >> 16 ) & 0xFF ] << 16 ) ^
-            ( (uint32_t) RSb[ ( t.Y[0] >> 24 ) & 0xFF ] << 24 );
+            ( (uint32_t) RSb[ BYTE_0( t.Y[3] ) ]       ) ^
+            ( (uint32_t) RSb[ BYTE_1( t.Y[2] ) ] <<  8 ) ^
+            ( (uint32_t) RSb[ BYTE_2( t.Y[1] ) ] << 16 ) ^
+            ( (uint32_t) RSb[ BYTE_3( t.Y[0] ) ] << 24 );
 
     PUT_UINT32_LE( t.X[0], output,  0 );
     PUT_UINT32_LE( t.X[1], output,  4 );

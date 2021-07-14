@@ -1,0 +1,4 @@
+Changes
+   * Create 4 byte reading macros in relevant files in library/:
+     MBEDTLS_BYTE_0... MBEDTLS_BYTE_3. Fixes #4274.
+

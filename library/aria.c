@@ -109,6 +109,12 @@
 }
 #endif
 
+/* Byte reading macros */
+#define BYTE_0( x ) ( (uint8_t) (   ( x )         & 0xff ) )
+#define BYTE_1( x ) ( (uint8_t) ( ( ( x ) >>  8 ) & 0xff ) )
+#define BYTE_2( x ) ( (uint8_t) ( ( ( x ) >> 16 ) & 0xff ) )
+#define BYTE_3( x ) ( (uint8_t) ( ( ( x ) >> 24 ) & 0xff ) )
+
 /*
  * modify byte order: ( A B C D ) -> ( B A D C ), i.e. swap pairs of bytes
  *
@@ -266,22 +272,22 @@ static inline void aria_sl( uint32_t *a, uint32_t *b,
                             const uint8_t sa[256], const uint8_t sb[256],
                             const uint8_t sc[256], const uint8_t sd[256] )
 {
-    *a = ( (uint32_t) sa[ *a        & 0xFF]       ) ^
-         (((uint32_t) sb[(*a >>  8) & 0xFF]) <<  8) ^
-         (((uint32_t) sc[(*a >> 16) & 0xFF]) << 16) ^
-         (((uint32_t) sd[ *a >> 24        ]) << 24);
-    *b = ( (uint32_t) sa[ *b        & 0xFF]       ) ^
-         (((uint32_t) sb[(*b >>  8) & 0xFF]) <<  8) ^
-         (((uint32_t) sc[(*b >> 16) & 0xFF]) << 16) ^
-         (((uint32_t) sd[ *b >> 24        ]) << 24);
-    *c = ( (uint32_t) sa[ *c        & 0xFF]       ) ^
-         (((uint32_t) sb[(*c >>  8) & 0xFF]) <<  8) ^
-         (((uint32_t) sc[(*c >> 16) & 0xFF]) << 16) ^
-         (((uint32_t) sd[ *c >> 24        ]) << 24);
-    *d = ( (uint32_t) sa[ *d        & 0xFF]       ) ^
-         (((uint32_t) sb[(*d >>  8) & 0xFF]) <<  8) ^
-         (((uint32_t) sc[(*d >> 16) & 0xFF]) << 16) ^
-         (((uint32_t) sd[ *d >> 24        ]) << 24);
+    *a = ( (uint32_t) sa[ BYTE_0( *a ) ]       ) ^
+         (((uint32_t) sb[ BYTE_1( *a ) ]) <<  8) ^
+         (((uint32_t) sc[ BYTE_2( *a ) ]) << 16) ^
+         (((uint32_t) sd[ *a >> 24     ]) << 24);
+    *b = ( (uint32_t) sa[ BYTE_0( *b ) ]       ) ^
+         (((uint32_t) sb[ BYTE_1( *b ) ]) <<  8) ^
+         (((uint32_t) sc[ BYTE_2( *b ) ]) << 16) ^
+         (((uint32_t) sd[ *b >> 24     ]) << 24);
+    *c = ( (uint32_t) sa[ BYTE_0( *c ) ]       ) ^
+         (((uint32_t) sb[ BYTE_1( *c ) ]) <<  8) ^
+         (((uint32_t) sc[ BYTE_2( *c ) ]) << 16) ^
+         (((uint32_t) sd[ *c >> 24     ]) << 24);
+    *d = ( (uint32_t) sa[ BYTE_0( *d ) ]       ) ^
+         (((uint32_t) sb[ BYTE_1( *d ) ]) <<  8) ^
+         (((uint32_t) sc[ BYTE_2( *d ) ]) << 16) ^
+         (((uint32_t) sd[ *d >> 24     ]) << 24);
 }
 
 /*
