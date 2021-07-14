@@ -131,3 +131,8 @@ struct tm *mbedtls_platform_gmtime_r( const mbedtls_time_t *tt,
 #endif /* _WIN32 && !EFIX64 && !EFI32 */
 }
 #endif /* MBEDTLS_HAVE_TIME_DATE && MBEDTLS_PLATFORM_GMTIME_R_ALT */
+
+#if defined(MBEDTLS_TEST_HOOKS)
+void (*mbedtls_test_hook_test_fail)( const char *, int, const char *);
+#endif /* MBEDTLS_TEST_HOOKS */
+

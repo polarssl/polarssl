@@ -1000,8 +1000,17 @@ psa_status_t psa_wipe_key_slot( psa_key_slot_t *slot )
 {
     psa_status_t status = psa_remove_key_data_from_memory( slot );
 
+   /*
+    * As the return error code may not be handled in case of multiple errors,
+    * do our best to report an unexpected lock counter. Assert with
+    * MBEDTLS_TEST_HOOK_TEST_ASSERT that the lock counter is equal to one:
+    * if the MBEDTLS_TEST_HOOKS configuration option is enabled and the
+    * function is called as part of the execution of a test suite, the
+    * execution of the test suite is stopped in error if the assertion fails.
+    */
     if( slot->lock_count != 1 )
     {
+        MBEDTLS_TEST_HOOK_TEST_ASSERT( slot->lock_count == 1 );
         status = PSA_ERROR_CORRUPTION_DETECTED;
     }
 

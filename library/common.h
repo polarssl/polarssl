@@ -46,6 +46,19 @@
 #define MBEDTLS_STATIC_TESTABLE static
 #endif
 
+#if defined(MBEDTLS_TEST_HOOKS)
+extern void (*mbedtls_test_hook_test_fail)( const char * test, int line, const char * file );
+#define MBEDTLS_TEST_HOOK_TEST_ASSERT( TEST ) \
+       do { \
+            if( ( ! ( TEST ) ) && ( ( *mbedtls_test_hook_test_fail ) != NULL ) ) \
+            { \
+              ( *mbedtls_test_hook_test_fail )( #TEST, __LINE__, __FILE__ ); \
+            } \
+    } while( 0 )
+#else
+#define MBEDTLS_TEST_HOOK_TEST_ASSERT( TEST )
+#endif /* defined(MBEDTLS_TEST_HOOKS) */
+
 /** Allow library to access its structs' private members.
  *
  * Although structs defined in header files are publicly available,

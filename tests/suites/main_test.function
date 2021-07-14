@@ -237,8 +237,11 @@ $platform_code
  */
 int main( int argc, const char *argv[] )
 {
-#if defined(MBEDTLS_TEST_HOOKS) && defined (MBEDTLS_ERROR_C)
+#if defined(MBEDTLS_TEST_HOOKS)
+    mbedtls_test_hook_test_fail = &mbedtls_test_fail;
+#if defined(MBEDTLS_ERROR_C)
     mbedtls_test_hook_error_add = &mbedtls_test_err_add_check;
+#endif
 #endif
 
     int ret = mbedtls_test_platform_setup();

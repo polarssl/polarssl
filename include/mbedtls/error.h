@@ -129,6 +129,7 @@ extern "C" {
  *        Only used when invasive testing is enabled via MBEDTLS_TEST_HOOKS.
  */
 extern void (*mbedtls_test_hook_error_add)( int, int, const char *, int );
+extern void (*mbedtls_test_hook_test_fail)( const char * test, int line, const char * file );
 #endif
 
 /**
