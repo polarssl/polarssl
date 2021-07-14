@@ -1,0 +1,2 @@
+Bugfix
+   * Stop using reserved identifiers as local variables. Fixes #4630.
