@@ -1,0 +1,4 @@
+Bugfix
+   * Prevent divide by zero if either of PSA_CIPHER_ENCRYPT_OUTPUT_SIZE() or
+     PSA_CIPHER_UPDATE_OUTPUT_SIZE() were called using an asymmetric key type.
+
