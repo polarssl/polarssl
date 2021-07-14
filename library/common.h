@@ -154,12 +154,12 @@
 #endif
 
 /**
- * Get the unsigned 16 bits integer corresponding to four bytes in
+ * Get the unsigned 16 bits integer corresponding to two bytes in
  * little-endian order (LSB first).
  *
- * \param   data    Base address of the memory to get the four bytes from.
+ * \param   data    Base address of the memory to get the two bytes from.
  * \param   offset  Offset from \p base of the first and least significant
- *                  byte of the four bytes to build the 16 bits unsigned
+ *                  byte of the two bytes to build the 16 bits unsigned
  *                  integer from.
  */
 #ifndef MBEDTLS_GET_UINT16_LE
