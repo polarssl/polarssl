@@ -78,18 +78,13 @@
 #define MBEDTLS_CHAR_7( x ) ( (unsigned char) ( ( ( x ) >> 56 ) & 0xff ) )
 
 /**
- * 32-bit integer manipulation GET macros (big endian)
+ * Get the unsigned 32 bits integer corresponding to four bytes in 
+ * big-endian order (MSB first).
  *
- * \brief   Use this to assign an unsigned 32 bit integer
- *          by taking data stored adjacent in memory that
- *          can be accessed via on offset
- *          Big Endian is used when wanting to
- *          transmit the most signifcant bits first
- *
- * \param   data    The data used to translate to a 32 bit
- *                  integer
- * \param   offset  the shift in bytes to access the next byte
- *                  of data
+ * \param   data    Base address of the memory to get the four bytes from.
+ * \param   offset  Offset from \p base of the first and most significant 
+ *                  byte of the four bytes to build the 32 bits unsigned 
+ *                  integer from.
  */
 #ifndef MBEDTLS_GET_UINT32_BE
 #define MBEDTLS_GET_UINT32_BE( data , offset )              \
@@ -102,44 +97,32 @@
 #endif
 
 /**
- * 32-bit integer manipulation PUT macros (big endian)
+ * Put in memory a 32 bits unsigned integer in big-endian order.
  *
- * \brief   Read from a 32 bit integer and store each byte
- *          in memory, offset by a specified amount, resulting
- *          in each byte being adjacent in memory.
- *          Big Endian is used when wanting to
- *          transmit the most signifcant bits first
- *
- * \param   n   32 bit integer where data is accessed
- * \param   b   const unsigned char array of data to be
- *              manipulated
- * \param   i   offset in bytes, In the case of UINT32, i
- *              would increment by 4 every use assuming
- *              the data is being stored in the same location
+ * \param   n       32 bits unsigned integer to put in memory
+ * \param   data    Base address of the memory where to put the 32 
+ *                  bits unsigned integer in.
+ * \param   offset  Offset from \p base where to put the most significant 
+ *                  byte of the 32 bits unsigned integer \p n.
  */
 #ifndef MBEDTLS_PUT_UINT32_BE
-#define MBEDTLS_PUT_UINT32_BE(n,b,i)                    \
-    do {                                                \
-        (b)[(i)    ] = (unsigned char) ( (n) >> 24 );   \
-        (b)[(i) + 1] = (unsigned char) ( (n) >> 16 );   \
-        (b)[(i) + 2] = (unsigned char) ( (n) >>  8 );   \
-        (b)[(i) + 3] = (unsigned char) ( (n)       );   \
+#define MBEDTLS_PUT_UINT32_BE( n, data, offset )                    \
+    do {                                                            \
+        ( data )[( offset )    ] = (unsigned char) ( (n) >> 24 );   \
+        ( data )[( offset ) + 1] = (unsigned char) ( (n) >> 16 );   \
+        ( data )[( offset ) + 2] = (unsigned char) ( (n) >>  8 );   \
+        ( data )[( offset ) + 3] = (unsigned char) ( (n)       );   \
     } while( 0 )
 #endif
 
 /**
- * 32-bit integer manipulation GET macros (little endian)
+ * Get the unsigned 32 bits integer corresponding to four bytes in 
+ * little-endian order (LSB first).
  *
- * \brief   Use this to assign an unsigned 32 bit integer
- *          by taking data stored adjacent in memory that
- *          can be accessed via on offset
- *          Little Endian is used when wanting to
- *          transmit the least signifcant bits first
- *
- * \param   data    The data used to translate to a 32 bit
- *                  integer
- * \param   offset  the shift in bytes to access the next byte
- *                  of data
+ * \param   data    Base address of the memory to get the four bytes from.
+ * \param   offset  Offset from \p base of the first and least significant 
+ *                  byte of the four bytes to build the 32 bits unsigned 
+ *                  integer from.
  */
 #ifndef MBEDTLS_GET_UINT32_LE
 #define MBEDTLS_GET_UINT32_LE( data, offset )              \
@@ -152,44 +135,32 @@
 #endif
 
 /**
- * 32-bit integer manipulation PUT macros (little endian)
+ * Put in memory a 32 bits unsigned integer in little-endian order.
  *
- * \brief   Read from a 32 bit integer and store each byte
- *          in memory, offset by a specified amount, resulting
- *          in each byte being adjacent in memory.
- *          Little Endian is used when wanting to
- *          transmit the least signifcant bits first
- *
- * \param   n   32 bit integer where data is accessed
- * \param   b   const unsigned char array of data to be
- *              manipulated
- * \param   i   offset in bytes, In the case of UINT32, i
- *              would increment by 4 every use assuming
- *              the data is being stored in the same location
+ * \param   n       32 bits unsigned integer to put in memory
+ * \param   data    Base address of the memory where to put the 32 
+ *                  bits unsigned integer in.
+ * \param   offset  Offset from \p base where to put the least significant 
+ *                  byte of the 32 bits unsigned integer \p n.
  */
 #ifndef MBEDTLS_PUT_UINT32_LE
-#define MBEDTLS_PUT_UINT32_LE(n,b,i)                                \
-    do {                                                            \
-        (b)[(i)    ] = (unsigned char) ( ( (n)       ) & 0xFF );    \
-        (b)[(i) + 1] = (unsigned char) ( ( (n) >>  8 ) & 0xFF );    \
-        (b)[(i) + 2] = (unsigned char) ( ( (n) >> 16 ) & 0xFF );    \
-        (b)[(i) + 3] = (unsigned char) ( ( (n) >> 24 ) & 0xFF );    \
+#define MBEDTLS_PUT_UINT32_LE( n, data, offset )                                \
+    do {                                                                        \
+        ( data )[( offset )    ] = (unsigned char) ( ( (n)       ) & 0xFF );    \
+        ( data )[( offset ) + 1] = (unsigned char) ( ( (n) >>  8 ) & 0xFF );    \
+        ( data )[( offset ) + 2] = (unsigned char) ( ( (n) >> 16 ) & 0xFF );    \
+        ( data )[( offset ) + 3] = (unsigned char) ( ( (n) >> 24 ) & 0xFF );    \
     } while( 0 )
 #endif
 
 /**
- * 16-bit integer manipulation GET macros (little endian)
+ * Get the unsigned 16 bits integer corresponding to four bytes in 
+ * little-endian order (LSB first).
  *
- * \brief   Use this to assign an unsigned 16 bit integer
- *          by taking data stored adjacent in memory that
- *          can be accessed via on offset
- *          Little Endian is used when wanting to
- *          transmit the least signifcant bits first
- *
- * \param   data    The data used to translate to a 16 bit
- *                  integer
- * \param   offset  the shit in bytes to access the next byte
- *                  of data
+ * \param   data    Base address of the memory to get the four bytes from.
+ * \param   offset  Offset from \p base of the first and least significant 
+ *                  byte of the four bytes to build the 16 bits unsigned 
+ *                  integer from.
  */
 #ifndef MBEDTLS_GET_UINT16_LE
 #define MBEDTLS_GET_UINT16_LE( data, offset )               \
@@ -200,26 +171,19 @@
 #endif
 
 /**
- * 16-bit integer manipulation PUT macros (little endian)
+ * Put in memory a 16 bits unsigned integer in little-endian order.
  *
- * \brief   Read from a 16 bit integer and store each byte
- *          in memory, offset by a specified amount, resulting
- *          in each byte being adjacent in memory.
- *          Little Endian is used when wanting to
- *          transmit the least signifcant bits first
- *
- * \param   n   16 bit integer where data is accessed
- * \param   b   const unsigned char array of data to be
- *              manipulated
- * \param   i   offset in bytes, In the case of UINT16, i
- *              would increment by 2 every use assuming
- *              the data is being stored in the same location
+ * \param   n       16 bits unsigned integer to put in memory
+ * \param   data    Base address of the memory where to put the 16 
+ *                  bits unsigned integer in.
+ * \param   offset  Offset from \p base where to put the least significant 
+ *                  byte of the 16 bits unsigned integer \p n.
  */
 #ifndef MBEDTLS_PUT_UINT16_LE
-#define MBEDTLS_PUT_UINT16_LE( n, b, i )                        \
-{                                                               \
-    (b)[(i)    ] = (unsigned char) ( ( (n)       ) & 0xFF );    \
-    (b)[(i) + 1] = (unsigned char) ( ( (n) >>  8 ) & 0xFF );    \
+#define MBEDTLS_PUT_UINT16_LE( n, data, offset )                            \
+{                                                                           \
+    ( data )[( offset )    ] = (unsigned char) ( ( (n)       ) & 0xFF );    \
+    ( data )[( offset ) + 1] = (unsigned char) ( ( (n) >>  8 ) & 0xFF );    \
 }
 #endif
 
