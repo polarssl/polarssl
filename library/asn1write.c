@@ -60,8 +60,8 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start, size_t len 
         if( *p - start < 3 )
             return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
-        *--(*p) = ( len       ) & 0xFF;
-        *--(*p) = ( len >>  8 ) & 0xFF;
+        *--(*p) = MBEDTLS_BYTE_0( len );
+        *--(*p) = MBEDTLS_BYTE_1( len );
         *--(*p) = 0x82;
         return( 3 );
     }
@@ -71,9 +71,9 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start, size_t len 
         if( *p - start < 4 )
             return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
-        *--(*p) = ( len       ) & 0xFF;
-        *--(*p) = ( len >>  8 ) & 0xFF;
-        *--(*p) = ( len >> 16 ) & 0xFF;
+        *--(*p) = MBEDTLS_BYTE_0( len );
+        *--(*p) = MBEDTLS_BYTE_1( len );
+        *--(*p) = MBEDTLS_BYTE_2( len );
         *--(*p) = 0x83;
         return( 4 );
     }
@@ -85,10 +85,10 @@ int mbedtls_asn1_write_len( unsigned char **p, unsigned char *start, size_t len 
         if( *p - start < 5 )
             return( MBEDTLS_ERR_ASN1_BUF_TOO_SMALL );
 
-        *--(*p) = ( len       ) & 0xFF;
-        *--(*p) = ( len >>  8 ) & 0xFF;
-        *--(*p) = ( len >> 16 ) & 0xFF;
-        *--(*p) = ( len >> 24 ) & 0xFF;
+        *--(*p) = MBEDTLS_BYTE_0( len );
+        *--(*p) = MBEDTLS_BYTE_1( len );
+        *--(*p) = MBEDTLS_BYTE_2( len );
+        *--(*p) = MBEDTLS_BYTE_3( len );
         *--(*p) = 0x84;
         return( 5 );
     }

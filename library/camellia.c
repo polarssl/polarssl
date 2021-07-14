@@ -49,29 +49,6 @@
 #define CAMELLIA_VALIDATE( cond )                                           \
     MBEDTLS_INTERNAL_VALIDATE( cond )
 
-/*
- * 32-bit integer manipulation macros (big endian)
- */
-#ifndef GET_UINT32_BE
-#define GET_UINT32_BE(n,b,i)                            \
-{                                                       \
-    (n) = ( (uint32_t) (b)[(i)    ] << 24 )             \
-        | ( (uint32_t) (b)[(i) + 1] << 16 )             \
-        | ( (uint32_t) (b)[(i) + 2] <<  8 )             \
-        | ( (uint32_t) (b)[(i) + 3]       );            \
-}
-#endif
-
-#ifndef PUT_UINT32_BE
-#define PUT_UINT32_BE(n,b,i)                            \
-{                                                       \
-    (b)[(i)    ] = (unsigned char) ( (n) >> 24 );       \
-    (b)[(i) + 1] = (unsigned char) ( (n) >> 16 );       \
-    (b)[(i) + 2] = (unsigned char) ( (n) >>  8 );       \
-    (b)[(i) + 3] = (unsigned char) ( (n)       );       \
-}
-#endif
-
 static const unsigned char SIGMA_CHARS[6][8] =
 {
     { 0xa0, 0x9e, 0x66, 0x7f, 0x3b, 0xcc, 0x90, 0x8b },
@@ -301,14 +278,14 @@ static void camellia_feistel( const uint32_t x[2], const uint32_t k[2],
     I0 = x[0] ^ k[0];
     I1 = x[1] ^ k[1];
 
-    I0 = ((uint32_t) SBOX1((I0 >> 24) & 0xFF) << 24) |
-         ((uint32_t) SBOX2((I0 >> 16) & 0xFF) << 16) |
-         ((uint32_t) SBOX3((I0 >>  8) & 0xFF) <<  8) |
-         ((uint32_t) SBOX4((I0      ) & 0xFF)      );
-    I1 = ((uint32_t) SBOX2((I1 >> 24) & 0xFF) << 24) |
-         ((uint32_t) SBOX3((I1 >> 16) & 0xFF) << 16) |
-         ((uint32_t) SBOX4((I1 >>  8) & 0xFF) <<  8) |
-         ((uint32_t) SBOX1((I1      ) & 0xFF)      );
+    I0 = ((uint32_t) SBOX1( MBEDTLS_BYTE_3( I0 )) << 24) |
+         ((uint32_t) SBOX2( MBEDTLS_BYTE_2( I0 )) << 16) |
+         ((uint32_t) SBOX3( MBEDTLS_BYTE_1( I0 )) <<  8) |
+         ((uint32_t) SBOX4( MBEDTLS_BYTE_0( I0 ))      );
+    I1 = ((uint32_t) SBOX2( MBEDTLS_BYTE_3( I1 )) << 24) |
+         ((uint32_t) SBOX3( MBEDTLS_BYTE_2( I1 )) << 16) |
+         ((uint32_t) SBOX4( MBEDTLS_BYTE_1( I1 )) <<  8) |
+         ((uint32_t) SBOX1( MBEDTLS_BYTE_0( I1 ))      );
 
     I0 ^= (I1 << 8) | (I1 >> 24);
     I1 ^= (I0 << 16) | (I0 >> 16);
@@ -376,8 +353,8 @@ int mbedtls_camellia_setkey_enc( mbedtls_camellia_context *ctx,
      * Prepare SIGMA values
      */
     for( i = 0; i < 6; i++ ) {
-        GET_UINT32_BE( SIGMA[i][0], SIGMA_CHARS[i], 0 );
-        GET_UINT32_BE( SIGMA[i][1], SIGMA_CHARS[i], 4 );
+        SIGMA[i][0] = MBEDTLS_GET_UINT32_BE( SIGMA_CHARS[i], 0 );
+        SIGMA[i][1] = MBEDTLS_GET_UINT32_BE( SIGMA_CHARS[i], 4 );
     }
 
     /*
@@ -388,7 +365,7 @@ int mbedtls_camellia_setkey_enc( mbedtls_camellia_context *ctx,
 
     /* Store KL, KR */
     for( i = 0; i < 8; i++ )
-        GET_UINT32_BE( KC[i], t, i * 4 );
+        KC[i] = MBEDTLS_GET_UINT32_BE( t, i * 4 );
 
     /* Generate KA */
     for( i = 0; i < 4; ++i )
@@ -514,10 +491,10 @@ int mbedtls_camellia_crypt_ecb( mbedtls_camellia_context *ctx,
     NR = ctx->nr;
     RK = ctx->rk;
 
-    GET_UINT32_BE( X[0], input,  0 );
-    GET_UINT32_BE( X[1], input,  4 );
-    GET_UINT32_BE( X[2], input,  8 );
-    GET_UINT32_BE( X[3], input, 12 );
+    X[0] = MBEDTLS_GET_UINT32_BE( input,  0 );
+    X[1] = MBEDTLS_GET_UINT32_BE( input,  4 );
+    X[2] = MBEDTLS_GET_UINT32_BE( input,  8 );
+    X[3] = MBEDTLS_GET_UINT32_BE( input, 12 );
 
     X[0] ^= *RK++;
     X[1] ^= *RK++;
@@ -552,10 +529,10 @@ int mbedtls_camellia_crypt_ecb( mbedtls_camellia_context *ctx,
     X[0] ^= *RK++;
     X[1] ^= *RK++;
 
-    PUT_UINT32_BE( X[2], output,  0 );
-    PUT_UINT32_BE( X[3], output,  4 );
-    PUT_UINT32_BE( X[0], output,  8 );
-    PUT_UINT32_BE( X[1], output, 12 );
+    MBEDTLS_PUT_UINT32_BE( X[2], output,  0 );
+    MBEDTLS_PUT_UINT32_BE( X[3], output,  4 );
+    MBEDTLS_PUT_UINT32_BE( X[0], output,  8 );
+    MBEDTLS_PUT_UINT32_BE( X[1], output, 12 );
 
     return( 0 );
 }

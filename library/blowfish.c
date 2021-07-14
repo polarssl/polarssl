@@ -40,29 +40,6 @@
 #define BLOWFISH_VALIDATE( cond )                                           \
     MBEDTLS_INTERNAL_VALIDATE( cond )
 
-/*
- * 32-bit integer manipulation macros (big endian)
- */
-#ifndef GET_UINT32_BE
-#define GET_UINT32_BE(n,b,i)                            \
-{                                                       \
-    (n) = ( (uint32_t) (b)[(i)    ] << 24 )             \
-        | ( (uint32_t) (b)[(i) + 1] << 16 )             \
-        | ( (uint32_t) (b)[(i) + 2] <<  8 )             \
-        | ( (uint32_t) (b)[(i) + 3]       );            \
-}
-#endif
-
-#ifndef PUT_UINT32_BE
-#define PUT_UINT32_BE(n,b,i)                            \
-{                                                       \
-    (b)[(i)    ] = (unsigned char) ( (n) >> 24 );       \
-    (b)[(i) + 1] = (unsigned char) ( (n) >> 16 );       \
-    (b)[(i) + 2] = (unsigned char) ( (n) >>  8 );       \
-    (b)[(i) + 3] = (unsigned char) ( (n)       );       \
-}
-#endif
-
 static const uint32_t P[MBEDTLS_BLOWFISH_ROUNDS + 2] = {
         0x243F6A88L, 0x85A308D3L, 0x13198A2EL, 0x03707344L,
         0xA4093822L, 0x299F31D0L, 0x082EFA98L, 0xEC4E6C89L,
@@ -242,8 +219,8 @@ int mbedtls_blowfish_crypt_ecb( mbedtls_blowfish_context *ctx,
     BLOWFISH_VALIDATE_RET( input  != NULL );
     BLOWFISH_VALIDATE_RET( output != NULL );
 
-    GET_UINT32_BE( X0, input,  0 );
-    GET_UINT32_BE( X1, input,  4 );
+    X0 = MBEDTLS_GET_UINT32_BE( input,  0 );
+    X1 = MBEDTLS_GET_UINT32_BE( input,  4 );
 
     if( mode == MBEDTLS_BLOWFISH_DECRYPT )
     {
@@ -254,8 +231,8 @@ int mbedtls_blowfish_crypt_ecb( mbedtls_blowfish_context *ctx,
         blowfish_enc( ctx, &X0, &X1 );
     }
 
-    PUT_UINT32_BE( X0, output,  0 );
-    PUT_UINT32_BE( X1, output,  4 );
+    MBEDTLS_PUT_UINT32_BE( X0, output,  0 );
+    MBEDTLS_PUT_UINT32_BE( X1, output,  4 );
 
     return( 0 );
 }
