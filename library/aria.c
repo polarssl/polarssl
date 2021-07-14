@@ -215,19 +215,19 @@ static inline void aria_sl( uint32_t *a, uint32_t *b,
     *a = ( (uint32_t) sa[ MBEDTLS_BYTE_0( *a ) ]       ) ^
          (((uint32_t) sb[ MBEDTLS_BYTE_1( *a ) ]) <<  8) ^
          (((uint32_t) sc[ MBEDTLS_BYTE_2( *a ) ]) << 16) ^
-         (((uint32_t) sd[ *a >> 24             ]) << 24);
+         (((uint32_t) sd[ MBEDTLS_BYTE_3( *a ) ]) << 24);
     *b = ( (uint32_t) sa[ MBEDTLS_BYTE_0( *b ) ]       ) ^
          (((uint32_t) sb[ MBEDTLS_BYTE_1( *b ) ]) <<  8) ^
          (((uint32_t) sc[ MBEDTLS_BYTE_2( *b ) ]) << 16) ^
-         (((uint32_t) sd[ *b >> 24             ]) << 24);
+         (((uint32_t) sd[ MBEDTLS_BYTE_3( *b ) ]) << 24);
     *c = ( (uint32_t) sa[ MBEDTLS_BYTE_0( *c ) ]       ) ^
          (((uint32_t) sb[ MBEDTLS_BYTE_1( *c ) ]) <<  8) ^
          (((uint32_t) sc[ MBEDTLS_BYTE_2( *c ) ]) << 16) ^
-         (((uint32_t) sd[ *c >> 24             ]) << 24);
+         (((uint32_t) sd[ MBEDTLS_BYTE_3( *c ) ]) << 24);
     *d = ( (uint32_t) sa[ MBEDTLS_BYTE_0( *d ) ]       ) ^
          (((uint32_t) sb[ MBEDTLS_BYTE_1( *d ) ]) <<  8) ^
          (((uint32_t) sc[ MBEDTLS_BYTE_2( *d ) ]) << 16) ^
-         (((uint32_t) sd[ *d >> 24             ]) << 24);
+         (((uint32_t) sd[ MBEDTLS_BYTE_3( *d ) ]) << 24);
 }
 
 /*
