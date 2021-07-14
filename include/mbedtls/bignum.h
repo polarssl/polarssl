@@ -826,14 +826,14 @@ int mbedtls_mpi_mod_int( mbedtls_mpi_uint *r, const mbedtls_mpi *A,
  * \param E        The exponent MPI. This must point to an initialized MPI.
  * \param N        The base for the modular reduction. This must point to an
  *                 initialized MPI.
- * \param _RR      A helper MPI depending solely on \p N which can be used to
+ * \param prec_RR  A helper MPI depending solely on \p N which can be used to
  *                 speed-up multiple modular exponentiations for the same value
  *                 of \p N. This may be \c NULL. If it is not \c NULL, it must
  *                 point to an initialized MPI. If it hasn't been used after
  *                 the call to mbedtls_mpi_init(), this function will compute
- *                 the helper value and store it in \p _RR for reuse on
+ *                 the helper value and store it in \p prec_RR for reuse on
  *                 subsequent calls to this function. Otherwise, the function
- *                 will assume that \p _RR holds the helper value set by a
+ *                 will assume that \p prec_RR holds the helper value set by a
  *                 previous call to mbedtls_mpi_exp_mod(), and reuse it.
  *
  * \return         \c 0 if successful.
@@ -845,7 +845,7 @@ int mbedtls_mpi_mod_int( mbedtls_mpi_uint *r, const mbedtls_mpi *A,
  */
 int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
                          const mbedtls_mpi *E, const mbedtls_mpi *N,
-                         mbedtls_mpi *_RR );
+                         mbedtls_mpi *prec_RR );
 
 /**
  * \brief          Fill an MPI with a number of random bytes.
