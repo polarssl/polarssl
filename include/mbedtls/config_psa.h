@@ -433,11 +433,6 @@ extern "C" {
 
 #if defined(PSA_WANT_ECC_MONTGOMERY_448)
 #if !defined(MBEDTLS_PSA_ACCEL_ECC_MONTGOMERY_448)
-/*
- * Curve448 is not yet supported via the PSA API in Mbed TLS
- * (https://github.com/ARMmbed/mbedtls/issues/4249).
- */
-#error "Curve448 is not yet supported via the PSA API in Mbed TLS."
 #define MBEDTLS_ECP_DP_CURVE448_ENABLED
 #define MBEDTLS_PSA_BUILTIN_ECC_MONTGOMERY_448 1
 #endif /* !MBEDTLS_PSA_ACCEL_ECC_MONTGOMERY_448 */
@@ -710,8 +705,7 @@ extern "C" {
 #define PSA_WANT_ECC_MONTGOMERY_255
 #endif
 
-/* Curve448 is not yet supported via the PSA API (https://github.com/ARMmbed/mbedtls/issues/4249) */
-#if 0 && defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
+#if defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
 #define MBEDTLS_PSA_BUILTIN_ECC_MONTGOMERY_448 1
 #define PSA_WANT_ECC_MONTGOMERY_448
 #endif

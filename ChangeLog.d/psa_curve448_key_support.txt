@@ -1,0 +1,3 @@
+Features
+   * Enable support for Curve448 via the PSA API. Contributed by
+     Archana Madhavan in #4626. Fixes #3399 and #4249.
