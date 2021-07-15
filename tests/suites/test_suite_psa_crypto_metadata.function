@@ -629,6 +629,10 @@ void block_cipher_key_type( int type_arg, int block_size_arg )
     TEST_EQUAL( type & PSA_KEY_TYPE_CATEGORY_MASK,
                 PSA_KEY_TYPE_CATEGORY_SYMMETRIC );
     TEST_EQUAL( PSA_BLOCK_CIPHER_BLOCK_LENGTH( type ), block_size );
+
+    /* Check that the block size is a power of 2. This is required, at least,
+    for PSA_ROUND_UP_TO_MULTIPLE(block_size, length) in crypto_sizes.h. */
+    TEST_ASSERT( ( ( block_size - 1 ) & block_size ) == 0 );
 }
 /* END_CASE */
 
